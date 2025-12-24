@@ -1,4 +1,5 @@
 import os
+import json
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -6,19 +7,31 @@ from openai import OpenAI
 load_dotenv()
 client = OpenAI()
 
-# 2. Dein Statement (Die Basis für den Vibe-Check)
-text_input = "Musik ist für mich kein Konsumgut, sondern ein essentielles Ordnungssystem (Fokus auf Techno/Klangästhetik)."
+# 2. Dein Datensatz
+profile_data = {
+    "user": "Marc",
+    "statement": "Musik ist für mich kein Konsumgut, sondern ein essentielles Ordnungssystem (Fokus auf Techno/Klangästhetik).",
+    "metadata": {
+        "category": "music_values",
+        "date": "2025-12-24"
+    }
+}
 
-print("Starte Vektorisierung...")
+print(f"Verarbeite Statement für: {profile_data['user']}...")
 
-# 3. Den Vektor erzeugen (1536 Dimensionen pure Mathematik)
+# 3. Vektor erzeugen
 response = client.embeddings.create(
-    input=text_input,
+    input=profile_data["statement"],
     model="text-embedding-3-small"
 )
 
-# Den eigentlichen Vektor (eine Liste von Zahlen) extrahieren
-vector = response.data[0].embedding
+# 4. Daten zusammenführen
+profile_data["vector"] = response.data[0].embedding
 
-print(f"\nErfolgreich! Dein Statement wurde in einen Vektor mit {len(vector)} Dimensionen verwandelt.")
-print(f"Hier sind die ersten 10 Dimensionen deines Profils:\n{vector[:10]}")
+# 5. Als JSON-Datei speichern
+with open('marc_profile.json', 'w', encoding='utf-8') as f:
+    json.dump(profile_data, f, ensure_ascii=False, indent=4)
+
+print("\n--- ERFOLG ---")
+print("Datei 'marc_profile.json' wurde erstellt.")
+print("Dieser Datensatz ist bereit für den Abgleich (Matchmaking).")
