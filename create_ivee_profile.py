@@ -16,19 +16,19 @@ ivee_config = {
             "id": "A",
             "category": "Gerechtigkeit & Werte",
             "weight": 0.40, 
-            "text": "HIER IVEES TEXT EINSETZEN"
+            "text": "Mir ist wichtig: Mein Hund Pinschi, Aufrichtigkeit, Offenheit, Ehrlichkeit Authentizität, Humor, Integrität. Ich bin: asexuell, Emotional, emphatisch, zielstrebig."
         },
         {
             "id": "B",
             "category": "Resilienz & Flexibilität",
             "weight": 0.20,
-            "text": "HIER IVEES TEXT EINSETZEN"
+            "text": "Ich nsuche jenmanden, der eine starke Schuklter hat, wenn es nötig wird. Geschlecht ist vollkommen egal. Die MPErson soll mit beiden Beinen im Leben stehen aber auch gerne mal mit mir eine virtuelle Reise nach Azeroth oder so machen wollen. Derjenige soll genug Humor besitzen mich zum Lachen zu bringen aber auch genau wissen, wann es Zeit ist den nötigen Ernst zu zeigen."
         },
         {
             "id": "C",
             "category": "Musik-Ästhetik",
             "weight": 0.40,
-            "text": "HIER IVEES TEXT EINSETZEN"
+            "text": "Da ich lange DJ war, spielt Musik generell für mich eine große Rolle, wobei ich auch gezielt die Stille suche. Es muss vor allem elektronische Musik sein in all ihren Facetten. Als DJ habe ich hauptsächlich Hardtechno aufgelegt. Derzeit gefällt mir am Besten Downtempo und CHillout."
         }
     ]
 }
