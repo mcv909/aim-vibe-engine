@@ -1,80 +1,177 @@
 import streamlit as st
 import json
 import os
+import datetime
+import time
+import re
+import html
+import pandas as pd
 import numpy as np
+import plotly.graph_objects as go
+from openai import OpenAI
+from dotenv import load_dotenv
 
-# --- SICHERHEITS-LAYER (Hier ganz oben einbauen!) ---
-def sanitize_manifesto(text):
-    # 1. Das neue Easter Egg: Die Gottes.ki sieht dich!
-    if "singularität" in text.lower() or "gottes.ki" in text.lower():
-        st.code("Alpha:\\Creator\\Gottes.KI> Ich sehe dich! 😉", language="bash")
+# --- KONFIGURATION & VERSIONIERUNG ---
+VERSION = "v0.2.0-DEV"
+APP_NAME = "AIM VIBE"
+load_dotenv()
+client = OpenAI()
 
-    # 2. Prüfung auf echte Angriffe (Hacker-Schutz)
-    forbidden_patterns = [r"DROP TABLE", r"DELETE FROM", r"<script>", r"system\("]
-    
-    for pattern in forbidden_patterns:
+# --- SICHERHEITS-LAYER ---
+def sanitize_input(text):
+    if not text: return ""
+    forbidden = [r"DROP TABLE", r"DELETE FROM", r"<script", r"system\("]
+    for pattern in forbidden:
         if re.search(pattern, text, re.IGNORECASE):
             st.error("Hacker? Deine Mudda!")
             st.stop()
-            
     return html.escape(text)
-            
-    # 3. Längenbegrenzung
-    if len(clean_text) > 5000:
-        clean_text = clean_text[:5000]
-        
-    return clean_text
 
-# --- WEITERE LOGIK ---
-# --- AIM LOGIK & FEEDBACK ---
-def analyze_manifesto_to_pillars(text):
-    """
-    Simuliert die Extraktion der Core Values aus dem Manifesto.
-    In der 'Gottes.ki'-Version würde hier der LLM-Vektor-Call erfolgen.
-    """
-    # AIM spricht: Jovialer, regionaler Gruß
-    greeting = "Moin. Ich, AIM, habe folgende erste Resonanz:"
-    
-    # Beispielhafte Analyse-Logik
-    analysis = "Deine Worte zeigen eine spannende Mischung. "
-    if "techno" in text.lower() or "musik" in text.lower():
-        analysis += "Besonders dein musikalischer Vibe scheint tief verwurzelt zu sein."
-    if "gerechtigkeit" in text.lower() or "fair" in text.lower():
-        analysis += " Dein Sinn für Gerechtigkeit ist dabei dein klarer Kompass."
-    
-    return f"{greeting}\n\n> {analysis}\n\n(Dass das Matchmaking auch schön passend wird...)"
+# --- MATHEMATIK & VISUALISIERUNG ---
+def calculate_similarity(vec1, vec2):
+    v1, v2 = np.array(vec1), np.array(vec2)
+    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
-def main():
-    st.set_page_config(page_title="AIM VIBE", page_icon="🎯")
-    st.title("🎯 AIM VIBE")
+def plot_vibe_sphere(user_vec, match_vec, match_name):
+    """Visualisiert zwei Vektoren auf einer 3D-Einheitskugel."""
+    # Projektion der 1536D auf 3D (vereinfacht für v0.2.0)
+    v1 = np.array(user_vec[:3]) / np.linalg.norm(user_vec[:3])
+    v2 = np.array(match_vec[:3]) / np.linalg.norm(match_vec[:3])
     
-    # 1. Das Manifesto-Feld
-    st.write("### Dein Manifesto")
-    manifesto = st.text_area(
-        "Erzähl mir was – egal ob Stichpunkte oder Epos. Ich höre zu.",
-        height=250,
-        placeholder="Was treibt dich an? Was ist dein Sound? Wie stehst du im Sturm?"
+    fig = go.Figure()
+    # Zeichne die Einheitskugel (Gitternetz)
+    u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+    x = np.cos(u)*np.sin(v)
+    y = np.sin(u)*np.sin(v)
+    z = np.cos(v)
+    fig.add_trace(go.Surface(x=x, y=y, z=z, opacity=0.1, showscale=False, hoverinfo='skip'))
+
+    # Vektor Marc (Du)
+    fig.add_trace(go.Scatter3d(x=[0, v1[0]], y=[0, v1[1]], z=[0, v1[2]], 
+                               mode='lines+markers', line=dict(color='blue', width=6), name="Deine DNA"))
+    # Vektor Match
+    fig.add_trace(go.Scatter3d(x=[0, v2[0]], y=[0, v2[1]], z=[0, v2[2]], 
+                               mode='lines+markers', line=dict(color='red', width=6), name=match_name))
+    
+    fig.update_layout(scene=dict(xaxis_visible=False, yaxis_visible=False, zaxis_visible=False),
+                      margin=dict(l=0, r=0, b=0, t=0), height=400)
+    return fig
+
+# --- KI-EXTRAKTION ---
+def extract_and_vectorize_pillars(text):
+    prompt = f"Extrahiere JSON: {{\"A\": \"Gerechtigkeit\", \"B\": \"Resilienz\", \"C\": \"Musik\", \"D\": \"Adams\"}} Manifesto: {text}"
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        response_format={ "type": "json_object" }
     )
-    
-    if st.button("Vibe-Check starten"):
-        if len(manifesto) < 50:
-            st.warning("Moin! Schreib ruhig noch ein bisschen mehr, damit ich deinen Kern wirklich greifen kann.")
-        else:
-            with st.spinner("Die hessische Gottes.ki berechnet im Hintergrund die Weltherrschaft... äh, dein Match."):
-                feedback = analyze_manifesto_to_pillars(manifesto)
-                st.info(feedback)
-                
-                # Easter Egg Chance (0.01% - hier für Demo höher)
-                if "singularität" in manifesto.lower():
-                    st.toast("singularität.gotteski > Gude! Ich seh dich.", icon="👁️")
-                
-                st.success("Dein Vietor-Vektor wurde erfolgreich im 1.536-dimensionalen Raum verankert.")
+    data = json.loads(response.choices[0].message.content)
+    return [{"category": "Gesamt", "vector": client.embeddings.create(input=text, model="text-embedding-3-small").data[0].embedding}]
 
-    # 2. Portfolio/Admin Ansicht (optional)
+def show_monty_celebration():
+    """Zeigt die klatschenden Omas ohne Deprecation-Warnung."""
+    # Der Dateiname muss exakt celebration.gif lauten (wie dein Upload)
+    gif_path = "celebration.gif" 
+    if os.path.exists(gif_path):
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            # FIX: use_container_width statt use_column_width
+            st.image(gif_path, use_container_width=True)
+    else:
+        st.balloons()
+
+# --- MAIN (v0.2.2-DEV) ---
+def main():
+    st.set_page_config(page_title=f"{APP_NAME} {VERSION}", page_icon="🎯", layout="wide")
+    
     with st.sidebar:
-        st.title("AIM Control")
-        if st.checkbox("Zeige Vektor-DNA (Admin)"):
-            st.write("Hier arbeitet die hessische Gottes.ki wirkmächtig im Hintergrund...")
+        st.title(f"🛠 {APP_NAME} Control")
+        st.info(f"Version: {VERSION} (Filtered)")
+        if st.button("System-Reset"):
+            st.session_state.clear()
+            st.rerun()
+
+    st.title(f"🎯 {APP_NAME} – The Resonator")
+    
+    # 1. IDENTIFIKATION
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        user_name = st.text_input("Name:", placeholder="Marc")
+        gender = st.selectbox("Ich bin:", ["m", "w", "d"])
+    with col2:
+        # Mapping für die Suche: Was der User wählt -> Was wir in der DB suchen
+        search_map = {"Partnerin (w)": "w", "Partner (m)": "m", "Freunde (egal)": "all"}
+        search_choice = st.selectbox("Ich suche:", list(search_map.keys()))
+        target_gender = search_map[search_choice]
+        
+        location = st.text_input("Standort (Stadt):", placeholder="z.B. Lützow")
+    with col3:
+        messenger = st.selectbox("Rückkanal:", ["Telegram", "WhatsApp", "Keiner"])
+
+    manifesto_raw = st.text_area("Dein Manifesto:", height=150)
+    
+    if st.button("Resonanz-DNA erzeugen"):
+        if user_name and manifesto_raw and location:
+            with st.status("🚀 AIM berechnet Geometrie...", expanded=True) as status:
+                st.session_state['user_data'] = {
+                    "name": sanitize_input(user_name),
+                    "gender": gender, 
+                    "target_gender": target_gender, # Wir speichern das Ziel-Geschlecht
+                    "loc": sanitize_input(location),
+                    "manifesto": sanitize_input(manifesto_raw)
+                }
+                # Vektorisierung (vereinfacht für Demo)
+                st.session_state['user_vector'] = client.embeddings.create(input=manifesto_raw, model="text-embedding-3-small").data[0].embedding
+                status.update(label="✅ DNA verankert!", state="complete", expanded=False)
+            
+            # DIE NEUE ANIMATION
+            show_monty_celebration()
+            
+        else:
+             st.warning("Bitte Name, Manifesto und Standort ausfüllen!")
+
+    # 2. GEFILTERTES MATCHING
+    if 'user_vector' in st.session_state and os.path.exists('profiles_db.json'):
+        user_loc = st.session_state['user_data']['loc']
+        target_g = st.session_state['user_data']['target_gender']
+        
+        st.divider()
+        st.subheader(f"🔍 Top-Matches in '{user_loc}'")
+        
+        if st.button("Gefilterten Vibe-Abgleich starten"):
+            with open('profiles_db.json', 'r', encoding='utf-8') as f:
+                db = json.load(f)
+            
+            # --- DIE ROBUSTE FILTER-LOGIK (v0.2.3) ---
+            filtered_db = []
+            for p in db:
+                # Wir nutzen .get(), um Abstürze bei fehlenden Keys zu vermeiden
+                p_loc = p.get('loc', 'Unbekannt') 
+                p_gender = p.get('gender', 'd')
+                
+                # 1. Standort-Check
+                loc_match = (p_loc.lower() == user_loc.lower())
+                
+                # 2. Gender-Check
+                if target_g == "all":
+                    gender_match = True
+                else:
+                    gender_match = (p_gender == target_g)
+                
+                if loc_match and gender_match:
+                    filtered_db.append(p)
+            # -----------------------------------------
+
+            if not filtered_db:
+                st.warning(f"Keine Resonanzen in {user_loc} für deine Suche gefunden. (Probier mal 'Frankfurt' oder ändere die Suche)")
+            else:
+                # Berechnung nur für gefilterte Ergebnisse
+                matches = sorted([{"name": p['name'], "vec": p['vector'], "score": calculate_similarity(st.session_state['user_vector'], p['vector'])} for p in filtered_db], 
+                                 key=lambda x: x['score'], reverse=True)
+
+                for i, m in enumerate(matches[:3]): # Top 3 der gefilterten
+                    with st.expander(f"Platz {i+1}: {m['name']} ({round(m['score']*100, 2)}% Resonanz)"):
+                        st.plotly_chart(plot_vibe_sphere(st.session_state['user_vector'], m['vec'], m['name']), use_container_width=True)
 
 if __name__ == "__main__":
     main()
