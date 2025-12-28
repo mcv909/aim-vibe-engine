@@ -87,7 +87,7 @@ api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
 # --- KONFIGURATION & VERSIONIERUNG ---
-VERSION = "v0.2.6-DEV"
+VERSION = "v0.2.8-DEV"
 APP_NAME = "AIM VIBE"
 load_dotenv()
 client = OpenAI()
