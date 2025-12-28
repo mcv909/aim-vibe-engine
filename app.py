@@ -65,6 +65,26 @@ def plot_vibe_sphere(user_vec, match_vec, match_name):
 def main():
     st.set_page_config(page_title=f"{APP_NAME} {VERSION}", page_icon="🎯", layout="wide")
     
+    # --- BETA PASSWORTSCHUTZ ---
+    # Wir holen uns das Passwort aus der Umgebung (Lokal .env / Cloud Secrets)
+    BETA_PASSWORD = os.getenv("BETA_PASSWORD")
+    
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    if not st.session_state["authenticated"]:
+        st.title("🔐 AIM Vibe - Beta Access")
+        st.write("Moin! Diese Version ist aktuell nur für geladene Tester zugänglich.")
+        pwd_input = st.text_input("Bitte gib das Beta-Passwort ein:", type="password")
+        
+        if st.button("Unlock matching magic"):
+            if pwd_input == BETA_PASSWORD:
+                st.session_state["authenticated"] = True
+                st.rerun()
+            else:
+                st.error("Falsches Passwort. Die Resonanz bleibt verwehrt.")
+        st.stop() # Beendet die App-Ausführung hier, falls nicht eingeloggt
+
     with st.sidebar:
         st.title(f"🛠 {APP_NAME} Control")
         st.info(f"Version: {VERSION}")
