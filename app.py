@@ -12,6 +12,68 @@ import numpy as np
 import plotly.graph_objects as go
 from openai import OpenAI
 from dotenv import load_dotenv
+import telebot # Muss in requirements.txt stehen!
+
+# --- TELEGRAM LOGIK (Sauber getrennt) ---
+
+def log_fast_match_to_admin(user_a, user_b, score):
+    """Sendet eine lautlose Info bei Beinahe-Resonanz (0.82 - 0.87)."""
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    admin_id = os.getenv("TELEGRAM_ADMIN_ID")
+    if not token or not admin_id: 
+        return
+    
+    bot = telebot.TeleBot(token)
+    msg = (f"🔍 **Fast-Match Monitoring**\n\n"
+           f"Präzision: **{score:.2f}**\n"
+           f"Zwischen: {user_a['name']} & {user_b['name']}\n"
+           f"Status: Unter 0.88 - kein automatischer Kontakt.")
+    
+    try:
+        # disable_notification=True macht die Nachricht lautlos
+        bot.send_message(admin_id, msg, parse_mode='Markdown', disable_notification=True)
+    except Exception as e:
+        print(f"Monitoring-Fehler: {e}")
+
+def trigger_match_alarm(user_a, user_b, score):
+    """Sendet einen echten Alarm bei hoher Resonanz (>= 0.88)."""
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    admin_id = os.getenv("TELEGRAM_ADMIN_ID")
+    if not token or not admin_id: 
+        return
+        
+    bot = telebot.TeleBot(token)
+    msg = (f"🚀 **Resonanz-Alarm!**\n\n"
+           f"Mathematische Präzision: **{score:.2f}**\n\n"
+           f"👤 **{user_a['name']}** ({user_a['loc']})\n"
+           f"    ↔️\n"
+           f"👤 **{user_b['name']}** ({user_b['loc']})\n\n"
+           f"Die Geometrie der Gedanken passt! Kontakt via Telegram: {user_b['contact']}")
+    
+    try:
+        bot.send_message(admin_id, msg, parse_mode='Markdown')
+    except Exception as e:
+        st.error(f"Telegram-Fehler: {e}")
+
+# --- INITIALISIERUNG FOLGT HIER ---
+  
+    if not token or not admin_id:
+        return # Sicherheit, falls Keys fehlen
+        
+    bot = telebot.TeleBot(token)
+    
+    # Die Nachricht, die DU als Admin (oder später die User) bekommst
+    msg = (f"🚀 **Resonanz-Alarm!**\n\n"
+           f"Mathematische Präzision: **{score:.2f}**\n\n"
+           f"👤 **{user_a['name']}** ({user_a['location']})\n"
+           f"    ↔️\n"
+           f"👤 **{user_b['name']}** ({user_b['location']})\n\n"
+           f"Die Geometrie der Gedanken passt! Kontakt via Telegram: {user_b['contact']}")
+    
+    try:
+        bot.send_message(admin_id, msg, parse_mode='Markdown')
+    except Exception as e:
+        st.error(f"Telegram-Fehler: {e}")
 
 # --- INITIALISIERUNG (Universal-Safe) ---
 # 1. Lokale .env laden (macht lokal nichts kaputt, wenn sie fehlt)
@@ -117,6 +179,8 @@ def main():
         location = st.text_input("Standort (Stadt):", placeholder="z.B. Lützow")
     with col3:
         st.info("💡 Beta-Kanal: Telegram")
+        # Wir definieren die Variable hier fest, damit sie unten bekannt ist
+        messenger = "Telegram" 
         contact_value = st.text_input("Dein Telegram-Handle (@username):")
         if contact_value and not contact_value.startswith("@"):
             st.caption("Tipp: Handles starten meist mit @")
@@ -171,6 +235,38 @@ def main():
                 st.image("OHcB.gif", use_container_width=True)
 
     # ... (Matching Logik bleibt wie gehabt)
+
+    # --- 6. MATCHING ANALYSE ---
+            st.write("---")
+            st.subheader("🔮 Die Resonator-Analyse")
+            
+            matches_found = 0
+            # Wir laden die DB frisch, um alle (inkl. dem neuen Profil) zu haben
+            if os.path.exists('profiles_db.json'):
+                with open('profiles_db.json', 'r', encoding='utf-8') as f:
+                    all_profiles = json.load(f)
+                
+                for other in all_profiles:
+                    # Nicht mit sich selbst vergleichen (via Hash)
+                    if other['vibe_key_hash'] == vibe_hash:
+                        continue
+                    
+                    # Mathematik der Resonanz
+                    score = calculate_similarity(embedding, other['vector'])
+                    
+                    # A: Echter Volltreffer
+                    if score >= 0.88:
+                        trigger_match_alarm(st.session_state['user_data'], other, score)
+                        st.success(f"🔥 Volltreffer! Du hast eine hohe Resonanz mit {other['name']}!")
+                        st.plotly_chart(plot_vibe_sphere(embedding, other['vector'], other['name']))
+                        matches_found += 1
+                    
+                    # B: Fast-Match Monitoring (nur für Admin)
+                    elif 0.82 <= score < 0.88:
+                        log_fast_match_to_admin(st.session_state['user_data'], other, score)
+            
+            if matches_found == 0:
+                st.info("Aktuell schwingt noch niemand exakt auf deiner Frequenz. Aber keine Sorge: Deine DNA ist verankert und wartet auf das passende Gegenstück!")
 
 if __name__ == "__main__":
     main()
