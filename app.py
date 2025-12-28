@@ -65,58 +65,50 @@ def plot_vibe_sphere(user_vec, match_vec, match_name):
 def main():
     st.set_page_config(page_title=f"{APP_NAME} {VERSION}", page_icon="🎯", layout="wide")
     
-    # --- BETA PASSWORTSCHUTZ ---
-    # Wir holen uns das Passwort aus der Umgebung (Lokal .env / Cloud Secrets)
+    # --- 1. BETA-SCHUTZ (Sicherung der Resonanz) ---
     BETA_PASSWORD = os.getenv("BETA_PASSWORD")
-    
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
 
     if not st.session_state["authenticated"]:
-        st.title("🔐 AIM Vibe - Beta Access")
-        st.write("Moin! Diese Version ist aktuell nur für geladene Tester zugänglich.")
+        st.title("🔐 AIM-VIBE – Beta Access")
+        st.write("Moin! Diese Version ist aktuell nur für geladene Pioniere zugänglich.")
         pwd_input = st.text_input("Bitte gib das Beta-Passwort ein:", type="password")
-        
         if st.button("Unlock matching magic"):
             if pwd_input == BETA_PASSWORD:
                 st.session_state["authenticated"] = True
                 st.rerun()
             else:
                 st.error("Falsches Passwort. Die Resonanz bleibt verwehrt.")
-        st.stop() # Beendet die App-Ausführung hier, falls nicht eingeloggt
+        st.stop()
 
-    with st.sidebar:
-        st.title(f"🛠 {APP_NAME} Control")
-        st.info(f"Version: {VERSION}")
+    # --- 2. BRANDING & TITEL ---
+    st.title("🎯 AIM-VIBE > The Resonator")
+    st.subheader("Finde deine semantische Resonanz im 1.536-dimensionalen Raum")
+
+    # --- 3. DER VIBE-GUIDE (Erklärungstext) ---
+    with st.expander("📖 Wie funktioniert die Matching-Magie? (Hier klicken)", expanded=True):
+        st.markdown("""
+        **Was bringt es dir?** Vergiss oberflächliches Swipen. Wir finden Menschen, die auf derselben Frequenz schwingen wie du – basierend auf deinen Werten und Gedanken.
         
-        # --- LÖSCH-INTERFACE ---
-        st.write("---")
-        st.subheader("🗑 Profil löschen")
-        delete_key = st.text_input("Vibe-Key eingeben:", type="password", help="Gib hier deine UUID ein, um dein Profil zu entfernen.")
-        if st.button("Profil unwiderruflich löschen"):
-            if delete_key:
-                hashed_input = hash_key(delete_key)
-                if os.path.exists('profiles_db.json'):
-                    with open('profiles_db.json', 'r', encoding='utf-8') as f:
-                        db = json.load(f)
-                    
-                    new_db = [p for p in db if p.get('vibe_key_hash') != hashed_input]
-                    
-                    if len(new_db) < len(db):
-                        with open('profiles_db.json', 'w', encoding='utf-8') as f:
-                            json.dump(new_db, f, ensure_ascii=False, indent=2)
-                        st.success("Dein Profil wurde aus dem 1.536-dimensionalen Raum entfernt.")
-                    else:
-                        st.error("Key ungültig oder Profil nicht gefunden.")
-            else:
-                st.warning("Bitte gib einen Key ein.")
+        **Die Technik:**
+        1. **Manifesto:** Du schreibst, wer du bist. Was dir wichtig ist, was nicht; Was du magst und was nicht; Schreib einfach ;)
+        2. **DNA:** AIM wandelt deinen Text in einen hochdimensionalen Vektor um. Aus deinen Gedanken wird Geometrie.
+        3. **Matching:** Wir berechnen die **Cosinus-Ähnlichkeit** zwischen dir und allen anderen Profilen.            
+        
+        **Der Ablauf:**
+        Bei einer Resonanz von über **0.88** schlägt der Resonator an. 
+        **Wichtig:** Aktuell nutzen wir exklusiv **Telegram** für die Benachrichtigung. Dein Match erhält dein Handle und kann den ersten Schritt machen.
+        
+        **Feedback:**
+        Da wir die Magie nur berechnen, aber nicht 'sehen', brauchen wir dich: Schreib uns kurz, ob der Vibe beim Match gepasst hat!
+        """)
 
-    st.title(f"🎯 {APP_NAME} – The Resonator")
-    
-    # 1. IDENTIFIKATION (PFLICHTFELDER)
+    # --- 4. DAS INTERFACE (Eingabe) ---
+    st.write("---")
     col1, col2, col3 = st.columns(3)
     with col1:
-        user_name = st.text_input("Name:", placeholder="Marc")
+        user_name = st.text_input("Dein Name:", placeholder="Marc")
         gender = st.selectbox("Ich bin:", ["m", "w", "d"])
     with col2:
         search_map = {"Partnerin (w)": "w", "Partner (m)": "m", "Freunde (egal)": "all"}
@@ -124,10 +116,14 @@ def main():
         target_gender = search_map[search_choice]
         location = st.text_input("Standort (Stadt):", placeholder="z.B. Lützow")
     with col3:
-        messenger = st.selectbox("Rückkanal:", ["Telegram", "WhatsApp"])
-        contact_value = st.text_input(f"Dein {messenger}-Handle / Nummer:")
+        st.info("💡 Beta-Kanal: Telegram")
+        contact_value = st.text_input("Dein Telegram-Handle (@username):")
+        if contact_value and not contact_value.startswith("@"):
+            st.caption("Tipp: Handles starten meist mit @")
 
-    manifesto_raw = st.text_area("Dein Manifesto:", height=150)
+    manifesto_raw = st.text_area("Dein Manifesto (Was macht dich aus?):", height=200)
+    
+    # --- 5. LOGIK-TRIGGER ---
     
     if st.button("Resonanz-DNA erzeugen"):
         # Validierung der Pflichtfelder
