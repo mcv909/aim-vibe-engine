@@ -246,7 +246,7 @@ def main():
                 
                 for other in all_profiles:
                     # Nicht mit sich selbst vergleichen (via Hash)
-                    if other['vibe_key_hash'] == vibe_hash:
+                    if other.get('vibe_key_hash') == vibe_hash:
                         continue
                     
                     # Mathematik der Resonanz
