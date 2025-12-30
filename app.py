@@ -13,6 +13,44 @@ import plotly.graph_objects as go
 from openai import OpenAI
 from dotenv import load_dotenv
 import telebot # Muss in requirements.txt stehen!
+import streamlit as st
+import os
+import psutil # Falls du Systemlast sehen willst (muss in requirements.txt)
+
+def show_admin_dashboard():
+    st.divider()
+    st.subheader("🛡️ AIM-Vibe Engine - Admin Control")
+    
+    # Passwort-Abfrage (Abgleich mit deiner secrets.toml)
+    admin_pwd = st.text_input("Master Password", type="password")
+    
+    if admin_pwd == st.secrets["ADMIN_PASSWORD"]:
+        st.success("Identität bestätigt. Willkommen im Maschinenraum, Marc.")
+        
+        # Metriken für den schnellen Überblick
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Server", "CAX11 ARM", "Hetzner")
+        col2.metric("Status", "ONLINE", "SSL Active")
+        col3.metric("OS", "Ubuntu 24.04", "Stable")
+
+        # System-Statistiken (Interessant für deinen ARM-Server)
+        with st.expander("System-Ressourcen"):
+            cpu_load = psutil.cpu_percent()
+            ram_load = psutil.virtual_memory().percent
+            st.write(f"CPU Last: {cpu_load}%")
+            st.progress(cpu_load / 100)
+            st.write(f"RAM Last: {ram_load}%")
+            st.progress(ram_load / 100)
+
+        # Techno-Vibe Section (Weil Musik wichtig ist)
+        st.info("🎵 System-Resonanz: Techno-Beats synchronisiert.")
+    
+    elif admin_pwd != "":
+        st.error("Zugriff verweigert. Ungültiger Key.")
+
+# Aufruf in der Main-Logik (z.B. über eine Sidebar-Option)
+if st.sidebar.checkbox("Admin-Bereich anzeigen"):
+    show_admin_dashboard()
 
 # --- TELEGRAM LOGIK (Sauber getrennt) ---
 
