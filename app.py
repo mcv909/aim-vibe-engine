@@ -160,19 +160,36 @@ def main():
             st.success(f"Dein Vibe-Key: {v_key}")
             
             # Matching
+            # --- VERBESSERTE ANALYSE ---
             st.subheader("🔮 Resonator-Analyse")
-            for other in db:
+            matches_count = 0
+            highest_score = 0
+            
+            # Fortschrittsbalken für das Feedback
+            progress_bar = st.progress(0)
+            
+            for i, other in enumerate(db):
                 if other.get('vibe_key_hash') == hash_key(v_key): continue
+                
                 score = calculate_similarity(emb, other['vector'])
+                highest_score = max(highest_score, score)
+                
+                # Fortschritt aktualisieren
+                progress_bar.progress((i + 1) / len(db))
                 
                 o_name = decrypt_data(other['name'])
-                o_loc = decrypt_data(other['loc'])
+                
                 if score >= 0.88:
                     st.balloons()
-                    st.success(f"🔥 Volltreffer mit {o_name}! (Score: {score:.2f})")
-                    send_telegram_msg(f"🚀 **Resonanz-Alarm!**\nMatch: {u_name} & {o_name} ({score:.2f})")
+                    st.success(f"🔥 Volltreffer mit {o_name}! (Resonanz: {score:.4f})")
+                    send_telegram_msg(f"🚀 **Match!**\n{u_name} & {o_name} ({score:.4f})")
+                    matches_count += 1
                 elif 0.82 <= score < 0.88:
-                    send_telegram_msg(f"🔍 **Fast-Match:** {u_name} & {o_name} ({score:.2f})", silent=True)
+                    st.info(f"📡 Nahe Resonanz erkannt: {score:.4f} (mit {o_name})")
+                    send_telegram_msg(f"🔍 **Fast-Match:** {u_name} & {o_name} ({score:.4f})", silent=True)
+
+            if matches_count == 0:
+                st.warning(f"Aktuell keine Resonanz über 0.88. Höchster Wert im System: {highest_score:.4f}")
         else:
             st.warning("Bitte Name, Standort, Telegram und Manifesto ausfüllen.")
 
