@@ -53,12 +53,20 @@ def calculate_similarity(vec1, vec2):
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
 def send_telegram_msg(msg, silent=False):
+    # Wir laden die Werte und entfernen sofort alle Leerzeichen oder Anführungszeichen
     token = os.getenv("TELEGRAM_BOT_TOKEN")
+    if token:
+        token = token.replace('"', '').replace("'", "").strip()
+        
     admin_id = os.getenv("TELEGRAM_ADMIN_ID")
+    if admin_id:
+        admin_id = admin_id.replace('"', '').replace("'", "").strip()
+
     if token and admin_id:
-        bot = telebot.TeleBot(token)
         try:
-            bot.send_message(admin_id, msg, parse_mode='Markdown', disable_notification=silent)
+            bot = telebot.TeleBot(token)
+            # Wichtig: admin_id muss für telebot oft ein Integer sein
+            bot.send_message(int(admin_id), msg, parse_mode='Markdown', disable_notification=silent)
         except Exception as e:
             st.error(f"Telegram-Fehler: {e}")
 
