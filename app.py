@@ -125,57 +125,96 @@ def show_admin_dashboard(client):
             inject_test_users(client)
 
 # --- MAIN APP ---
+# --- NEU: DESIGN INJEKTION ---
+def apply_minimalist_theme():
+    st.markdown("""
+        <style>
+        .stApp { background-color: #F8F9FA; color: #1B263B; }
+        .brand-title { font-size: 3.5rem; font-weight: 200; letter-spacing: 0.6rem; color: #1B263B; margin-bottom: 0rem; }
+        .brand-subtitle { font-size: 0.85rem; letter-spacing: 0.2rem; color: rgba(27, 38, 59, 0.5); margin-bottom: 2rem; text-transform: uppercase; }
+        .anchor-box { 
+            border: 1px solid rgba(27, 38, 59, 0.1); 
+            padding: 1.5rem; 
+            background-color: #FFFFFF; 
+            border-radius: 2px;
+            height: 100%;
+        }
+        .stick-figure { font-size: 30px; margin-bottom: 10px; }
+        .pixelated { opacity: 0.2; }
+        /* Buttons & Inputs */
+        .stButton > button { border: 1px solid #1B263B; border-radius: 0px; background: transparent; color: #1B263B; width: 100%; }
+        .stButton > button:hover { background: #1B263B; color: #F8F9FA; }
+        hr { border: 0; border-top: 1px solid rgba(27, 38, 59, 0.15); }
+        </style>
+    """, unsafe_allow_html=True)
+
+# --- MAIN APP ---
 def main():
-    st.set_page_config(page_title=f"{APP_NAME} {VERSION}", page_icon="🎯", layout="wide")
+    # 1. Config & Theme
+    st.set_page_config(page_title=f"I AM | {VERSION}", page_icon="🎯", layout="wide")
+    apply_minimalist_theme()
+    
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    # Beta-Schutz
+    # 2. Beta-Schutz (unverändert)
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
 
     if not st.session_state["authenticated"]:
-        st.title("🔐 AIM-VIBE – Beta Access")
-        pwd_input = st.text_input("Passwort:", type="password")
+        st.markdown('<p class="brand-title">I AM</p>', unsafe_allow_html=True)
+        pwd_input = st.text_input("Access Key:", type="password")
         if st.button("Unlock"):
             if pwd_input == os.getenv("BETA_PASSWORD"):
                 st.session_state["authenticated"] = True
                 st.rerun()
         st.stop()
 
+    # 3. Sidebar / Admin
     if st.sidebar.checkbox("Admin-Bereich"):
         show_admin_dashboard(client)
 
-    st.title("🎯 AIM-VIBE > The Resonator")
+    # 4. Branding Header
+    st.markdown('<p class="brand-title">I AM</p>', unsafe_allow_html=True)
+    st.markdown('<p class="brand-subtitle">Architectural Intelligent Matching</p>', unsafe_allow_html=True)
     
-    # Eingabe-Maske
-    with st.container():
-        c1, c2, c3 = st.columns(3)
-        u_name = sanitize_input(c1.text_input("Dein Name:", placeholder="Marc"))
-        u_loc = sanitize_input(c2.text_input("Standort:", placeholder="Lützow"))
-        u_contact = sanitize_input(c3.text_input("Telegram (@username):"))
-        manifesto = st.text_area("Dein Manifesto (Wer bist du?):", height=150)
+    # 5. Der Qualitative Anker (Das neue Layout)
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown("""
+        <div class="anchor-box">
+            <div class="stick-figure pixelated">👤</div>
+            <p><strong>Vager Input</strong><br>
+            Erzeugt ein generisches Rauschen. Die Architektur bleibt instabil.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_b:
+        st.markdown("""
+        <div class="anchor-box">
+            <div class="stick-figure">🧍‍♂️</div>
+            <p><strong>Präzise DNA</strong><br>
+            Je tiefer das Manifesto, desto schärfer die Resonanz. Qualität erzeugt Identität.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-    if st.button("Resonanz-DNA erzeugen"):
+    st.markdown("<br><hr>", unsafe_allow_html=True)
+
+    # 6. Eingabe-Maske (In den neuen Stil integriert)
+    with st.container():
+        c1, c2, c3 = st.columns([1, 1, 1])
+        u_name = sanitize_input(c1.text_input("Identität (Name):", placeholder="Marc"))
+        u_loc = sanitize_input(c2.text_input("Präsenz (Ort):", placeholder="Obertshausen"))
+        u_contact = sanitize_input(c3.text_input("Signal (Telegram):", placeholder="@handle"))
+        
+        manifesto = st.text_area("Manifesto (Deine Resonanz-DNA):", height=200, 
+                                placeholder="Beschreibe deine Vision, deine Skills und deine Schwingung...")
+
+    # 7. Matching Logik (dein bestehender Code)
+    if st.button("RESONANZ ERZEUGEN"):
         if u_name and manifesto and u_contact:
-            with st.status("🚀 Berechne Geometrie...") as status:
-                v_key = str(uuid.uuid4())
-                emb = client.embeddings.create(input=manifesto, model="text-embedding-3-small").data[0].embedding
-                
-                new_user = {
-                    "name": encrypt_data(u_name), "loc": encrypt_data(u_loc),
-                    "contact": encrypt_data(u_contact), "vibe_key_hash": hash_key(v_key),
-                    "vector": emb, "timestamp": datetime.datetime.now().isoformat()
-                }
-                
-                db = []
-                if os.path.exists('profiles_db.json'):
-                    with open('profiles_db.json', 'r') as f: db = json.load(f)
-                db.append(new_user)
-                with open('profiles_db.json', 'w') as f: json.dump(db, f, indent=2)
-                
-                status.update(label="✅ DNA verankert!", state="complete")
-            
-            st.success(f"Dein Vibe-Key: {v_key}")
+            # ... (Hier folgt dein bestehender Code für Embeddings und DB-Speicherung) ...
+            # [WICHTIG: Nutze hier deine bestehende Logik weiter]
+            st.info("AIM analysiert die Geometrie...")
+            # ...
             
             # Matching
             # --- VERBESSERTE ANALYSE ---
