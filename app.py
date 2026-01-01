@@ -25,16 +25,14 @@ env_targets = [
     os.path.join(parentdir, '.env')
 ]
 
-# 3. .env laden und alte System-Werte (wie @MV303) zwingend überschreiben
+# 3. .env laden
+# Wir gehen die Liste durch. Das aktuelle Element heißt "target".
 for target in env_targets:
-    if os.path.exists(target):
-        load_dotenv(target, override=True)
-        break
+    if os.path.exists(target):          # Prüfe das einzelne "target"
+        load_dotenv(target, override=True) # Lade das einzelne "target"
+        break                           # Stop, wenn eine gefunden wurde
 
-VERSION = "v0.3.3-PRO-BETA"
-APP_NAME = "AIM VIBE"
-
-VERSION = "v0.3.2-PRO-BETA"
+VERSION = "v0.3.4-PRO-BETA"
 APP_NAME = "AIM VIBE"
 
 # --- SECURITY & VERSCHLÜSSELUNG ---
