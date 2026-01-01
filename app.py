@@ -32,7 +32,7 @@ for target in env_targets:
         load_dotenv(target, override=True) # Lade das einzelne "target"
         break                           # Stop, wenn eine gefunden wurde
 
-VERSION = "v0.4.0-ARCHITECT"
+VERSION = "v0.4.1-ARCHITECT"
 APP_NAME = "I AM"  # Hier direkt das neue Branding setzen
 
 # --- SECURITY & VERSCHLÜSSELUNG ---
@@ -138,13 +138,15 @@ def apply_minimalist_theme():
             text-align: center;
             padding: 40px 0 20px 0;
         }}
-        .brand-title {{
-            font-size: 5rem;
+        .brand-title {
+            font-size: 7rem;
             font-weight: 900;
-            letter-spacing: -3px;
+            letter-spacing: 0.5rem;
             margin: 0;
-            line-height: 1;
+            line-height: 1.1;
             color: #000;
+            text-transform: uppercase;
+            display: block;
         }}
         .brand-subtitle {{
             font-size: 1.1rem;
