@@ -388,13 +388,22 @@ def main():
             
             # 5. Visualisierung & Telegram
             st.success(f"DNA erfolgreich stabilisiert! Dein Access-Key: {v_key}")
-            if best_match:
+            if best_match and best_score >= 0.88:
                 m_name = decrypt_data(best_match['name'])
+                m_contact = decrypt_data(best_match['contact']) # Wir entschlüsseln das Match-Handle
+                
                 st.balloons()
                 st.write(f"✨ **Resonanz-Match gefunden:** {m_name} (Score: {best_score:.4f})")
-                send_telegram_msg(f"🚀 **Neues Match!**\n{u_name} & {m_name}\nResonanz-Score: {best_score:.4f}")
+                
+                # Nachricht mit beiden Handles an den Admin/Bot
+                msg = (f"🚀 **MATCH GEFUNDEN (Score: {best_score:.4f})**\n\n"
+                       f"👤 Neu: {u_name} ({u_contact})\n"
+                       f"🤝 Match: {m_name} ({m_contact})")
+                send_telegram_msg(msg)
             else:
-                send_telegram_msg(f"📝 Neuer User registriert: {u_name} ({u_loc})")
+                # Nur Info über Neuanmeldung ohne Match-Trigger
+                st.info(f"DNA gesichert. Aktuell stärkste Resonanz: {best_score:.4f} (Match erst ab 0.88)")
+                send_telegram_msg(f"📝 Neuer User registriert: {u_name} ({u_loc}) - Handle: {u_contact}")
 
         else:
             st.warning("Bitte alle Felder ausfüllen, um eine präzise DNA zu erzeugen.")
