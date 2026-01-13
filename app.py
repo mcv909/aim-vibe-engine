@@ -85,7 +85,7 @@ def main():
                             "contact": encrypt_data(u_contact),
                             "manifesto_enc": encrypt_data(manifesto), # Für Modell-Wechsel gesichert
                             "vector": res.data[0].embedding,
-                            "meta": {"model": "text-embedding-3-small", "ver": VERSION}
+                            "meta": {"model": "text-embedding-3-small", "ver": VERSION},
                             "stature": u_stature,
                             "target_stature": u_target_stature,
                             "coords": coords, # Speichern für schnellen Distanzcheck
