@@ -52,11 +52,13 @@ def main():
                 u_age = st.number_input("Dein Alter", 18, 99, 30)
                 u_location = st.text_input("Dein Ort")
                 u_height = st.slider("Körpergröße (cm)", 140, 220, 175)
+                u_stature = st.selectbox("Deine Statur", ["zierlich", "sportlich", "athletisch", "durchschnittlich", "kräftig", "curvy"])
             with col2:
                 u_contact = st.text_input("Signal / Telegram Kontakt")
                 u_radius = st.slider("Such-Umkreis (km)", 5, 500, 50)
                 u_age_range = st.slider("Alters-Spektrum", 18, 99, (25, 45))
                 u_smoker = st.selectbox("Raucher?", ["Nein", "Gelegentlich", "Ja"])
+                u_target_stature = st.multiselect("Gesuchte Statur(en)", ["zierlich", "sportlich", "athletisch", "durchschnittlich", "kräftig", "curvy"], default=["durchschnittlich"])
 
             manifesto = st.text_area("Dein Manifesto (Drogen, Techno, Werte - schreib frei!)", height=200)
             v_key_new = st.text_input("Wähle deinen Vibe Key (Sicher aufbewahren!)", type="password")
@@ -84,6 +86,9 @@ def main():
                             "manifesto_enc": encrypt_data(manifesto), # Für Modell-Wechsel gesichert
                             "vector": res.data[0].embedding,
                             "meta": {"model": "text-embedding-3-small", "ver": VERSION}
+                            "stature": u_stature,
+                            "target_stature": u_target_stature,
+                            "coords": coords, # Speichern für schnellen Distanzcheck
                         }
                         
                         db = load_db()
