@@ -22,7 +22,7 @@ def main():
     render_header()
 
     # 2. Zentraler Einstieg: Der Vibe Key als Weiche
-    st.markdown("### 🔑 Dein Zugang")
+    st.markdown("### Dein Zugang")
     vibe_key = st.text_input("Vibe Key", type="password") # Ohne 🔑
     
     if vibe_key:

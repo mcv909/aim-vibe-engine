@@ -45,38 +45,36 @@ def set_page_style():
     )
 
 def render_header():
-    """Zeigt Text-Header an. Bilder werden nur geladen, wenn vorhanden."""
+    """Zeigt den Header an. Nutzt Text-Fallback für den Clean-Look (v0.4.2)."""
+    img_blur = None
+    img_clear = None
+    
+    # Versuch, die Bilder zu laden
     try:
         img_blur = get_base64_of_bin_file("header_blurry.png")
         img_clear = get_base64_of_bin_file("header_clear.png")
-        # ... (dein bisheriger Bilder-Code) ...
-    except FileNotFoundError:
-        # CLEAN LOOK: Wenn Bilder fehlen, nur der Text wie in PROD
+    except Exception:
+        # Wenn Bilder fehlen, bleiben die Variablen None -> wir zeigen Text
+        pass
+
+    if img_blur and img_clear:
+        # Der komplexe Bilder-Look (nur wenn Dateien existieren)
+        st.markdown(f"""
+            <div style="text-align: center; margin-bottom: 30px;">
+                <img src="data:image/png;base64,{img_clear}" style="width: 250px; border-radius: 10px;">
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        # CLEAN LOOK (v0.4.2): Zentrierter Text ohne Schnickschnack
         st.markdown(
             """
-            <div style="text-align: center; margin-top: 50px; margin-bottom: 30px;">
-                <h1 style="font-weight: 200; letter-spacing: 5px;">[ I  A  M ]  |  A I M</h1>
-                <p style="opacity: 0.6;">AI-Matching basierend auf Resonanz, nicht auf Checklisten.</p>
+            <div style="text-align: center; margin-top: 50px; margin-bottom: 50px;">
+                <h1 style="font-weight: 200; letter-spacing: 8px; font-size: 3rem; color: #FAFAFA !important;">
+                    [ I  A  M ]  |  A I M
+                </h1>
+                <p style="opacity: 0.5; font-size: 1.1rem; letter-spacing: 2px;">
+                    AI-Matching basierend auf Resonanz, nicht auf Checklisten.
+                </p>
             </div>
             """, unsafe_allow_html=True
         )
-
-    st.markdown(
-        f"""
-        <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 30px;">
-            <div style="position: relative; width: 80%; max-width: 600px;">
-                <img src="data:image/png;base64,{img_blur}" 
-                     style="width: 100%; border-radius: 15px; opacity: 0.4; position: absolute; top: 0; left: 0; z-index: 1;">
-                
-                <div style="position: relative; z-index: 2; padding: 20px; text-align: center;">
-                    <img src="data:image/png;base64,{img_clear}" 
-                         style="width: 60%; border-radius: 10px; box-shadow: 0 0 20px rgba(255, 75, 75, 0.5);">
-                    <h3 style="margin-top: 20px; color: #FAFAFA !important; text-shadow: 1px 1px 2px #000;">
-                        Der Unterschied zwischen Rauschen und Resonanz ist Mathematik.
-                    </h3>
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
