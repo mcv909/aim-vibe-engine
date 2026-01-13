@@ -23,7 +23,7 @@ def main():
 
     # 2. Zentraler Einstieg: Der Vibe Key als Weiche
     st.markdown("### 🔑 Dein Zugang")
-    vibe_key = st.text_input("Gib deinen Vibe Key ein", type="password", help="Dies ist dein Passwort zum Einloggen oder Registrieren.")
+    vibe_key = st.text_input("Vibe Key", type="password") # Ohne 🔑
     
     if vibe_key:
         v_hash = hash_key(vibe_key)
@@ -80,10 +80,10 @@ def main():
             with st.form("registration_form"):
                 col1, col2 = st.columns(2)
                 with col1:
-                    u_name = st.text_input("Dein Name / Alias")
+                    u_name = st.text_input("Identität (Name / Pseudonym)") # Wie in PROD
                     u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"])
                 with col2:
-                    u_contact = st.text_input("Kontakt (z.B. Signal/Telegram)")
+                    u_contact = st.text_input("Signal / Kontakt")
                     u_pref = st.selectbox("Du suchst", ["m", "w", "d", "egal"])
                 
                 manifesto = st.text_area("Dein Manifesto (Wofür brennst du?)", height=200)

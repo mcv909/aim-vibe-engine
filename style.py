@@ -45,14 +45,21 @@ def set_page_style():
     )
 
 def render_header():
-    """Zeigt den dynamischen Header mit den Mona Lisa Bildern an."""
+    """Zeigt Text-Header an. Bilder werden nur geladen, wenn vorhanden."""
     try:
-        # Bilder müssen im selben Ordner liegen!
         img_blur = get_base64_of_bin_file("header_blurry.png")
         img_clear = get_base64_of_bin_file("header_clear.png")
+        # ... (dein bisheriger Bilder-Code) ...
     except FileNotFoundError:
-        st.error("🚨 Header-Bilder nicht gefunden! Bitte 'header_blurry.png' und 'header_clear.png' hochladen.")
-        return
+        # CLEAN LOOK: Wenn Bilder fehlen, nur der Text wie in PROD
+        st.markdown(
+            """
+            <div style="text-align: center; margin-top: 50px; margin-bottom: 30px;">
+                <h1 style="font-weight: 200; letter-spacing: 5px;">[ I  A  M ]  |  A I M</h1>
+                <p style="opacity: 0.6;">AI-Matching basierend auf Resonanz, nicht auf Checklisten.</p>
+            </div>
+            """, unsafe_allow_html=True
+        )
 
     st.markdown(
         f"""
