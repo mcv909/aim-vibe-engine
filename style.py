@@ -1,31 +1,28 @@
 import streamlit as st
 
 def set_page_style():
-    """Setzt das globale CSS (Clean Layout, nur Button in Rot)."""
+    """Setzt das globale CSS (Clean Layout, Fokus auf Tooltips & Validierung)."""
     st.markdown(
         """
         <style>
-        /* Grundlayout */
         .stApp { background-color: #FFFFFF; color: #222222; }
         
-        /* Akzentfarben für Streamlit-Elemente (Slider, Radio, etc.) -> Dunkelblau */
+        /* Akzentfarben: Dunkelblau für alles Operative */
         :root { --primary-color: #1B263B; }
-        div[data-baseweb="slider"] > div > div { background-color: #1B263B !important; }
-        .st-at { background-color: #1B263B !important; }
         
-        /* Text-Kontrast in allen Feldern fixen (keine Negativ-Typo) */
-        input, textarea, select, div[data-baseweb="select"] {
-            color: #222222 !important;
-            background-color: #FAFAFA !important;
+        /* Tooltip Icon Style */
+        .stTooltipIcon {
+            color: #1B263B !important;
         }
 
-        /* Einheitliches Feld-Design (wie bei Identität/Signal) */
+        /* Felder einheitlich gestalten */
         .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
             border: 2px solid #E0E0E0 !important;
             border-radius: 0px !important;
+            color: #222 !important;
         }
         
-        /* Der EINZIG ROTE Button (CTA) */
+        /* Der EINZIG ROTE Button */
         div.stButton > button {
             background-color: #FF4B4B !important;
             color: #FFFFFF !important;
@@ -36,11 +33,9 @@ def set_page_style():
             width: 100% !important;
             border-radius: 0px !important;
             letter-spacing: 2px;
-            transition: opacity 0.3s;
         }
-        div.stButton > button:hover { opacity: 0.85; color: #FFFFFF !important; }
 
-        /* Build-Hint */
+        /* Build-Hint & Status */
         .build-hint {
             font-family: 'Courier New', Courier, monospace;
             color: #1b5e20;
@@ -50,7 +45,7 @@ def set_page_style():
             margin-bottom: 40px;
         }
 
-        /* Mona Lisa Boxen */
+        /* Mona Lisa Boxen Alignment */
         .visual-anchor { display: flex; flex-direction: column; gap: 20px; margin-top: 10px; }
         .m-box { display: flex; align-items: flex-start; gap: 15px; height: 100px; }
         .m-img { width: 100px; height: 100px; overflow: hidden; border: 1px solid #EEE; flex-shrink: 0; }
@@ -65,7 +60,6 @@ def set_page_style():
     )
 
 def render_header():
-    """Header mit präziser Subline."""
     st.markdown(
         """
         <div style="text-align: center; margin-top: 40px; margin-bottom: 70px; width: 100%;">
