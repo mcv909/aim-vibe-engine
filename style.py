@@ -1,39 +1,33 @@
 import streamlit as st
-import base64
 
 def set_page_style():
-    """Setzt das globale CSS (Prod-Layout, Weiß, keine Signalfarben)."""
+    """Setzt das globale CSS (Clean Layout, nur Button in Rot)."""
     st.markdown(
         """
         <style>
         /* Grundlayout */
         .stApp { background-color: #FFFFFF; color: #222222; }
         
-        /* Akzentfarben: Slider, Checkboxen, Radio auf Dunkelblau statt Rot */
+        /* Akzentfarben für Streamlit-Elemente (Slider, Radio, etc.) -> Dunkelblau */
         :root { --primary-color: #1B263B; }
         div[data-baseweb="slider"] > div > div { background-color: #1B263B !important; }
         .st-at { background-color: #1B263B !important; }
         
-        /* Technische Build-Anzeige (Console-Look) */
-        .build-hint {
-            font-family: 'Courier New', Courier, monospace;
-            color: #1b5e20; /* Dunkelgrün */
-            font-size: 0.75rem;
-            text-align: center;
-            margin-top: -60px;
-            margin-bottom: 40px;
+        /* Text-Kontrast in allen Feldern fixen (keine Negativ-Typo) */
+        input, textarea, select, div[data-baseweb="select"] {
+            color: #222222 !important;
+            background-color: #FAFAFA !important;
         }
 
-        /* Manifesto-Bereich Styling */
-        .stTextArea textarea {
-            background-color: #FAFAFA !important;
+        /* Einheitliches Feld-Design (wie bei Identität/Signal) */
+        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
             border: 2px solid #E0E0E0 !important;
             border-radius: 0px !important;
         }
         
-        /* Buttons */
+        /* Der EINZIG ROTE Button (CTA) */
         div.stButton > button {
-            background-color: #000000 !important;
+            background-color: #FF4B4B !important;
             color: #FFFFFF !important;
             border: none !important;
             padding: 20px !important;
@@ -42,10 +36,22 @@ def set_page_style():
             width: 100% !important;
             border-radius: 0px !important;
             letter-spacing: 2px;
+            transition: opacity 0.3s;
+        }
+        div.stButton > button:hover { opacity: 0.85; color: #FFFFFF !important; }
+
+        /* Build-Hint */
+        .build-hint {
+            font-family: 'Courier New', Courier, monospace;
+            color: #1b5e20;
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: -60px;
+            margin-bottom: 40px;
         }
 
-        /* Mona Lisa & Skelett Logik */
-        .visual-anchor { display: flex; flex-direction: column; gap: 20px; margin-top: 50px; }
+        /* Mona Lisa Boxen */
+        .visual-anchor { display: flex; flex-direction: column; gap: 20px; margin-top: 10px; }
         .m-box { display: flex; align-items: flex-start; gap: 15px; height: 100px; }
         .m-img { width: 100px; height: 100px; overflow: hidden; border: 1px solid #EEE; flex-shrink: 0; }
         .m-img img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); }
@@ -59,11 +65,11 @@ def set_page_style():
     )
 
 def render_header():
-    """Header mit korrigierter Bündigkeit."""
+    """Header mit präziser Subline."""
     st.markdown(
         """
         <div style="text-align: center; margin-top: 40px; margin-bottom: 70px; width: 100%;">
-            <h1 style="font-weight: 900; letter-spacing: 12px; font-size: 5rem; line-height: 1; margin: 0 auto; display: inline-block;">
+            <h1 style="font-weight: 900; letter-spacing: 12px; font-size: 5rem; line-height: 1; margin: 0 auto;">
                 [ I  A  M ]  |  A I M
             </h1>
             <div style="max-width: 720px; margin: 15px auto 0 auto;">
@@ -76,7 +82,6 @@ def render_header():
     )
 
 def render_visual_anchor():
-    """Hilfsfunktion für die Mona Lisa Boxen rechts neben dem Manifesto."""
     st.markdown("""
         <div class="visual-anchor">
             <div class="m-box">
