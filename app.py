@@ -3,6 +3,8 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
+load_dotenv()
+
 # Unsere neuen Module
 import security
 import db_handler
@@ -10,7 +12,6 @@ import logic
 import style
 
 # --- INITIALISIERUNG ---
-load_dotenv()
 VERSION = "v0.7.6-Verbesserungen: DB, SEC und Änderung Batchlauf etc-TST"
 
 # Datenbank-Struktur sicherstellen (Einmalig/Idempotent)
