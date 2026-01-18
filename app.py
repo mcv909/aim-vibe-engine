@@ -52,7 +52,39 @@ def main():
     st.title("[ i am ]")
     render_founding_dashboard()
 
-    menu = st.sidebar.selectbox("Matrix-Navigation", ["Manifesto erstellen", "Login", "Über AIM"])
+    # ... (vorheriger Code in main()) ...
+    menu = st.sidebar.selectbox("Matrix-Navigation", ["Manifesto erstellen", "Login", "Über AIM", "Admin"])
+
+    if menu == "Admin":
+        st.subheader("Maschinenraum (Admin)")
+        admin_pw = st.text_input("Admin-Passwort", type="password")
+        
+        if admin_pw == os.getenv("ADMIN_PASSWORD"):
+            st.success("Zugriff gewährt. Willkommen im Kern, Marc.")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("BATCH-MATCHING STARTEN"):
+                    with st.spinner("AIM scannt die Matrix nach Resonanzen..."):
+                        # Hier rufen wir die Logik auf, die wir vorhin gebaut haben
+                        logic.run_batch_matching()
+                    st.balloons()
+                    st.success("Batch-Lauf beendet. Signale wurden (falls vorhanden) versendet.")
+            
+            with col2:
+                # Kleiner Statistik-Check
+                conn = db_handler.get_connection()
+                cur = conn.cursor()
+                cur.execute("SELECT COUNT(*) FROM profiles")
+                user_count = cur.fetchone()[0]
+                cur.close()
+                conn.close()
+                st.metric("User in der Matrix", user_count)
+                
+            st.info("Hinweis: Der Batch-Lauf vergleicht alle vektorisierten Profile. "
+                    "Nachrichten gehen nur bei einem Score > 0.88 raus.")
+        elif admin_pw:
+            security.handle_hacker() # Wer das Admin-PW falsch eingibt, bekommt auch die "Mudda"
 
     if menu == "Manifesto erstellen":
         st.subheader("Deine Digitale DNA")
