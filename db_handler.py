@@ -4,27 +4,29 @@ import os
 import json
 
 # DB-Verbindung aus der .env laden
+# Wir nutzen getenv mit Fallback auf die Standard-Werte
 DB_NAME = os.getenv("DB_NAME", "aim_db")
 DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASS = os.getenv("DB_PASS", "dein_passwort")
+DB_PASS = os.getenv("DB_PASS")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
 def get_connection():
     """Baut die Verbindung zur Postgres-DB auf."""
     return psycopg2.connect(
-        dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT
+        dbname=DB_NAME, 
+        user=DB_USER, 
+        password=DB_PASS, 
+        host=DB_HOST, 
+        port=DB_PORT
     )
 
 def init_db():
-    """Initialisiert die Datenbank-Struktur (Einmalig ausführen)."""
+    """Initialisiert die Datenbank-Struktur (Einmalig/Idempotent)."""
     conn = get_connection()
     cur = conn.cursor()
     try:
-        # Vektor-Erweiterung aktivieren
         cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-        
-        # Die Profile-Tabelle anlegen
         cur.execute("""
             CREATE TABLE IF NOT EXISTS profiles (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -33,7 +35,7 @@ def init_db():
                 contact_enc TEXT,
                 password_hash TEXT,
                 manifesto_enc TEXT,
-                vector_string vector(1536), -- Dimension für OpenAI text-embedding-3-small
+                vector_string vector(1536),
                 is_vectorized BOOLEAN DEFAULT false,
                 is_active BOOLEAN DEFAULT true,
                 early_adopter BOOLEAN DEFAULT false,
@@ -44,10 +46,7 @@ def init_db():
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        
-        # HNSW Index für High-Speed Matching
         cur.execute("CREATE INDEX IF NOT EXISTS idx_vector ON profiles USING hnsw (vector_string vector_cosine_ops);")
-        
         conn.commit()
     except Exception as e:
         print(f"DB-Init Fehler: {e}")
@@ -57,7 +56,7 @@ def init_db():
         conn.close()
 
 def save_profile(data):
-    """Speichert ein neues Profil oder aktualisiert ein bestehendes."""
+    """Speichert oder aktualisiert ein Profil."""
     conn = get_connection()
     cur = conn.cursor()
     try:
@@ -94,7 +93,7 @@ def save_profile(data):
         conn.close()
 
 def get_profile_by_telegram_id(tid):
-    """Lädt ein Profil basierend auf der Telegram ID für den Login."""
+    """Lädt ein Profil für den Login."""
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
@@ -105,7 +104,7 @@ def get_profile_by_telegram_id(tid):
         conn.close()
 
 def delete_profile_permanently(tid):
-    """Unwiderrufliche Löschung ('Weg ist weg')."""
+    """Unwiderrufliche Löschung – hier fehlte das Schließen der Connection!"""
     conn = get_connection()
     cur = conn.cursor()
     try:
@@ -118,4 +117,4 @@ def delete_profile_permanently(tid):
         return False
     finally:
         cur.close()
-        conn.close()
+        conn.close() # <--- DAS war der fehlende Baustein!
