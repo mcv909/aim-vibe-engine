@@ -1,34 +1,73 @@
 import os
-import hashlib
 import re
 import html
+import base64
+import hashlib
 import streamlit as st
+from argon2 import PasswordHasher
 from cryptography.fernet import Fernet
 
-def get_cipher():
-    # Holt den Key aus der .env deines TST-Ordners
-    key = os.getenv("ENCRYPTION_KEY")
-    if not key:
-        st.error("🚨 KRITISCHER FEHLER: ENCRYPTION_KEY fehlt in der .env!")
-        st.stop()
-    return Fernet(key.encode())
+# Initialisierung des Argon2-Hashers
+ph = PasswordHasher()
 
-def encrypt_data(data):
-    if not data: return ""
-    return get_cipher().encrypt(data.encode()).decode()
-
-def decrypt_data(token):
-    if not token or token == "[Entschlüsselungsfehler]": return token
-    try:
-        return get_cipher().decrypt(token.encode()).decode()
-    except Exception:
-        return "[Entschlüsselungsfehler]"
-
-def sanitize_input(text):
-    if not text: return ""
-    # Schutz gegen XSS und einfache Injektionen
-    clean = re.sub(r"(DROP TABLE|DELETE FROM|<script|system\()", "[REDACTED]", text, flags=re.IGNORECASE)
-    return html.escape(clean)
-
+# --- 1. KEY-PROTECTION (Hashing) ---
 def hash_key(vibe_key):
-    return hashlib.sha256(vibe_key.encode()).hexdigest()
+    """Erzeugt einen sicheren Argon2-Einweg-Hash des Keys."""
+    if not vibe_key: return None
+    return ph.hash(vibe_key)
+
+def verify_key(vibe_key, hashed_key):
+    """Vergleicht den Input mit dem Hash in der DB."""
+    try:
+        return ph.verify(hashed_key, vibe_key)
+    except Exception:
+        return False
+
+# --- 2. ZERO-KNOWLEDGE ENCRYPTION (AES) ---
+def derive_encryption_key(vibe_key):
+    """
+    Leitet aus dem User-Key einen AES-Schlüssel ab. 
+    Ohne diesen exakten Key bleibt das Manifesto Datenmüll [cite: 2026-01-18].
+    """
+    digest = hashlib.sha256(vibe_key.encode()).digest()
+    return base64.urlsafe_b64encode(digest)
+
+def encrypt_data(text, vibe_key):
+    """Verschlüsselt Daten mit dem User-abgeleiteten Schlüssel."""
+    if not text or not vibe_key: return ""
+    cipher = Fernet(derive_encryption_key(vibe_key))
+    return cipher.encrypt(text.encode()).decode()
+
+def decrypt_data(token, vibe_key):
+    """Entschlüsselt Daten. Falls Key falsch: 'Weg ist weg' [cite: 2026-01-18]."""
+    if not token or not vibe_key: return ""
+    try:
+        cipher = Fernet(derive_encryption_key(vibe_key))
+        return cipher.decrypt(token.encode()).decode()
+    except Exception:
+        return "[Entschlüsselung unmöglich - Key inkorrekt]"
+
+# --- 3. ATTACK DETECTION & SANITIZATION ---
+def sanitize_input(text):
+    """Basis-Bereinigung für harmlose Felder."""
+    if not text: return ""
+    return html.escape(text.strip())
+
+def detect_attack(input_string):
+    """
+    Sucht nach Injektions-Mustern. Falls gefunden: 'Mudda'-Protokoll.
+    """
+    if not input_string: return False
+    patterns = [
+        r"(?i)DROP\s+TABLE", r"(?i)DELETE\s+FROM", r"(?i)SELECT\s+\*",
+        r"<script.*?>", r"javascript:", r"(\.\./){2,}", r"system\("
+    ]
+    for pattern in patterns:
+        if re.search(pattern, input_string):
+            return True
+    return False
+
+def handle_hacker():
+    """Der finale Rauswurf mit dem gewünschten Wording [cite: 2026-01-18]."""
+    st.error("Hacker? Deine Mudda!")
+    st.stop()
