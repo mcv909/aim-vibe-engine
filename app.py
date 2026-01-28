@@ -35,20 +35,22 @@ def render_founding_dashboard():
     
     # Wir definieren das HTML ohne führende Leerzeichen für die Markdown-Engine
     # Wir setzen auf ein sanftes Lichtgrau (#BBBBBB) für die Typo
-    dashboard_html = f"""
-<div style="background-color: #111111; color: #BBBBBB; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333;">
-    <p style="text-transform: uppercase; letter-spacing: 3px; font-size: 0.8rem; margin-bottom: 10px; color: #FF00FF; font-weight: 600;">Founding Member Status</p>
-    
-    <h2 style="color: #BBBBBB !important; margin: 0; font-size: 3.5rem; font-weight: 300; letter-spacing: -1px;">
-        {current_count} / {limit}
-    </h2>
-    
-    <div style="margin-top: 20px; font-size: 1.0rem; font-weight: 300; border-top: 1px solid #333; padding-top: 15px; line-height: 1.5; color: #888888;">
-        Pionier-Privileg: Dein Account bleibt <b style="color: #BBBBBB;">lebenslang beitragsfrei</b>.<br>
-        <span style="font-size: 0.85rem; opacity: 0.7;">Gilt exklusiv für die ersten 2.000 Anmeldungen – danach wird das System kostenpflichtig.</span>
-    </div>
-</div>
-""".strip()
+    # Durch die Klammern fügt Python die Zeilen ohne Leerzeichen am Anfang zusammen
+    dashboard_html = (
+        '<div style="background-color: #111111; color: #BBBBBB; padding: 30px; border-radius: 12px; '
+        'text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333;">'
+        '<p style="text-transform: uppercase; letter-spacing: 3px; font-size: 0.8rem; margin-bottom: 10px; '
+        'color: #FF00FF; font-weight: 600;">Founding Member Status</p>'
+        f'<h2 style="color: #BBBBBB !important; margin: 0; font-size: 3.5rem; font-weight: 300; letter-spacing: -1px;">'
+        f'{current_count} / {limit}</h2>'
+        '<div style="margin-top: 20px; font-size: 1.0rem; font-weight: 300; border-top: 1px solid #333; '
+        'padding-top: 15px; line-height: 1.5; color: #888888;">'
+        'Pionier-Privileg: Dein Account bleibt <b style="color: #BBBBBB;">lebenslang beitragsfrei</b>.<br>'
+        '<span style="font-size: 0.85rem; opacity: 0.7;">Gilt exklusiv für die ersten 2.000 Anmeldungen – '
+        'danach wird das System kostenpflichtig.</span>'
+        '</div>'
+        '</div>'
+    )
 
     st.markdown(dashboard_html, unsafe_allow_html=True)
 
