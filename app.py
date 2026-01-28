@@ -25,58 +25,26 @@ if "db_initialized" not in st.session_state:
 def render_founding_dashboard():
     """Nutzt die neue get_user_count Funktion für maximale Performance."""
     try:
-        # Falls du die Funktion in db_handler.py noch nicht 'get_user_count' genannt hast,
-        # nutzt dieser Fallback len(load_db())
+        # Prüfung auf Postgres-Migration (v0.7.6)
         db = db_handler.load_db()
         current_count = len(db)
-    except:
+    except Exception:
         current_count = 0
         
     limit = 2000
-    # Nutze textwrap.dedent, damit die Einrückung im UI verschwindet
-    dashboard_html = textwrap.dedent(f"""
-        <div style="
-            background-color: #111111; 
-            color: white; 
-            padding: 30px; 
-            border-radius: 12px; 
-            text-align: center; 
-            margin-bottom: 30px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid #333;
-        ">
-            <p style="
-                text-transform: uppercase; 
-                letter-spacing: 3px; 
-                font-size: 0.8rem; 
-                margin-bottom: 10px; 
-                color: #FF00FF; 
-                font-weight: 600;
-            ">Founding Member Status</p>
-            
-            <h2 style="
-                color: #FFFFFF !important; 
-                margin: 0; 
-                font-size: 3.5rem; 
-                font-weight: 700; 
-                text-shadow: 0 0 15px rgba(255,255,255,0.2);
-            ">{current_count} / {limit}</h2>
-            
-            <div style="
-                margin-top: 20px; 
-                font-size: 1.1rem; 
-                font-weight: 300; 
-                border-top: 1px solid #333; 
-                padding-top: 15px;
-                line-height: 1.5;
-            ">
-                Pionier-Privileg: Dein Account bleibt <b>lebenslang beitragsfrei</b>.<br>
-                <span style="font-size: 0.9rem; opacity: 0.8;">
-                    Gilt exklusiv für die ersten 2.000 Anmeldungen – danach wird das System kostenpflichtig.
-                </span>
-            </div>
-        </div>
-    """)
+    
+    # Wir definieren das HTML ohne führende Leerzeichen für die Markdown-Engine
+    dashboard_html = f"""
+<div style="background-color: #111111; color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333;">
+    <p style="text-transform: uppercase; letter-spacing: 3px; font-size: 0.8rem; margin-bottom: 10px; color: #FF00FF; font-weight: 600;">Founding Member Status</p>
+    <h2 style="color: #FFFFFF !important; margin: 0; font-size: 3.5rem; font-weight: 700; text-shadow: 0 0 15px rgba(255,255,255,0.2);">{current_count} / {limit}</h2>
+    <div style="margin-top: 20px; font-size: 1.1rem; font-weight: 300; border-top: 1px solid #333; padding-top: 15px; line-height: 1.5;">
+        Pionier-Privileg: Dein Account bleibt <b>lebenslang beitragsfrei</b>.<br>
+        <span style="font-size: 0.9rem; opacity: 0.8;">Gilt exklusiv für die ersten 2.000 Anmeldungen – danach wird das System kostenpflichtig.</span>
+    </div>
+</div>
+""".strip()
+
     st.markdown(dashboard_html, unsafe_allow_html=True)
 
 def get_embedding(text):
