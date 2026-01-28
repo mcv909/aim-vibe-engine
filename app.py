@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import textwrap
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -32,8 +33,8 @@ def render_founding_dashboard():
         current_count = 0
         
     limit = 2000
-    st.markdown(
-        f"""
+    # Nutze textwrap.dedent, damit die Einrückung im UI verschwindet
+    dashboard_html = textwrap.dedent(f"""
         <div style="
             background-color: #111111; 
             color: white; 
@@ -49,7 +50,7 @@ def render_founding_dashboard():
                 letter-spacing: 3px; 
                 font-size: 0.8rem; 
                 margin-bottom: 10px; 
-                color: #FF00FF; /* Magenta Akzent für den Vibe */
+                color: #FF00FF; 
                 font-weight: 600;
             ">Founding Member Status</p>
             
@@ -57,7 +58,7 @@ def render_founding_dashboard():
                 color: #FFFFFF !important; 
                 margin: 0; 
                 font-size: 3.5rem; 
-                font-weight: 700; /* Viel fetter für bessere Lesbarkeit */
+                font-weight: 700; 
                 text-shadow: 0 0 15px rgba(255,255,255,0.2);
             ">{current_count} / {limit}</h2>
             
@@ -75,8 +76,8 @@ def render_founding_dashboard():
                 </span>
             </div>
         </div>
-        """, unsafe_allow_html=True
-    )
+    """)
+    st.markdown(dashboard_html, unsafe_allow_html=True)
 
 def get_embedding(text):
     """Verwandelt Text via OpenAI in einen 1536-D Vektor."""
