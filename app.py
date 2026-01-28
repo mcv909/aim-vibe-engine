@@ -34,10 +34,46 @@ def render_founding_dashboard():
     limit = 2000
     st.markdown(
         f"""
-        <div style="background-color: #1C1C1C; color: white; padding: 25px; border-radius: 10px; text-align: center; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <p style="text-transform: uppercase; letter-spacing: 2px; font-size: 0.7rem; margin-bottom: 5px; opacity: 0.7;">Founding Member Status</p>
-            <h2 style="color: white !important; margin: 0; font-size: 2.5rem; font-weight: 300;">{current_count} / {limit}</h2>
-            <p style="margin-top: 15px; font-size: 0.95rem; font-weight: 200; border-top: 1px solid #333; padding-top: 10px;">Sichere dir lebenslange Resonanz ohne Gebühren.</p>
+        <div style="
+            background-color: #111111; 
+            color: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            text-align: center; 
+            margin-bottom: 30px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+        ">
+            <p style="
+                text-transform: uppercase; 
+                letter-spacing: 3px; 
+                font-size: 0.8rem; 
+                margin-bottom: 10px; 
+                color: #FF00FF; /* Magenta Akzent für den Vibe */
+                font-weight: 600;
+            ">Founding Member Status</p>
+            
+            <h2 style="
+                color: #FFFFFF !important; 
+                margin: 0; 
+                font-size: 3.5rem; 
+                font-weight: 700; /* Viel fetter für bessere Lesbarkeit */
+                text-shadow: 0 0 15px rgba(255,255,255,0.2);
+            ">{current_count} / {limit}</h2>
+            
+            <div style="
+                margin-top: 20px; 
+                font-size: 1.1rem; 
+                font-weight: 300; 
+                border-top: 1px solid #333; 
+                padding-top: 15px;
+                line-height: 1.5;
+            ">
+                Pionier-Privileg: Dein Account bleibt <b>lebenslang beitragsfrei</b>.<br>
+                <span style="font-size: 0.9rem; opacity: 0.8;">
+                    Gilt exklusiv für die ersten 2.000 Anmeldungen – danach wird das System kostenpflichtig.
+                </span>
+            </div>
         </div>
         """, unsafe_allow_html=True
     )
