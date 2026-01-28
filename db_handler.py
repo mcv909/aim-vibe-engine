@@ -11,6 +11,34 @@ DB_PASS = os.getenv("DB_PASS")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
+def load_db():
+    """Überbrückt die Postgres-DB für die app.py Matching-Logik."""
+    conn = get_connection()
+    # RealDictCursor sorgt dafür, dass wir Dictionaries wie früher bekommen
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        cur.execute("SELECT * FROM profiles WHERE is_active = true;")
+        rows = cur.fetchall()
+        # Wir müssen 'password_hash' zu 'key_hash' umbenennen für app.py Kompatibilität
+        for row in rows:
+            row['key_hash'] = row.pop('password_hash')
+            row['name'] = decrypt_data(row.pop('name_enc')) # Direkt entschlüsseln für UI
+        return rows
+    finally:
+        cur.close()
+        conn.close()
+
+def get_user_count():
+    """Gibt die Anzahl der aktiven Profile für das Dashboard zurück."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT COUNT(*) FROM profiles WHERE is_active = true;")
+        return cur.fetchone()[0]
+    finally:
+        cur.close()
+        conn.close()
+
 def get_connection():
     """Baut die Verbindung zur Postgres-DB auf."""
     return psycopg2.connect(
