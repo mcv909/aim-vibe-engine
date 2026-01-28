@@ -23,9 +23,7 @@ if "db_initialized" not in st.session_state:
 
 # --- UI HILFSFUNKTIONEN ---
 def render_founding_dashboard():
-    """Nutzt die neue get_user_count Funktion für maximale Performance."""
     try:
-        # Prüfung auf Postgres-Migration (v0.7.6)
         db = db_handler.load_db()
         current_count = len(db)
     except Exception:
@@ -33,26 +31,20 @@ def render_founding_dashboard():
         
     limit = 2000
     
-    # Wir definieren das HTML ohne führende Leerzeichen für die Markdown-Engine
-    # Wir setzen auf ein sanftes Lichtgrau (#CCCCCC) für die Typo
-    # Durch die Klammern fügt Python die Zeilen ohne Leerzeichen am Anfang zusammen
-    dashboard_html = (
-        '<div style="background-color: #111111; color: #CCCCCC; padding: 30px; border-radius: 12px; '
-        'text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333;">'
-        '<p style="text-transform: uppercase; letter-spacing: 3px; font-size: 0.8rem; margin-bottom: 10px; '
-        'color: #FF00FF; font-weight: 600;">Founding Member Status</p>'
-        f'<h2 style="#CCCCCC !important; margin: 0; font-size: 3.5rem; font-weight: 300; letter-spacing: -1px;">'
-        f'{current_count} / {limit}</h2>'
-        '<div style="margin-top: 20px; font-size: 1.0rem; font-weight: 300; border-top: 1px solid #333; '
-        'padding-top: 15px; line-height: 1.5; color: #888888;">'
-        'Pionier-Privileg: Dein Account bleibt <b style="#CCCCCC;">lebenslang beitragsfrei</b>.<br>'
-        '<span style="font-size: 0.85rem; opacity: 0.7;">Gilt exklusiv für die ersten 2.000 Anmeldungen – '
-        'danach wird das System kostenpflichtig.</span>'
+    # WICHTIG: Keine Zeilenumbrüche oder Einrückungen zwischen den Tags!
+    # Wir nehmen ein helleres Grau (#EEEEEE) und mehr Gewicht (500) für die Zahl.
+    html_content = (
+        '<div style="background-color: #111111; color: #CCCCCC; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px; border: 1px solid #333;">'
+        '<p style="text-transform: uppercase; letter-spacing: 3px; font-size: 0.8rem; margin-bottom: 5px; color: #FF00FF; font-weight: 600;">Founding Member Status</p>'
+        f'<div style="color: #EEEEEE !important; margin: 10px 0; font-size: 3.5rem; font-weight: 500; letter-spacing: -1px;">{current_count} / {limit}</div>'
+        '<div style="margin-top: 20px; font-size: 1.0rem; font-weight: 300; border-top: 1px solid #333; padding-top: 15px; line-height: 1.5; color: #AAAAAA;">'
+        'Pionier-Privileg: Dein Account bleibt <b style="color: #EEEEEE;">lebenslang beitragsfrei</b>.<br>'
+        '<span style="font-size: 0.85rem; opacity: 0.7;">Gilt exklusiv für die ersten 2.000 Anmeldungen – danach wird das System kostenpflichtig.</span>'
         '</div>'
         '</div>'
     )
 
-    st.markdown(dashboard_html, unsafe_allow_html=True)
+    st.markdown(html_content, unsafe_allow_html=True)
 
 def get_embedding(text):
     """Verwandelt Text via OpenAI in einen 1536-D Vektor."""
