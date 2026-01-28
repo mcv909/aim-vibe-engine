@@ -1,0 +1,248 @@
+nohup: ignoring input
+
+Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
+
+
+  You can now view your Streamlit app in your browser.
+
+  URL: http://0.0.0.0:8502
+
+2026-01-13 03:57:55.618 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 10, in <module>
+    from style import set_page_style, render_header # Importiere das neue Style-Modul
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'set_page_style' from 'style' (/root/aim-vibe-test/style.py)
+2026-01-13 04:10:16.842 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 123, in <module>
+    main()
+  File "/root/aim-vibe-test/app.py", line 22, in main
+    render_header()
+  File "/root/aim-vibe-test/style.py", line 68, in render_header
+    <img src="data:image/png;base64,{img_blur}"
+                                    ^^^^^^^^
+UnboundLocalError: cannot access local variable 'img_blur' where it is not associated with a value
+2026-01-13 04:10:19.679 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 123, in <module>
+    main()
+  File "/root/aim-vibe-test/app.py", line 22, in main
+    render_header()
+  File "/root/aim-vibe-test/style.py", line 68, in render_header
+    <img src="data:image/png;base64,{img_blur}"
+                                    ^^^^^^^^
+UnboundLocalError: cannot access local variable 'img_blur' where it is not associated with a value
+2026-01-13 04:16:23.294 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 123, in <module>
+    main()
+  File "/root/aim-vibe-test/app.py", line 33, in main
+    user_profile = next((item for item in db if item["key_hash"] == v_hash), None)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 33, in <genexpr>
+    user_profile = next((item for item in db if item["key_hash"] == v_hash), None)
+                                                ~~~~^^^^^^^^^^^^
+KeyError: 'key_hash'
+2026-01-13 04:16:39.143 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 123, in <module>
+    main()
+  File "/root/aim-vibe-test/app.py", line 33, in main
+    user_profile = next((item for item in db if item["key_hash"] == v_hash), None)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 33, in <genexpr>
+    user_profile = next((item for item in db if item["key_hash"] == v_hash), None)
+                                                ~~~~^^^^^^^^^^^^
+KeyError: 'key_hash'
+2026-01-13 04:17:49.754 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 123, in <module>
+    main()
+  File "/root/aim-vibe-test/app.py", line 33, in main
+    user_profile = next((item for item in db if item["key_hash"] == v_hash), None)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 33, in <genexpr>
+    user_profile = next((item for item in db if item["key_hash"] == v_hash), None)
+                                                ~~~~^^^^^^^^^^^^
+KeyError: 'key_hash'
+2026-01-13 04:18:01.633 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 123, in <module>
+    main()
+  File "/root/aim-vibe-test/app.py", line 33, in main
+    user_profile = next((item for item in db if item["key_hash"] == v_hash), None)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 33, in <genexpr>
+    user_profile = next((item for item in db if item["key_hash"] == v_hash), None)
+                                                ~~~~^^^^^^^^^^^^
+KeyError: 'key_hash'
+2026-01-13 17:46:05.015 Script compilation error
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 573, in _run_script
+    code = self._script_cache.get_bytecode(script_path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_cache.py", line 72, in get_bytecode
+    filebody = magic.add_magic(filebody, script_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/magic.py", line 45, in add_magic
+    tree = ast.parse(code, script_path, "exec")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/ast.py", line 52, in parse
+    return compile(source, filename, mode, flags,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 88
+    "meta": {"model": "text-embedding-3-small", "ver": VERSION}
+            ^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+2026-01-13 17:46:05.034 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-01-18 13:31:20.992 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 18, in <module>
+    db_handler.init_db()
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'db_handler' has no attribute 'init_db'
+2026-01-18 13:36:01.175 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 18, in <module>
+    db_handler.init_db()
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'db_handler' has no attribute 'init_db'
+2026-01-18 13:38:03.843 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 18, in <module>
+    db_handler.init_db()
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'db_handler' has no attribute 'init_db'
+2026-01-18 13:38:26.366 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 18, in <module>
+    db_handler.init_db()
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'db_handler' has no attribute 'init_db'
+2026-01-18 13:39:40.676 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 18, in <module>
+    db_handler.init_db()
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'db_handler' has no attribute 'init_db'
+2026-01-18 13:40:21.474 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 18, in <module>
+    db_handler.init_db()
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'db_handler' has no attribute 'init_db'
+2026-01-18 15:38:32.221 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 19, in <module>
+    db_handler.init_db()
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'db_handler' has no attribute 'init_db'
+2026-01-18 15:44:30.402 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 19, in <module>
+    db_handler.init_db()
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'db_handler' has no attribute 'init_db'
+2026-01-18 15:45:12.130 Uncaught app execution
+Traceback (most recent call last):
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/root/aim-vibe-test/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 671, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/aim-vibe-test/app.py", line 19, in <module>
+    db_handler.init_db()
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'db_handler' has no attribute 'init_db'

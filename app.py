@@ -21,19 +21,37 @@ if "db_initialized" not in st.session_state:
 
 # --- UI HILFSFUNKTIONEN ---
 def render_founding_dashboard():
-    """Zeigt den exklusiven Status der ersten 2000 Plätze."""
-    # Hier ziehen wir die echte Anzahl aus der DB (später Count Query)
-    current_count = 42 # Beispielwert für TST
-    limit = 2000
-    remaining = limit - current_count
+    """Zeigt den exklusiven Status der ersten 2000 Plätze mit echten DB-Daten."""
+    from db_handler import load_db # Sicherstellen, dass wir Zugriff haben
     
-    st.markdown(f"""
-        <div style="text-align: center; border: 1px solid #1B263B; padding: 20px; margin-bottom: 30px;">
-            <p style="text-transform: uppercase; letter-spacing: 2px; font-size: 0.7rem; margin: 0;">Founding Member Status</p>
-            <h2 style="font-size: 2rem; margin: 10px 0;">{remaining} / {limit}</h2>
-            <p style="font-size: 0.8rem; opacity: 0.6;">Sichere dir lebenslange Resonanz ohne Gebühren.</p>
+    db = load_db()
+    current_count = len(db)
+    limit = 2000
+    
+    st.markdown(
+        f"""
+        <div style="
+            background-color: #1C1C1C; 
+            color: white; 
+            padding: 25px; 
+            border-radius: 10px; 
+            text-align: center; 
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        ">
+            <p style="text-transform: uppercase; letter-spacing: 2px; font-size: 0.7rem; margin-bottom: 5px; opacity: 0.7;">
+                Founding Member Status
+            </p>
+            <h2 style="color: white !important; margin: 0; font-size: 2.5rem; font-weight: 300;">
+                {current_count} / {limit}
+            </h2>
+            <p style="margin-top: 15px; font-size: 0.95rem; font-weight: 200; border-top: 1px solid #333; padding-top: 10px;">
+                Sichere dir lebenslange Resonanz ohne Gebühren.
+            </p>
         </div>
-    """, unsafe_allow_html=True)
+        """, 
+        unsafe_allow_html=True
+    )
 
 def get_embedding(text):
     """Verwandelt Text in einen mathematischen Vektor (1536 Dimensionen)."""

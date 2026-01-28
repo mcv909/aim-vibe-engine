@@ -1,60 +1,53 @@
 import streamlit as st
 
-def apply_custom_style():
-    """Konfiguriert das Layout und das visuelle Branding von AIM [cite: 2026-01-18]."""
-    
-    # Seite konfigurieren (Muss der erste Streamlit-Befehl sein!)
-    st.set_page_config(
-        page_title="[ i am ] | AIM",
-        page_icon="🎯",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-
-    # CSS für das "hart cleane" Dark-Mode Design
-    st.markdown("""
+def set_page_style():
+    """Wiederherstellung des hellen Produktions-Looks (v0.4.2 Style)."""
+    st.markdown(
+        """
         <style>
-        /* Hintergrund und Grundfarben */
+        /* Hintergrund & Basis-Text */
         .stApp {
-            background-color: #0D1B2E;
-            color: #E0E1DD;
+            background-color: #FFFFFF;
+            color: #262730;
         }
-        
-        /* Sidebar Styling */
-        [data-testid="stSidebar"] {
-            background-color: #1B263B;
-            border-right: 1px solid #415A77;
-        }
-        
-        /* Überschriften-Design */
+        /* Header & Headlines */
         h1, h2, h3 {
-            font-family: 'Courier New', Courier, monospace;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            color: #778DA9;
+            color: #000000 !important;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-weight: 200;
+            text-align: center;
         }
-        
-        /* Buttons (Der rote Action-Button) */
-        div.stButton > button:first-child {
-            background-color: #E63946;
-            color: white;
-            border: none;
-            border-radius: 0px;
-            padding: 0.6rem 2rem;
-            font-weight: bold;
-            transition: all 0.3s ease;
+        /* Die graue Inhalts-Box (Card) */
+        div[data-testid="stForm"], .beta-box {
+            background-color: #F0F2F6;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #E6E9EF;
         }
-        
-        div.stButton > button:first-child:hover {
-            background-color: #D62828;
-            box-shadow: 0 0 15px rgba(230, 57, 70, 0.4);
+        /* Input Felder weiß machen */
+        .stTextInput input, .stTextArea textarea, .stSelectbox div {
+            background-color: white !important;
         }
-
-        /* Input Felder */
-        .stTextInput > div > div > input {
-            background-color: #1B263B;
-            color: #E0E1DD;
-            border: 1px solid #415A77;
+        /* Beta-Footer Styling */
+        .footer-box {
+            background-color: #E9ECEF;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 50px;
+            font-size: 0.9rem;
         }
         </style>
-    """, unsafe_allow_html=True)
+        """, 
+        unsafe_allow_html=True
+    )
+
+def render_header():
+    """Der minimalistische Text-Header der Prod."""
+    st.markdown(
+        """
+        <div style="text-align: center; margin-top: 50px; margin-bottom: 20px;">
+            <h1 style="letter-spacing: 5px;">[ I  A  M ]  |  A I M</h1>
+            <p style="opacity: 0.6;">AI-Matching basierend auf Resonanz, nicht auf Checklisten.</p>
+        </div>
+        """, unsafe_allow_html=True
+    )
