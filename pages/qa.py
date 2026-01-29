@@ -1,9 +1,10 @@
 import streamlit as st
-from style import set_page_style, render_header
+# HIER DIE KORREKTUR: apply_custom_style statt set_page_style
+from style import apply_custom_style, render_header
 
 def main():
     st.set_page_config(page_title="Q&A | [i am] | AIM", layout="wide")
-    set_page_style()
+    apply_custom_style()
     render_header()
 
     st.title("💡 Fragen & Resonanzen")
