@@ -61,7 +61,7 @@ def main():
     
     render_founding_dashboard()
 
-    menu = st.sidebar.selectbox("Matrix-Navigation", ["Manifesto erstellen", "Login", "Über AIM", "Admin"])
+    menu = st.sidebar.selectbox("Navigation", ["Manifesto erstellen", "Login", "Q&A / Resonanz", "Über AIM", "Admin"])
 
     if menu == "Admin":
         st.subheader("Maschinenraum (Admin)")
@@ -85,6 +85,9 @@ def main():
                 st.metric("Aktive User", user_count)
         elif admin_pw:
             security.handle_hacker()
+
+    elif menu == "Q&A / Resonanz":
+        st.switch_page("pages/qa.py")
 
     elif menu == "Manifesto erstellen":
         st.subheader("Deine Digitale DNA")
