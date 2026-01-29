@@ -2,12 +2,18 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 import json
+from dotenv import load_dotenv # <--- DAS FEHLTE!
+from security import decrypt_data # <--- Wichtig für load_db()
+
+# HIER DIREKT LADEN
+load_dotenv()
 
 # DB-Verbindung aus der .env laden
-# Wir nutzen getenv mit Fallback auf die Standard-Werte
 DB_NAME = os.getenv("DB_NAME", "aim_db")
 DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASS = os.getenv("DB_PASS")
+# WICHTIG: Prüfe in deiner .env ob es DB_PASS oder DB_PASSWORD heißt. 
+# Dieser Fallback deckt beides ab:
+DB_PASS = os.getenv("DB_PASSWORD") or os.getenv("DB_PASS") 
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
@@ -22,7 +28,7 @@ def load_db():
         # Wir müssen 'password_hash' zu 'key_hash' umbenennen für app.py Kompatibilität
         for row in rows:
             row['key_hash'] = row.pop('password_hash')
-            row['name'] = decrypt_data(row.pop('name_enc')) # Direkt entschlüsseln für UI
+#            row['name'] = decrypt_data(row.pop('name_enc')) # Direkt entschlüsseln für UI
         return rows
     finally:
         cur.close()
