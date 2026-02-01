@@ -172,18 +172,73 @@ def main():
             else: st.warning("Eingabe unvollständig.")
 
     elif menu == "Login":
-        st.subheader("Resonanz-Check")
+        st.subheader("Resonanz-Zentrale")
+        
+        # Login-Eingabe
         l_tid = st.number_input("Telegram ID", step=1)
         l_key = st.text_input("Vibe Key", type="password")
 
-        if st.button("RESONANZ PRÜFEN"):
-            if security.detect_attack(l_key): security.handle_hacker()
-            user = db_handler.get_profile_by_telegram_id(l_tid)
-            if user and security.verify_key(l_key, user['password_hash']):
-                # Name entschlüsseln
-                name = security.decrypt_data(user['name_enc'], l_key)
-                st.success(f"Willkommen zurück, {name}!")
-            else: st.error("Zugriff verweigert.")
+        if st.button("IN DIE MATRIX EINLOGGEN"):
+            if security.detect_attack(l_key): 
+                security.handle_hacker()
+            else:
+                user = db_handler.get_profile_by_telegram_id(l_tid)
+                
+                if user and security.verify_key(l_key, user['password_hash']):
+                    st.session_state.logged_in = True
+                    st.session_state.user_data = user
+                    st.session_state.v_key = l_key
+                    st.success(f"Resonanz stabil. Willkommen zurück!")
+                else:
+                    st.error("Zugriff verweigert. Falscher Key oder ID.")
+
+        # Wenn eingeloggt: Editier-Modus anzeigen
+        if st.session_state.get('logged_in'):
+            st.markdown("---")
+            st.subheader("🧬 Dein Manifesto tunen")
+            
+            # Daten entschlüsseln für die Anzeige
+            current_name = security.decrypt_data(st.session_state.user_data['name_enc'], st.session_state.v_key)
+            current_manifesto = security.decrypt_data(st.session_state.user_data['manifesto_enc'], st.session_state.v_key)
+            current_contact = security.decrypt_data(st.session_state.user_data['contact_enc'], st.session_state.v_key)
+
+            # Editier-Felder (vorbelegt mit aktuellen Daten)
+            new_name = st.text_input("Name / Alias", value=current_name)
+            new_contact = st.text_input("Kontakt (@Telegram)", value=current_contact)
+            new_manifesto = st.text_area("Dein Manifesto", value=current_manifesto, height=300)
+            
+            col_e1, col_e2 = st.columns(2)
+            with col_e1:
+                new_stature = st.selectbox("Deine Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"], 
+                                           index=["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"].index(st.session_state.user_data['stature']))
+            with col_e2:
+                new_radius = st.slider("Suchradius (km)", 5, 500, int(st.session_state.user_data['radius']))
+
+            if st.button("ÄNDERUNGEN IN DER DB VERSIEGELN"):
+                with st.spinner("Vektoren werden neu ausgerichtet..."):
+                    # 1. Neue Vektoren berechnen (wichtig, falls sich der Text geändert hat!)
+                    new_vector = get_embedding(new_manifesto)
+                    
+                    # 2. Datenpaket schnüren
+                    updated_data = {
+                        'telegram_id': l_tid,
+                        'name_enc': security.encrypt_data(new_name, st.session_state.v_key),
+                        'contact_enc': security.encrypt_data(new_contact, st.session_state.v_key),
+                        'password_hash': st.session_state.user_data['password_hash'], # Bleibt gleich
+                        'manifesto_enc': security.encrypt_data(new_manifesto, st.session_state.v_key),
+                        'vector': new_vector,
+                        'coords': st.session_state.user_data['coords'], # Bleibt vorerst gleich
+                        'stature': new_stature,
+                        'target_stature': st.session_state.user_data['target_stature'],
+                        'radius': new_radius
+                    }
+                    
+                    # 3. Speichern (db_handler.save_profile nutzt ON CONFLICT und macht daher automatisch ein UPDATE)
+                    if db_handler.save_profile(updated_data):
+                        st.success("DNA erfolgreich aktualisiert. Deine Resonanz wurde neu berechnet!")
+                        st.balloons()
+                    else:
+                        st.error("Fehler beim Speichern in der Matrix.")
 
     # Der Beta-Footer am Ende jeder Seite
     style.render_beta_footer()
