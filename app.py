@@ -85,6 +85,27 @@ def main():
                     st.metric("Resonanzen im Feld", match_count)
                 except Exception as e:
                     st.error(f"Statistik-Fehler: {e}")
+
+            st.markdown("---")
+            st.subheader("🛠️ Signal-Test (Telegram)")
+            
+            col_t1, col_t2 = st.columns([2, 1])
+            with col_t1:
+                test_tid = st.number_input("Telegram ID für Test-Ping", step=1, value=int(u_tid) if 'u_tid' in locals() else 0)
+            with col_t2:
+                st.write(" ") # Spacer
+                if st.button("TEST-RESONANZ SENDEN"):
+                    if test_tid > 0:
+                        test_score = 0.9412 # Ein schöner fiktiver Wert
+                        try:
+                            # Wir nutzen direkt die notify-Funktion aus deiner logic.py
+                            logic.notify_match(test_tid, 12345678, test_score)
+                            st.success(f"Signal an {test_tid} wurde in die Matrix gespeist!")
+                        except Exception as e:
+                            st.error(f"Telegram-Fehler: {e}")
+                    else:
+                        st.warning("Bitte gültige Telegram ID eingeben.")
+
         elif admin_pw:
             security.handle_hacker()
 
