@@ -250,6 +250,23 @@ def main():
                     else:
                         st.error("Fehler beim Speichern in der Matrix.")
 
+            # Feedback-Bereich (innerhalb von logged_in)
+        st.markdown("---")
+        st.subheader("⭐ Wie resonant ist AIM?")
+        st.info("Hilf uns, die Magie zu kalibrieren. Wie gut passen deine bisherigen Matches zu dir?")
+        
+        with st.form("feedback_form"):
+            rating = st.select_slider("Deine Bewertung (1 = naja, 5 = Volltreffer)", options=[1, 2, 3, 4, 5], value=3)
+            comment = st.text_area("Anmerkungen (Optional)", placeholder="z.B. Die Lache war furchtbar, aber das Manifesto war 10/10...")
+            submit_feedback = st.form_submit_button("Feedback senden")
+            
+            if submit_feedback:
+                # Hier brauchen wir noch eine Logik in db_handler, um das zu speichern
+                if db_handler.save_feedback(st.session_state.user_data['id'], rating, comment):
+                    st.success("Danke! Deine Resonanz hilft uns, AIM besser zu machen.")
+                else:
+                    st.error("Matrix-Fehler beim Senden.")
+
             st.markdown("---")
             st.subheader("🗑️ Gefahrenzone")
             with st.expander("Profil löschen"):
