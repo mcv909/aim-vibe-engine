@@ -145,10 +145,10 @@ def main():
                 return
 
             if st.button("DNA SICHERN & RESONANZ STARTEN"):
-            if u_tid == 0:
-                st.warning("Wir brauchen deine Telegram-ID, damit du dich später wieder einloggen kannst. Klicke oben auf den Link!")
-                return
-            # ... restliche Logik
+                if u_tid == 0:
+                    st.warning("Wir brauchen deine Telegram-ID, damit du dich später wieder einloggen kannst. Klicke oben auf den Link!")
+                    return
+                # ... restliche Logik
 
             if all([u_name, u_tid, u_contact, manifesto, v_key, u_location]):
                 coords = logic.get_coords(u_location)
