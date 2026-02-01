@@ -163,3 +163,25 @@ def get_match_count():
     finally:
         cur.close()
         conn.close()
+        
+def save_feedback(user_id, rating, comment, match_id=None):
+    """
+    Speichert das User-Feedback zu einem Match oder der Systemqualität in die Datenbank.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            INSERT INTO feedback (user_id, match_id, rating, comment)
+            VALUES (%s, %s, %s, %s)
+        """, (user_id, match_id, rating, comment))
+        conn.commit()
+        return True
+    except Exception as e:
+        # Fehlerlogging für die spätere Optimierung
+        print(f"Fehler beim Speichern des Feedbacks: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cur.close()
+        conn.close()
