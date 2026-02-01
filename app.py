@@ -250,6 +250,19 @@ def main():
                     else:
                         st.error("Fehler beim Speichern in der Matrix.")
 
+            st.markdown("---")
+            st.subheader("🗑️ Gefahrenzone")
+            with st.expander("Profil löschen"):
+                st.warning("Bist du sicher? Alle deine Daten und Vektoren werden unwiderruflich aus der Matrix getilgt.")
+                if st.button("PROFIL UNWIDERRUFLICH LÖSCHEN", type="primary", use_container_width=True):
+                    # Wir nutzen die Funktion aus deinem db_handler
+                    if db_handler.delete_profile_permanently(l_tid):
+                        st.session_state.clear() # Session säubern
+                        st.success("Deine DNA wurde getilgt. Du bist nun wieder ein freies Fragment.")
+                        st.rerun() # Seite neu laden
+                    else:
+                        st.error("Fehler beim Löschvorgang. Die Matrix lässt dich gerade nicht gehen.")                        
+
     # Der Beta-Footer am Ende jeder Seite
     style.render_beta_footer()
 
