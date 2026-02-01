@@ -120,9 +120,13 @@ def main():
 
         col1, col2 = st.columns(2)
         with col1:
-            u_name = st.text_input("Name / Alias", placeholder="Alias...")
-            u_tid = st.number_input("Telegram ID", step=1, help="Deine ID vom Bot.")
-            v_key = st.text_input("Vibe Key", type="password", help="Wichtig: Weg ist weg.")
+            u_name = st.text_input("Name / Alias", placeholder="Wie sollen wir dich nennen?")
+            
+            # Hilfe zur ID-Beschaffung direkt im Formular
+            st.markdown(f"[🆔 Hol dir hier deine ID von AIM](https://t.me/DEIN_BOT_NAME)") 
+            u_tid = st.number_input("Telegram ID", step=1, help="Klicke auf den Link oben, starte den Bot und tippe /id", value=0)
+            
+            v_key = st.text_input("Vibe Key", type="password", help="Wähle ein starkes Passwort. Das ist dein einziger Schlüssel!")
         with col2:
             u_contact = st.text_input("Kontakt (@Telegram)", placeholder="@handle")
             u_location = st.text_input("Standort", placeholder="Stadt...")
@@ -139,6 +143,12 @@ def main():
             if any(security.detect_attack(f) for f in [u_name, u_contact, manifesto, v_key]):
                 security.handle_hacker()
                 return
+
+            if st.button("DNA SICHERN & RESONANZ STARTEN"):
+            if u_tid == 0:
+                st.warning("Wir brauchen deine Telegram-ID, damit du dich später wieder einloggen kannst. Klicke oben auf den Link!")
+                return
+            # ... restliche Logik
 
             if all([u_name, u_tid, u_contact, manifesto, v_key, u_location]):
                 coords = logic.get_coords(u_location)
