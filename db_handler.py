@@ -152,3 +152,14 @@ def delete_profile_permanently(tid):
     finally:
         cur.close()
         conn.close() # <--- DAS war der fehlende Baustein!
+
+def get_match_count():
+    """Gibt die Gesamtanzahl der gefundenen Resonanzen zurück."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT COUNT(*) FROM matches;")
+        return cur.fetchone()[0]
+    finally:
+        cur.close()
+        conn.close()

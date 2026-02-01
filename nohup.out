@@ -2,3 +2,7 @@
 Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
 
 2026-01-29 10:53:08.300 Port 8502 is already in use
+
+Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
+
+2026-01-29 12:08:53.502 Port 8502 is already in use

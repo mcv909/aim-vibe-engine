@@ -75,14 +75,16 @@ def main():
                         logic.run_batch_matching()
                     st.balloons()
             with col2:
-                # Statistik direkt aus Postgres
-                conn = db_handler.get_connection()
-                cur = conn.cursor()
-                cur.execute("SELECT COUNT(*) FROM profiles WHERE is_active = true")
-                user_count = cur.fetchone()[0]
-                cur.close()
-                conn.close()
-                st.metric("Aktive User", user_count)
+                # Wir nutzen jetzt die sauberen Funktionen aus dem db_handler
+                # Das hält die app.py frei von SQL-Gedöns
+                try:
+                    user_count = db_handler.get_user_count()
+                    match_count = db_handler.get_match_count()
+                    
+                    st.metric("Aktive User", user_count)
+                    st.metric("Resonanzen im Feld", match_count)
+                except Exception as e:
+                    st.error(f"Statistik-Fehler: {e}")
         elif admin_pw:
             security.handle_hacker()
 
