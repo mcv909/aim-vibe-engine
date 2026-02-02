@@ -143,9 +143,9 @@ def main():
             
             # Schritt A: ID-Check
             if u_tid == 0:
-                st.warning("Wir brauchen deine Telegram-ID, damit du dich später wieder einloggen kannst. Klicke oben auf den Link!")
-                return 
-
+                st.warning("Wir brauchen deine Telegram-ID, damit du dich später wieder einloggen kannst. Klicke oben auf den Link! Du bekommst sie, wenn du den Bot startest.")
+                return
+            
             # Schritt B: Mudda-Sperre (Security)
             if any(security.detect_attack(f) for f in [u_name, u_contact, manifesto, v_key]):
                 security.handle_hacker()
@@ -174,7 +174,7 @@ def main():
                         st.success("DNA stabilisiert. Check deinen Bot!")
                         st.balloons()
                     else: st.error("Speicherfehler in Postgres.")
-            else: st.warning("Eingabe unvollständig.")
+            else: st.warning("Eingabe unvollständig. Bitte fülle alle Felder aus, damit AIM schwingen kann.")
 
     elif menu == "Login":
         st.subheader("Resonanz-Zentrale")

@@ -69,9 +69,12 @@ def run_deadman_check():
 # --- 3. STANDARD BEFEHLE ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
+    user_id = message.chat.id    
     welcome_text = (
-        "<b>Willkommen bei [ i am ] | AIM</b> 🎯\n\n"
-        "Du hast den ersten Schritt zur Resonanz gemacht. Dein Telegram-Handle ist nun mit deiner DNA verknüpft.\n\n"
+        "<b>Willkommen bei [ i am ] | AIM 🎯</b>\n\n"
+        "Du hast den ersten Schritt zur Resonanz gemacht.\n"
+        f"Deine persönliche Telegram-ID lautet: <code>{user_id}</code>\n\n"
+        "Kopiere diese Zahl und füge sie auf der Website ein.\n"
         "Wichtig: Dies ist dein Kontrollzentrum. Nur hier kannst du dein Profil ohne Passwort löschen (/delete_dna)."
     )
     bot.reply_to(message, welcome_text, parse_mode='HTML')
