@@ -141,18 +141,33 @@ def main():
         # Nur EIN Button für alles!
         if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):
             
-            # Schritt A: ID-Check
+            # DEBUG-AUSGABE (hilft uns jetzt beim Testen)
+            st.write(f"DEBUG: Name: '{u_name}', Kontakt: '{u_contact}', Manifesto: {len(manifesto)} Zeichen, Key: '{v_key}', ID: {u_tid}")
+
+            # 1. Schritt: Telegram-ID Check
             if u_tid == 0:
-                st.warning("Wir brauchen deine Telegram-ID, damit du dich später wieder einloggen kannst. Klicke oben auf den Link! Du bekommst sie, wenn du den Bot startest.")
+                st.warning("Wir brauchen deine Telegram-ID! Klicke oben auf den Link und starte den Bot.")
                 return
             
-            # Schritt B: Mudda-Sperre (Security)
+            # 2. Schritt: Pflichtfelder Check (Hier lösen wir dein Problem!)
+            missing_fields = []
+            if not u_name: missing_fields.append("Name")
+            if not u_contact: missing_fields.append("Kontakt (@Handle)")
+            if not manifesto or len(manifesto) < 10: missing_fields.append("Manifesto (zu kurz)")
+            if not v_key: missing_fields.append("Vibe Key")
+            
+            if missing_fields:
+                st.warning(f"Eingabe unvollständig! Es fehlt: {', '.join(missing_fields)}")
+                return
+
+            # 3. Schritt: Mudda-Sperre (Security)
             if any(security.detect_attack(f) for f in [u_name, u_contact, manifesto, v_key]):
                 security.handle_hacker()
                 return
 
-                with st.spinner("Vektorisierung läuft..."):
-                    real_vector = get_embedding(manifesto)
+            # 4. Schritt: Vektorisierung & Speichern
+            with st.spinner("Vektorisierung läuft... AIM berechnet deine Resonanz..."):
+                real_vector = get_embedding(manifesto)
                 
                 if real_vector:
                     data = {
@@ -173,10 +188,10 @@ def main():
                         st.session_state.manifesto_buffer = "" # Cache leeren
                         st.success("DNA stabilisiert. Check deinen Bot!")
                         st.balloons()
-                    else: st.error("Speicherfehler in Postgres.")
-            # Nur zum Testen einfügen:
-            st.write(f"DEBUG: Name: '{u_name}', Kontakt: '{u_contact}', Manifesto-Länge: {len(manifesto)}, Key: '{v_key}', ID: {u_tid}")
-            else: st.warning("Eingabe unvollständig. Bitte fülle alle Felder aus, damit AIM schwingen kann.")
+                    else:
+                        st.error("Speicherfehler in Postgres. Die Matrix ist gerade belegt.")
+                else:
+                    st.error("KI-Fehler: Konnte keine Vektoren aus deinem Text extrahieren.")
 
     elif menu == "Login":
         st.subheader("Resonanz-Zentrale")
