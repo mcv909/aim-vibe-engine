@@ -174,6 +174,8 @@ def main():
                         st.success("DNA stabilisiert. Check deinen Bot!")
                         st.balloons()
                     else: st.error("Speicherfehler in Postgres.")
+            # Nur zum Testen einfügen:
+            st.write(f"DEBUG: Name: '{u_name}', Kontakt: '{u_contact}', Manifesto-Länge: {len(manifesto)}, Key: '{v_key}', ID: {u_tid}")
             else: st.warning("Eingabe unvollständig. Bitte fülle alle Felder aus, damit AIM schwingen kann.")
 
     elif menu == "Login":
