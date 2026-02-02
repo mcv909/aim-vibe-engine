@@ -141,18 +141,16 @@ def main():
         # Nur EIN Button für alles!
         if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):
             
-            # DEBUG-AUSGABE (hilft uns jetzt beim Testen)
-            st.write(f"DEBUG: Name: '{u_name}', Kontakt: '{u_contact}', Manifesto: {len(manifesto)} Zeichen, Key: '{v_key}', ID: {u_tid}")
-
             # 1. Schritt: Telegram-ID Check
             if u_tid == 0:
                 st.warning("Wir brauchen deine Telegram-ID! Klicke oben auf den Link und starte den Bot.")
                 return
             
-            # 2. Schritt: Pflichtfelder Check (Hier lösen wir dein Problem!)
+            # 2. Schritt: Pflichtfelder Check
             missing_fields = []
             if not u_name: missing_fields.append("Name")
             if not u_contact: missing_fields.append("Kontakt (@Handle)")
+            if not u_location: missing_fields.append("Standort") # Standort-Check hinzugefügt
             if not manifesto or len(manifesto) < 10: missing_fields.append("Manifesto (zu kurz)")
             if not v_key: missing_fields.append("Vibe Key")
             
@@ -160,12 +158,21 @@ def main():
                 st.warning(f"Eingabe unvollständig! Es fehlt: {', '.join(missing_fields)}")
                 return
 
-            # 3. Schritt: Mudda-Sperre (Security)
+            # 3. Schritt: Geocoding (Stadt in Koordinaten umwandeln)
+            with st.spinner("AIM lokalisiert deine Resonanz in der Welt..."):
+                # Hier nutzen wir dein u_location Feld!
+                coords = logic.geocode_city(u_location)
+                
+                if not coords:
+                    st.error(f"Konnte den Standort '{u_location}' nicht finden. Bitte prüfe die Schreibweise.")
+                    return
+
+            # 4. Schritt: Mudda-Sperre (Security)
             if any(security.detect_attack(f) for f in [u_name, u_contact, manifesto, v_key]):
                 security.handle_hacker()
                 return
 
-            # 4. Schritt: Vektorisierung & Speichern
+            # 5. Schritt: Vektorisierung & Speichern
             with st.spinner("Vektorisierung läuft... AIM berechnet deine Resonanz..."):
                 real_vector = get_embedding(manifesto)
                 
@@ -177,7 +184,7 @@ def main():
                         'password_hash': security.hash_key(v_key),
                         'manifesto_enc': security.encrypt_data(manifesto, v_key),
                         'vector': real_vector,
-                        'coords': coords,
+                        'coords': coords, # Jetzt ist coords durch logic.geocode_city definiert!
                         'stature': u_stature,
                         'target_stature': u_target_stature,
                         'radius': u_radius,
@@ -186,10 +193,10 @@ def main():
 
                     if db_handler.save_profile(data):
                         st.session_state.manifesto_buffer = "" # Cache leeren
-                        st.success("DNA stabilisiert. Check deinen Bot!")
+                        st.success("DNA stabilisiert. Willkommen in der Matrix, Marc!")
                         st.balloons()
                     else:
-                        st.error("Speicherfehler in Postgres. Die Matrix ist gerade belegt.")
+                        st.error("Datenbank-Fehler beim Versiegeln der DNA.")
                 else:
                     st.error("KI-Fehler: Konnte keine Vektoren aus deinem Text extrahieren.")
 
