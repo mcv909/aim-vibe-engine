@@ -67,8 +67,8 @@ def run_deadman_check():
         conn.close()
 
 # --- 3. STANDARD BEFEHLE ---
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
+@bot.message_handler(commands=['start', 'id'])
+def send_id(message):
     user_id = message.chat.id    
     welcome_text = (
         "<b>Willkommen bei [ i am ] | AIM 🎯</b>\n\n"
@@ -77,7 +77,7 @@ def send_welcome(message):
         "Kopiere diese Zahl und füge sie auf der Website ein.\n"
         "Wichtig: Dies ist dein Kontrollzentrum. Nur hier kannst du dein Profil ohne Passwort löschen (/delete_dna)."
     )
-    bot.reply_to(message, welcome_text, parse_mode='HTML')
+    bot.reply_to(message, f"Deine Telegram-ID: <code>{message.chat.id}</code>", parse_mode='HTML')
 
 # Starten des Bots (Polling)
 if __name__ == "__main__":
