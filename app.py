@@ -123,7 +123,7 @@ def main():
             u_name = st.text_input("Name / Alias", placeholder="Wie sollen wir dich nennen?")
             
             # Hilfe zur ID-Beschaffung direkt im Formular
-            st.markdown(f"[🆔 Hol dir hier deine ID von AIM](https://t.me/DEIN_BOT_NAME)") 
+            st.markdown(f"[🆔 Hol dir hier deine ID von AIM](https://t.me/AIM-VIBE Resonator)") 
             u_tid = st.number_input("Telegram ID", step=1, help="Klicke auf den Link oben, starte den Bot und tippe /id", value=0)
             
             v_key = st.text_input("Vibe Key", type="password", help="Wähle ein starkes Passwort. Das ist dein einziger Schlüssel!")
@@ -138,21 +138,18 @@ def main():
         u_stature = st.selectbox("Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"])
         u_target_stature = st.multiselect("Gesuchte Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"], default=["durchschnittlich"])
 
-        if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_final_create"):
+        # Nur EIN Button für alles!
+        if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):
             
-            # Schritt 1: Telegram-ID Check (User-Hilfe)
+            # Schritt A: ID-Check
             if u_tid == 0:
                 st.warning("Wir brauchen deine Telegram-ID, damit du dich später wieder einloggen kannst. Klicke oben auf den Link!")
-                return # Bricht hier ab, falls ID fehlt
+                return 
 
-            # Schritt 2: Mudda-Sperre (Security)
+            # Schritt B: Mudda-Sperre (Security)
             if any(security.detect_attack(f) for f in [u_name, u_contact, manifesto, v_key]):
                 security.handle_hacker()
-                return # Bricht hier ab, falls Angriff erkannt
-
-            # Schritt 3: Die eigentliche Magie (Speichern & Vektorisieren)
-                # Hier geht dein restlicher Speicher-Code weiter...
-                # new_vector = get_embedding(manifesto)
+                return
 
                 with st.spinner("Vektorisierung läuft..."):
                     real_vector = get_embedding(manifesto)
@@ -222,7 +219,7 @@ def main():
             with col_e2:
                 new_radius = st.slider("Suchradius (km)", 5, 500, int(st.session_state.user_data['radius']))
 
-            if st.button("ÄNDERUNGEN IN DER DB VERSIEGELN"):
+            if st.button("ÄNDERUNGEN IN DER DB VERSIEGELN", key="btn_update_profile"):
                 with st.spinner("Vektoren werden neu ausgerichtet..."):
                     # 1. Neue Vektoren berechnen (wichtig, falls sich der Text geändert hat!)
                     new_vector = get_embedding(new_manifesto)
