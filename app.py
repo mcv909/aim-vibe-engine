@@ -123,7 +123,7 @@ def main():
             u_name = st.text_input("Name / Alias", placeholder="Wie sollen wir dich nennen?")
             
             # Hilfe zur ID-Beschaffung direkt im Formular
-            st.markdown(f"[🆔 Hol dir hier deine ID von AIM](https://t.me/AIM-VIBE Resonator)") 
+            st.markdown(f"[🆔 Hol dir hier deine ID von AIM](https://t.me/aim_vibe_bot)") 
             u_tid = st.number_input("Telegram ID", step=1, help="Klicke auf den Link oben, starte den Bot und tippe /id", value=0)
             
             v_key = st.text_input("Vibe Key", type="password", help="Wähle ein starkes Passwort. Das ist dein einziger Schlüssel!")
