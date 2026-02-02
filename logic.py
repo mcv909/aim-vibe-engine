@@ -3,9 +3,19 @@ import telebot
 import os
 import math
 import streamlit as st
+import ssl
+import certifi
+import geopy.geocoders
 from geopy.geocoders import Nominatim
 from geopy.exc import GeopyError
 from db_handler import get_connection
+
+# SSL-Fix für den Hetzner-Server
+ctx = ssl.create_default_context(cafile=certifi.where())
+geopy.geocoders.options.default_ssl_context = ctx
+
+# Das Werkzeug für alle Geographie-Funktionen
+geolocator = Nominatim(user_agent="aim_vibe_resonator_tst_marc")
 
 # --- GEOGRAPHIE ---
 def get_coords(location_name):
@@ -105,9 +115,15 @@ def notify_match(tid_a, tid_b, score):
 
 # Und das ist die fehlende Funktion:
 def geocode_city(city_name):
+    """Verwandelt Stadt/PLZ in [lat, lon] für die Profil-Erstellung."""
+    if not city_name: return None
     try:
-        location = geolocator.geocode(city_name, timeout=10)
+        # Wir hängen "Germany" an, damit er nicht in Hamburg, Iowa landet
+        search_query = f"{city_name.strip()}, Germany"
+        location = geolocator.geocode(search_query, timeout=15)
+        
         if location:
+            print(f"DEBUG: Standort gefunden: {location.address}")
             return [location.latitude, location.longitude]
         return None
     except Exception as e:
