@@ -4,6 +4,7 @@ import os
 import math
 import streamlit as st
 from geopy.geocoders import Nominatim
+from geopy.exc import GeopyError
 from db_handler import get_connection
 
 # --- GEOGRAPHIE ---
@@ -101,3 +102,14 @@ def notify_match(tid_a, tid_b, score):
     )
     send_telegram_msg(tid_a, msg)
     # Optional: Auch tid_b informieren, falls gewünscht
+
+# Und das ist die fehlende Funktion:
+def geocode_city(city_name):
+    try:
+        location = geolocator.geocode(city_name, timeout=10)
+        if location:
+            return [location.latitude, location.longitude]
+        return None
+    except Exception as e:
+        print(f"Geocoding Error: {e}")
+        return None
