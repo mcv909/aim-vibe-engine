@@ -230,23 +230,31 @@ def main():
 
        # Wenn eingeloggt: Editier-Modus anzeigen
         if st.session_state.get('logged_in'):
-            # 1. Daten entschlüsseln (MUSS ZUERST PASSIEREN)
-            current_name = security.decrypt_data(st.session_state.user_data['name_enc'], st.session_state.v_key)
-            current_manifesto = security.decrypt_data(st.session_state.user_data['manifesto_enc'], st.session_state.v_key)
-            current_contact = security.decrypt_data(st.session_state.user_data['contact_enc'], st.session_state.v_key)
+            # 1. DATEN ENTSCHLÜSSELN (Zuerst, damit Variablen für Header bekannt sind!)
+            try:
+                current_name = security.decrypt_data(st.session_state.user_data['name_enc'], st.session_state.v_key)
+                current_manifesto = security.decrypt_data(st.session_state.user_data['manifesto_enc'], st.session_state.v_key)
+                current_contact = security.decrypt_data(st.session_state.user_data['contact_enc'], st.session_state.v_key)
+            except Exception:
+                st.error("Fehler beim Entschlüsseln der DNA.")
+                return
 
-            # 2. Anzeige und Formular
             st.markdown("---")
+            # Jetzt ist current_name definiert und kann genutzt werden!
             st.subheader(f"🧬 Manifesto von {current_name} tunen")
             
+            # 2. DAS FORMULAR (Nur für Eingaben und das Speichern)
             with st.form("edit_profile_form"):
                 col_e1, col_e2 = st.columns(2)
                 
                 with col_e1:
                     new_name = st.text_input("Name / Alias", value=current_name)
                     new_contact = st.text_input("Kontakt (@Telegram)", value=current_contact)
-                    old_height = st.session_state.user_data.get('u_height', 175)
-                    new_height = st.slider("Deine Größe (cm)", 140, 220, int(old_height))
+                    
+                    # FIX: Fallback für 'None' Werte in neuen DB-Spalten
+                    raw_height = st.session_state.user_data.get('u_height')
+                    old_height = int(raw_height) if raw_height is not None else 175
+                    new_height = st.slider("Deine Größe (cm)", 140, 220, old_height)
                 
                 with col_e2:
                     new_stature = st.selectbox("Deine Statur", 
@@ -255,10 +263,14 @@ def main():
                     
                     new_radius = st.slider("Suchradius (km)", 5, 500, int(st.session_state.user_data['radius']))
                     
-                    old_h_min = st.session_state.user_data.get('u_target_height_min', 160)
-                    old_h_max = st.session_state.user_data.get('u_target_height_max', 190)
-                    new_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (int(old_h_min), int(old_h_max)))
+                    # FIX: Auch hier Fallback für Target-Height
+                    raw_min = st.session_state.user_data.get('u_target_height_min')
+                    raw_max = st.session_state.user_data.get('u_target_height_max')
+                    old_h_min = int(raw_min) if raw_min is not None else 160
+                    old_h_max = int(raw_max) if raw_max is not None else 190
+                    new_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (old_h_min, old_h_max))
 
+                # Wunschstatur mit Vorbelegung
                 current_target_stature = st.session_state.user_data.get('target_stature', ["durchschnittlich"])
                 new_target_stature = st.multiselect("Gesuchte Statur", 
                     ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"],
@@ -266,12 +278,12 @@ def main():
 
                 new_manifesto = st.text_area("Dein Manifesto", value=current_manifesto, height=300)
                 
+                # Wichtig: Innerhalb des Forms muss es ein 'form_submit_button' sein!
                 submit_update = st.form_submit_button("ÄNDERUNGEN IN DER DB VERSIEGELN")
 
                 if submit_update:
                     with st.spinner("Vektoren werden neu ausgerichtet..."):
                         new_vector = get_embedding(new_manifesto)
-                        
                         updated_data = {
                             'telegram_id': l_tid,
                             'name_enc': security.encrypt_data(new_name, st.session_state.v_key),
@@ -293,9 +305,11 @@ def main():
                             st.session_state.user_data.update(updated_data)
                             st.rerun()
 
-            # 3. GEFAHRENZONE (Außerhalb des Forms)
+            # 3. GEFAHRENZONE (Absolut sicher außerhalb des Forms!)
             st.markdown("---")
             with st.expander("🚨 Gefahrenzone"):
+                st.write("Vorsicht: Das Löschen deiner DNA ist irreversibel.")
+                # Hier ist der normale st.button jetzt erlaubt
                 if st.button("PROFIL UNWIDERRUFLICH LÖSCHEN", type="primary", key="del_profile_btn"):
                     if db_handler.delete_profile(l_tid):
                         st.warning("DNA wurde getilgt. System-Logout...")
