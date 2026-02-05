@@ -193,6 +193,11 @@ def main():
                         'early_adopter': True
                     }
 
+                    # Prüfung auf Duplikate (Pseudo-Code für app.py)
+                    if db_handler.check_handle_exists(u_contact):
+                        st.error("Dieser Telegram-Handle ist bereits in der Matrix registriert!")
+                    return
+
                     if db_handler.save_profile(data):
                         st.session_state.manifesto_buffer = "" # Cache leeren
                         st.success(f"DNA stabilisiert. Willkommen in der Matrix, {u_name}!") # Dynamisch!
