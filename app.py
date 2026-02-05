@@ -228,24 +228,23 @@ def main():
                 else:
                     st.error("Zugriff verweigert. Falscher Key oder ID.")
 
-        # Wenn eingeloggt: Editier-Modus anzeigen
+       # Wenn eingeloggt: Editier-Modus anzeigen
         if st.session_state.get('logged_in'):
-            st.markdown("---")
-            st.subheader(f"🧬 Manifesto von {current_name} tunen") # Dynamischer Name!
-            
-            # 1. Daten entschlüsseln
+            # 1. Daten entschlüsseln (MUSS ZUERST PASSIEREN)
             current_name = security.decrypt_data(st.session_state.user_data['name_enc'], st.session_state.v_key)
             current_manifesto = security.decrypt_data(st.session_state.user_data['manifesto_enc'], st.session_state.v_key)
             current_contact = security.decrypt_data(st.session_state.user_data['contact_enc'], st.session_state.v_key)
 
-            # 2. Das Formular für die Updates
+            # 2. Anzeige und Formular
+            st.markdown("---")
+            st.subheader(f"🧬 Manifesto von {current_name} tunen")
+            
             with st.form("edit_profile_form"):
                 col_e1, col_e2 = st.columns(2)
                 
                 with col_e1:
                     new_name = st.text_input("Name / Alias", value=current_name)
                     new_contact = st.text_input("Kontakt (@Telegram)", value=current_contact)
-                    # NEU: Körpergröße (wir nehmen 175 als Fallback, falls DB leer)
                     old_height = st.session_state.user_data.get('u_height', 175)
                     new_height = st.slider("Deine Größe (cm)", 140, 220, int(old_height))
                 
@@ -256,13 +255,10 @@ def main():
                     
                     new_radius = st.slider("Suchradius (km)", 5, 500, int(st.session_state.user_data['radius']))
                     
-                    # NEU: Wunschgröße (Range)
                     old_h_min = st.session_state.user_data.get('u_target_height_min', 160)
                     old_h_max = st.session_state.user_data.get('u_target_height_max', 190)
                     new_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (int(old_h_min), int(old_h_max)))
 
-                # NEU: Wunschstatur (Multiselect mit Vorbelegung!)
-                # Wir holen die Liste aus der DB (ist dort als Liste gespeichert)
                 current_target_stature = st.session_state.user_data.get('target_stature', ["durchschnittlich"])
                 new_target_stature = st.multiselect("Gesuchte Statur", 
                     ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"],
@@ -285,7 +281,7 @@ def main():
                             'vector': new_vector,
                             'coords': st.session_state.user_data['coords'],
                             'stature': new_stature,
-                            'target_stature': new_target_stature, # Jetzt korrekt aus Multiselect
+                            'target_stature': new_target_stature,
                             'radius': new_radius,
                             'u_height': new_height,
                             'u_target_height_min': new_target_height[0],
@@ -294,23 +290,17 @@ def main():
                         
                         if db_handler.save_profile(updated_data):
                             st.success(f"DNA erfolgreich aktualisiert, {new_name}!")
-                            st.balloons()
-                            # Session State aktualisieren, damit Änderungen sofort sichtbar sind
                             st.session_state.user_data.update(updated_data)
-                        else:
-                            st.error("Fehler beim Versiegeln in der Matrix.")
+                            st.rerun()
 
-            # 3. GEFAHRENZONE (Außerhalb des Forms!)
+            # 3. GEFAHRENZONE (Außerhalb des Forms)
             st.markdown("---")
             with st.expander("🚨 Gefahrenzone"):
-                st.write("Hier kannst du dein Profil unwiderruflich aus der Matrix löschen.")
                 if st.button("PROFIL UNWIDERRUFLICH LÖSCHEN", type="primary", key="del_profile_btn"):
                     if db_handler.delete_profile(l_tid):
                         st.warning("DNA wurde getilgt. System-Logout...")
                         st.session_state.clear()
                         st.rerun()
-                    else:
-                        st.error("Löschvorgang fehlgeschlagen.")
 
             # Feedback-Bereich (innerhalb von logged_in)
         st.markdown("---")
