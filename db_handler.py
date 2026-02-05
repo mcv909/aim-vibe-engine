@@ -137,21 +137,30 @@ def get_profile_by_telegram_id(tid):
         cur.close()
         conn.close()
 
-def delete_profile_permanently(tid):
-    """Unwiderrufliche Löschung – hier fehlte das Schließen der Connection!"""
+def delete_profile(telegram_id):
+    """Löscht ein Profil und alle zugehörigen Matches unwiderruflich."""
     conn = get_connection()
     cur = conn.cursor()
     try:
-        cur.execute("DELETE FROM profiles WHERE telegram_id = %s", (tid,))
+        # Erst die Matches löschen, damit es keinen Foreign-Key-Fehler gibt
+        cur.execute("""
+            DELETE FROM matches 
+            WHERE user_a = (SELECT id FROM profiles WHERE telegram_id = %s) 
+               OR user_b = (SELECT id FROM profiles WHERE telegram_id = %s)
+        """, (telegram_id, telegram_id))
+        
+        # Dann das Profil selbst löschen
+        cur.execute("DELETE FROM profiles WHERE telegram_id = %s", (telegram_id,))
+        
         conn.commit()
         return True
     except Exception as e:
-        print(f"Löschfehler: {e}")
+        print(f"Datenbank-Fehler beim Löschen: {e}")
         conn.rollback()
         return False
     finally:
         cur.close()
-        conn.close() # <--- DAS war der fehlende Baustein!
+        conn.close()
 
 def get_match_count():
     """Gibt die Gesamtanzahl der gefundenen Resonanzen zurück."""
