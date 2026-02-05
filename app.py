@@ -210,27 +210,29 @@ def main():
     elif menu == "Login":
         st.subheader("Resonanz-Zentrale")
         
-        # Login-Eingabe
-        l_tid = st.number_input("Telegram ID", step=1)
-        l_key = st.text_input("Vibe Key", type="password")
-
-        if st.button("IN DIE MATRIX EINLOGGEN"):
-            if security.detect_attack(l_key): 
-                security.handle_hacker()
-            else:
-                user = db_handler.get_profile_by_telegram_id(l_tid)
+        # 1. Login-Logik (Nur anzeigen, wenn NICHT eingeloggt)
+        if not st.session_state.get('logged_in'):
+            with st.form("login_form"):
+                l_tid = st.number_input("Telegram ID", step=1)
+                l_key = st.text_input("Vibe Key", type="password")
                 
-                if user and security.verify_key(l_key, user['password_hash']):
-                    st.session_state.logged_in = True
-                    st.session_state.user_data = user
-                    st.session_state.v_key = l_key
-                    st.success(f"Resonanz stabil. Willkommen zurück!")
-                else:
-                    st.error("Zugriff verweigert. Falscher Key oder ID.")
+                if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
+                    if security.detect_attack(l_key): 
+                        security.handle_hacker()
+                    else:
+                        user = db_handler.get_profile_by_telegram_id(l_tid)
+                        if user and security.verify_key(l_key, user['password_hash']):
+                            st.session_state.logged_in = True
+                            st.session_state.user_data = user
+                            st.session_state.v_key = l_key
+                            st.success("Resonanz stabil. Willkommen zurück!")
+                            st.rerun()
+                        else:
+                            st.error("Zugriff verweigert. Falscher Key oder ID.")
 
-       # Wenn eingeloggt: Editier-Modus anzeigen
+        # 2. Editier-Modus (Nur anzeigen, wenn EINGELOGGT)
         if st.session_state.get('logged_in'):
-            # 1. DATEN ENTSCHLÜSSELN (Zuerst, damit Variablen für Header bekannt sind!)
+            # Daten für diesen Durchlauf entschlüsseln
             try:
                 current_name = security.decrypt_data(st.session_state.user_data['name_enc'], st.session_state.v_key)
                 current_manifesto = security.decrypt_data(st.session_state.user_data['manifesto_enc'], st.session_state.v_key)
@@ -240,21 +242,17 @@ def main():
                 return
 
             st.markdown("---")
-            # Jetzt ist current_name definiert und kann genutzt werden!
             st.subheader(f"🧬 Manifesto von {current_name} tunen")
             
-            # 2. DAS FORMULAR (Nur für Eingaben und das Speichern)
             with st.form("edit_profile_form"):
                 col_e1, col_e2 = st.columns(2)
-                
                 with col_e1:
                     new_name = st.text_input("Name / Alias", value=current_name)
                     new_contact = st.text_input("Kontakt (@Telegram)", value=current_contact)
-                    
-                    # FIX: Fallback für 'None' Werte in neuen DB-Spalten
-                    raw_height = st.session_state.user_data.get('u_height')
-                    old_height = int(raw_height) if raw_height is not None else 175
-                    new_height = st.slider("Deine Größe (cm)", 140, 220, old_height)
+                    # Sicherer Zugriff auf neue Spalten
+                    raw_h = st.session_state.user_data.get('u_height')
+                    old_h = int(raw_h) if raw_h is not None else 175
+                    new_height = st.slider("Deine Größe (cm)", 140, 220, old_h)
                 
                 with col_e2:
                     new_stature = st.selectbox("Deine Statur", 
@@ -263,88 +261,59 @@ def main():
                     
                     new_radius = st.slider("Suchradius (km)", 5, 500, int(st.session_state.user_data['radius']))
                     
-                    # FIX: Auch hier Fallback für Target-Height
                     raw_min = st.session_state.user_data.get('u_target_height_min')
                     raw_max = st.session_state.user_data.get('u_target_height_max')
-                    old_h_min = int(raw_min) if raw_min is not None else 160
-                    old_h_max = int(raw_max) if raw_max is not None else 190
-                    new_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (old_h_min, old_h_max))
+                    old_min = int(raw_min) if raw_min is not None else 160
+                    old_max = int(raw_max) if raw_max is not None else 190
+                    new_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (old_min, old_max))
 
-                # Wunschstatur mit Vorbelegung
-                current_target_stature = st.session_state.user_data.get('target_stature', ["durchschnittlich"])
+                current_targets = st.session_state.user_data.get('target_stature', ["durchschnittlich"])
                 new_target_stature = st.multiselect("Gesuchte Statur", 
                     ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"],
-                    default=current_target_stature)
+                    default=current_targets)
 
                 new_manifesto = st.text_area("Dein Manifesto", value=current_manifesto, height=300)
                 
-                # Wichtig: Innerhalb des Forms muss es ein 'form_submit_button' sein!
-                submit_update = st.form_submit_button("ÄNDERUNGEN IN DER DB VERSIEGELN")
+                if st.form_submit_button("ÄNDERUNGEN IN DER DB VERSIEGELN"):
+                    new_vector = get_embedding(new_manifesto)
+                    updated_data = {
+                        'telegram_id': st.session_state.user_data['telegram_id'],
+                        'name_enc': security.encrypt_data(new_name, st.session_state.v_key),
+                        'contact_enc': security.encrypt_data(new_contact, st.session_state.v_key),
+                        'password_hash': st.session_state.user_data['password_hash'],
+                        'manifesto_enc': security.encrypt_data(new_manifesto, st.session_state.v_key),
+                        'vector': new_vector,
+                        'coords': st.session_state.user_data['coords'],
+                        'stature': new_stature,
+                        'target_stature': new_target_stature,
+                        'radius': new_radius,
+                        'u_height': new_height,
+                        'u_target_height_min': new_target_height[0],
+                        'u_target_height_max': new_target_height[1]
+                    }
+                    if db_handler.save_profile(updated_data):
+                        st.session_state.user_data.update(updated_data)
+                        st.success("DNA erfolgreich aktualisiert!")
+                        st.rerun()
 
-                if submit_update:
-                    with st.spinner("Vektoren werden neu ausgerichtet..."):
-                        new_vector = get_embedding(new_manifesto)
-                        updated_data = {
-                            'telegram_id': l_tid,
-                            'name_enc': security.encrypt_data(new_name, st.session_state.v_key),
-                            'contact_enc': security.encrypt_data(new_contact, st.session_state.v_key),
-                            'password_hash': st.session_state.user_data['password_hash'],
-                            'manifesto_enc': security.encrypt_data(new_manifesto, st.session_state.v_key),
-                            'vector': new_vector,
-                            'coords': st.session_state.user_data['coords'],
-                            'stature': new_stature,
-                            'target_stature': new_target_stature,
-                            'radius': new_radius,
-                            'u_height': new_height,
-                            'u_target_height_min': new_target_height[0],
-                            'u_target_height_max': new_target_height[1]
-                        }
-                        
-                        if db_handler.save_profile(updated_data):
-                            st.success(f"DNA erfolgreich aktualisiert, {new_name}!")
-                            st.session_state.user_data.update(updated_data)
-                            st.rerun()
+            # 3. FEEDBACK (Außerhalb des Edit-Forms)
+            st.markdown("---")
+            st.subheader("⭐ Wie resonant ist AIM?")
+            with st.form("feedback_form"):
+                rating = st.select_slider("Bewertung", options=[1, 2, 3, 4, 5], value=3)
+                comment = st.text_area("Anmerkungen")
+                if st.form_submit_button("Feedback senden"):
+                    db_handler.save_feedback(st.session_state.user_data['id'], rating, comment)
+                    st.success("Danke für deine Resonanz!")
 
-            # 3. GEFAHRENZONE (Absolut sicher außerhalb des Forms!)
+            # 4. GEFAHRENZONE (Absolut sicher getrennt)
             st.markdown("---")
             with st.expander("🚨 Gefahrenzone"):
                 st.write("Vorsicht: Das Löschen deiner DNA ist irreversibel.")
-                # Hier ist der normale st.button jetzt erlaubt
-                if st.button("PROFIL UNWIDERRUFLICH LÖSCHEN", type="primary", key="del_profile_btn"):
-                    if db_handler.delete_profile(l_tid):
-                        st.warning("DNA wurde getilgt. System-Logout...")
+                if st.button("PROFIL UNWIDERRUFLICH LÖSCHEN", type="primary", key="final_del_btn"):
+                    if db_handler.delete_profile(st.session_state.user_data['telegram_id']):
                         st.session_state.clear()
-                        st.rerun()
-
-            # Feedback-Bereich (innerhalb von logged_in)
-        st.markdown("---")
-        st.subheader("⭐ Wie resonant ist AIM?")
-        st.info("Hilf uns, die Magie zu kalibrieren. Wie gut passen deine bisherigen Matches zu dir?")
-        
-        with st.form("feedback_form"):
-            rating = st.select_slider("Deine Bewertung (1 = naja, 5 = Volltreffer)", options=[1, 2, 3, 4, 5], value=3)
-            comment = st.text_area("Anmerkungen (Optional)", placeholder="z.B. Die Lache war furchtbar, aber das Manifesto war 10/10...")
-            submit_feedback = st.form_submit_button("Feedback senden")
-            
-            if submit_feedback:
-                # Hier brauchen wir noch eine Logik in db_handler, um das zu speichern
-                if db_handler.save_feedback(st.session_state.user_data['id'], rating, comment):
-                    st.success("Danke! Deine Resonanz hilft uns, AIM besser zu machen.")
-                else:
-                    st.error("Matrix-Fehler beim Senden.")
-
-            st.markdown("---")
-            st.subheader("🗑️ Gefahrenzone")
-            with st.expander("Profil löschen"):
-                st.warning("Bist du sicher? Alle deine Daten und Vektoren werden unwiderruflich aus der Matrix getilgt.")
-                if st.button("PROFIL UNWIDERRUFLICH LÖSCHEN", type="primary", use_container_width=True):
-                    # Wir nutzen die Funktion aus deinem db_handler
-                    if db_handler.delete_profile_permanently(l_tid):
-                        st.session_state.clear() # Session säubern
-                        st.success("Deine DNA wurde getilgt. Du bist nun wieder ein freies Fragment.")
-                        st.rerun() # Seite neu laden
-                    else:
-                        st.error("Fehler beim Löschvorgang. Die Matrix lässt dich gerade nicht gehen.")                        
+                        st.rerun()                        
 
     # Der Beta-Footer am Ende jeder Seite
     style.render_beta_footer()
