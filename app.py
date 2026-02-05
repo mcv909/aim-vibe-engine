@@ -193,10 +193,10 @@ def main():
                         'early_adopter': True
                     }
 
-                    # Prüfung auf Duplikate (Pseudo-Code für app.py)
-                    if db_handler.check_handle_exists(u_contact):
-                        st.error("Dieser Telegram-Handle ist bereits in der Matrix registriert!")
-                    return
+                    # Prüfung auf Duplikate (Pseudo-Code für app.py) IN DER PROD WIEDER AKTIV NEHMEN - NUR IN DER TEST NOCH AUSKOMMENTIERT!
+                    # if db_handler.check_handle_exists(u_contact):
+                    #     st.error("Dieser Telegram-Handle ist bereits in der Matrix registriert!")
+                    # return
 
                     if db_handler.save_profile(data):
                         st.session_state.manifesto_buffer = "" # Cache leeren
@@ -231,50 +231,86 @@ def main():
         # Wenn eingeloggt: Editier-Modus anzeigen
         if st.session_state.get('logged_in'):
             st.markdown("---")
-            st.subheader("🧬 Dein Manifesto tunen")
+            st.subheader(f"🧬 Manifesto von {current_name} tunen") # Dynamischer Name!
             
-            # Daten entschlüsseln für die Anzeige
+            # 1. Daten entschlüsseln
             current_name = security.decrypt_data(st.session_state.user_data['name_enc'], st.session_state.v_key)
             current_manifesto = security.decrypt_data(st.session_state.user_data['manifesto_enc'], st.session_state.v_key)
             current_contact = security.decrypt_data(st.session_state.user_data['contact_enc'], st.session_state.v_key)
 
-            # Editier-Felder (vorbelegt mit aktuellen Daten)
-            new_name = st.text_input("Name / Alias", value=current_name)
-            new_contact = st.text_input("Kontakt (@Telegram)", value=current_contact)
-            new_manifesto = st.text_area("Dein Manifesto", value=current_manifesto, height=300)
-            
-            col_e1, col_e2 = st.columns(2)
-            with col_e1:
-                new_stature = st.selectbox("Deine Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"], 
-                                           index=["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"].index(st.session_state.user_data['stature']))
-            with col_e2:
-                new_radius = st.slider("Suchradius (km)", 5, 500, int(st.session_state.user_data['radius']))
+            # 2. Das Formular für die Updates
+            with st.form("edit_profile_form"):
+                col_e1, col_e2 = st.columns(2)
+                
+                with col_e1:
+                    new_name = st.text_input("Name / Alias", value=current_name)
+                    new_contact = st.text_input("Kontakt (@Telegram)", value=current_contact)
+                    # NEU: Körpergröße (wir nehmen 175 als Fallback, falls DB leer)
+                    old_height = st.session_state.user_data.get('u_height', 175)
+                    new_height = st.slider("Deine Größe (cm)", 140, 220, int(old_height))
+                
+                with col_e2:
+                    new_stature = st.selectbox("Deine Statur", 
+                        ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"], 
+                        index=["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"].index(st.session_state.user_data['stature']))
+                    
+                    new_radius = st.slider("Suchradius (km)", 5, 500, int(st.session_state.user_data['radius']))
+                    
+                    # NEU: Wunschgröße (Range)
+                    old_h_min = st.session_state.user_data.get('u_target_height_min', 160)
+                    old_h_max = st.session_state.user_data.get('u_target_height_max', 190)
+                    new_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (int(old_h_min), int(old_h_max)))
 
-            if st.button("ÄNDERUNGEN IN DER DB VERSIEGELN", key="btn_update_profile"):
-                with st.spinner("Vektoren werden neu ausgerichtet..."):
-                    # 1. Neue Vektoren berechnen (wichtig, falls sich der Text geändert hat!)
-                    new_vector = get_embedding(new_manifesto)
-                    
-                    # 2. Datenpaket schnüren
-                    updated_data = {
-                        'telegram_id': l_tid,
-                        'name_enc': security.encrypt_data(new_name, st.session_state.v_key),
-                        'contact_enc': security.encrypt_data(new_contact, st.session_state.v_key),
-                        'password_hash': st.session_state.user_data['password_hash'], # Bleibt gleich
-                        'manifesto_enc': security.encrypt_data(new_manifesto, st.session_state.v_key),
-                        'vector': new_vector,
-                        'coords': st.session_state.user_data['coords'], # Bleibt vorerst gleich
-                        'stature': new_stature,
-                        'target_stature': st.session_state.user_data['target_stature'],
-                        'radius': new_radius
-                    }
-                    
-                    # 3. Speichern (db_handler.save_profile nutzt ON CONFLICT und macht daher automatisch ein UPDATE)
-                    if db_handler.save_profile(updated_data):
-                        st.success("DNA erfolgreich aktualisiert. Deine Resonanz wurde neu berechnet!")
-                        st.balloons()
+                # NEU: Wunschstatur (Multiselect mit Vorbelegung!)
+                # Wir holen die Liste aus der DB (ist dort als Liste gespeichert)
+                current_target_stature = st.session_state.user_data.get('target_stature', ["durchschnittlich"])
+                new_target_stature = st.multiselect("Gesuchte Statur", 
+                    ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"],
+                    default=current_target_stature)
+
+                new_manifesto = st.text_area("Dein Manifesto", value=current_manifesto, height=300)
+                
+                submit_update = st.form_submit_button("ÄNDERUNGEN IN DER DB VERSIEGELN")
+
+                if submit_update:
+                    with st.spinner("Vektoren werden neu ausgerichtet..."):
+                        new_vector = get_embedding(new_manifesto)
+                        
+                        updated_data = {
+                            'telegram_id': l_tid,
+                            'name_enc': security.encrypt_data(new_name, st.session_state.v_key),
+                            'contact_enc': security.encrypt_data(new_contact, st.session_state.v_key),
+                            'password_hash': st.session_state.user_data['password_hash'],
+                            'manifesto_enc': security.encrypt_data(new_manifesto, st.session_state.v_key),
+                            'vector': new_vector,
+                            'coords': st.session_state.user_data['coords'],
+                            'stature': new_stature,
+                            'target_stature': new_target_stature, # Jetzt korrekt aus Multiselect
+                            'radius': new_radius,
+                            'u_height': new_height,
+                            'u_target_height_min': new_target_height[0],
+                            'u_target_height_max': new_target_height[1]
+                        }
+                        
+                        if db_handler.save_profile(updated_data):
+                            st.success(f"DNA erfolgreich aktualisiert, {new_name}!")
+                            st.balloons()
+                            # Session State aktualisieren, damit Änderungen sofort sichtbar sind
+                            st.session_state.user_data.update(updated_data)
+                        else:
+                            st.error("Fehler beim Versiegeln in der Matrix.")
+
+            # 3. GEFAHRENZONE (Außerhalb des Forms!)
+            st.markdown("---")
+            with st.expander("🚨 Gefahrenzone"):
+                st.write("Hier kannst du dein Profil unwiderruflich aus der Matrix löschen.")
+                if st.button("PROFIL UNWIDERRUFLICH LÖSCHEN", type="primary", key="del_profile_btn"):
+                    if db_handler.delete_profile(l_tid):
+                        st.warning("DNA wurde getilgt. System-Logout...")
+                        st.session_state.clear()
+                        st.rerun()
                     else:
-                        st.error("Fehler beim Speichern in der Matrix.")
+                        st.error("Löschvorgang fehlgeschlagen.")
 
             # Feedback-Bereich (innerhalb von logged_in)
         st.markdown("---")
