@@ -130,7 +130,9 @@ def main():
         with col2:
             u_contact = st.text_input("Kontakt (@Telegram)", placeholder="@handle")
             u_location = st.text_input("Standort", placeholder="Stadt...")
+            u_height = st.slider("Deine Körpergröße (cm)", 140, 220, 175) # NEU
             u_radius = st.slider("Radius (km)", 5, 500, 50)
+            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190)) # NEU
 
         manifesto = st.text_area("Dein Manifesto", value=st.session_state.manifesto_buffer if 'manifesto_buffer' in st.session_state else "", height=300)
         st.session_state.manifesto_buffer = manifesto
@@ -193,7 +195,7 @@ def main():
 
                     if db_handler.save_profile(data):
                         st.session_state.manifesto_buffer = "" # Cache leeren
-                        st.success("DNA stabilisiert. Willkommen in der Matrix, Marc!")
+                        st.success(f"DNA stabilisiert. Willkommen in der Matrix, {u_name}!") # Dynamisch!
                         st.balloons()
                     else:
                         st.error("Datenbank-Fehler beim Versiegeln der DNA.")
