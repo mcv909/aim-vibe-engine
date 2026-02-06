@@ -115,97 +115,78 @@ def main():
     elif menu == "Manifesto erstellen":
         st.subheader("Deine Digitale DNA")
         
-        # Anti-Frust Airbag (Session State)
-        if 'manifesto_cache' not in st.session_state: st.session_state.manifesto_cache = ""
+        if 'manifesto_buffer' not in st.session_state: 
+            st.session_state.manifesto_buffer = ""
 
+        # Die 3-Spalten-Architektur für maximale Übersicht
         col1, col2, col3 = st.columns(3)
+        
         with col1:
+            st.markdown("### Basis")
             u_name = st.text_input("Name / Alias", placeholder="Wie sollen wir dich nennen?")
-            
-            # Hilfe zur ID-Beschaffung direkt im Formular
-            st.markdown(f"[🆔 Hol dir hier deine ID von AIM](https://t.me/aim_vibe_bot)") 
-            u_tid = st.number_input("Telegram ID", step=1, help="Klicke auf den Link oben, starte den Bot und tippe /id", value=0)
-            
-            v_key = st.text_input("Vibe Key", type="password", help="Wähle ein starkes Passwort. Das ist dein einziger Schlüssel!")
-        with col2:
+            st.markdown(f"[🆔 ID-Bot](https://t.me/aim_vibe_bot)") 
+            u_tid = st.number_input("Telegram ID", step=1, value=0)
+            v_key = st.text_input("Vibe Key", type="password", help="Dein Passwort zur Verschlüsselung.")
             u_contact = st.text_input("Kontakt (@Telegram)", placeholder="@handle")
+
+        with col2:
+            st.markdown("### Identität")
+            u_age = st.slider("Dein Alter", 18, 99, 25)
+            u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"])
             u_location = st.text_input("Standort", placeholder="Stadt...")
-            u_height = st.slider("Deine Körpergröße (cm)", 140, 220, 175) # NEU
-            u_radius = st.slider("Radius (km)", 5, 500, 50)
+            u_height = st.slider("Größe (cm)", 140, 220, 175)
             u_stature = st.selectbox("Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"])
             
         with col3:
-            u_radius = st.slider("Radius (km)", 5, 500, 50)
-            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190)) # NEU
+            st.markdown("### Suche")
+            u_age_range = st.slider("Wunsch-Alter", 18, 99, (20, 40))
+            u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
             u_intent = st.selectbox("Absicht", ["partner", "friends", "both"], index=2)
-            u_radius = st.number_input("Suchradius (km)", value=50)
+            u_radius = st.slider("Suchradius (km)", 5, 500, 50) # Nur noch EINMAL hier
             u_target_stature = st.multiselect("Gesuchte Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"], default=["durchschnittlich"])
 
-        manifesto = st.text_area("Dein Manifesto", value=st.session_state.manifesto_buffer if 'manifesto_buffer' in st.session_state else "", height=300)
+        manifesto = st.text_area("Dein Manifesto (Der qualitative Anker)", value=st.session_state.manifesto_buffer, height=300)
         st.session_state.manifesto_buffer = manifesto
 
-        # Nur EIN Button für alles!
         if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):
-            
-            # 1. Schritt: Telegram-ID Check
-            if u_tid == 0:
-                st.warning("Wir brauchen deine Telegram-ID! Klicke oben auf den Link und starte den Bot.")
-                return
-            
-            # 2. Schritt: Pflichtfelder Check
-            missing_fields = []
-            if not u_name: missing_fields.append("Name")
-            if not u_contact: missing_fields.append("Kontakt (@Handle)")
-            if not u_location: missing_fields.append("Standort") # Standort-Check hinzugefügt
-            if not manifesto or len(manifesto) < 10: missing_fields.append("Manifesto (zu kurz)")
-            if not v_key: missing_fields.append("Vibe Key")
-            
-            if missing_fields:
-                st.warning(f"Eingabe unvollständig! Es fehlt: {', '.join(missing_fields)}")
+            # Validierung & Geocoding
+            if u_tid == 0 or not u_name or not u_location or len(manifesto) < 10:
+                st.warning("Pflichtfelder prüfen: Name, ID, Standort und Manifesto (min. 10 Zeichen)!")
                 return
 
-            # 3. Schritt: Geocoding (Stadt in Koordinaten umwandeln)
-            with st.spinner("AIM lokalisiert deine Resonanz in der Welt..."):
-                # Hier nutzen wir dein u_location Feld!
+            with st.spinner("Lokalisiere..."):
                 coords = logic.geocode_city(u_location)
-                
                 if not coords:
-                    st.error(f"Konnte den Standort '{u_location}' nicht finden. Bitte prüfe die Schreibweise.")
+                    st.error("Standort nicht gefunden.")
                     return
 
-            # 4. Schritt: Mudda-Sperre (Security)
-            if any(security.detect_attack(f) for f in [u_name, u_contact, manifesto, v_key]):
-                security.handle_hacker()
-                return
-
-            # 5. Schritt: Vektorisierung & Speichern
-            with st.spinner("Vektorisierung läuft... AIM berechnet deine Resonanz..."):
-                real_vector = get_embedding(manifesto)
+            # Vektorisierung & Speichern
+            real_vector = get_embedding(manifesto)
+            if real_vector:
+                data = {
+                    'telegram_id': u_tid,
+                    'name_enc': security.encrypt_data(u_name, v_key),
+                    'contact_enc': security.encrypt_data(u_contact, v_key),
+                    'password_hash': security.hash_key(v_key),
+                    'manifesto_enc': security.encrypt_data(manifesto, v_key),
+                    'vector': real_vector,
+                    'coords': coords,
+                    'stature': u_stature,
+                    'target_stature': u_target_stature,
+                    'radius': u_radius,
+                    'u_age': u_age,
+                    'u_gender': u_gender,
+                    'u_looking_for': u_looking_for,
+                    'u_age_min': u_age_range[0],
+                    'u_age_max': u_age_range[1],
+                    'u_intent': u_intent,
+                    'u_height': u_height,
+                    'early_adopter': True
+                }
                 
-                if real_vector:
-                    data = {
-                        'telegram_id': u_tid,
-                        'name_enc': security.encrypt_data(u_name, v_key),
-                        'contact_enc': security.encrypt_data(u_contact, v_key),
-                        'password_hash': security.hash_key(v_key),
-                        'manifesto_enc': security.encrypt_data(manifesto, v_key),
-                        'vector': real_vector,
-                        'coords': coords, # Jetzt ist coords durch logic.geocode_city definiert!
-                        'stature': u_stature,
-                        'target_stature': u_target_stature,
-                        'radius': u_radius,
-                        'early_adopter': True
-                    }
-
-                    # Prüfung auf Duplikate (Pseudo-Code für app.py) IN DER PROD WIEDER AKTIV NEHMEN - NUR IN DER TEST NOCH AUSKOMMENTIERT!
-                    # if db_handler.check_handle_exists(u_contact):
-                    #     st.error("Dieser Telegram-Handle ist bereits in der Matrix registriert!")
-                    # return
-
-                    if db_handler.save_profile(data):
-                        st.session_state.manifesto_buffer = "" # Cache leeren
-                        st.success(f"DNA stabilisiert. Willkommen in der Matrix, {u_name}!") # Dynamisch!
-                        st.balloons()
+                if db_handler.save_profile(data):
+                    st.success(f"DNA stabilisiert, {u_name}!")
+                    st.balloons()
                     else:
                         st.error("Datenbank-Fehler beim Versiegeln der DNA.")
                 else:
