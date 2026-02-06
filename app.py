@@ -187,10 +187,10 @@ def main():
                 if db_handler.save_profile(data):
                     st.success(f"DNA stabilisiert, {u_name}!")
                     st.balloons()
-                    else:
-                        st.error("Datenbank-Fehler beim Versiegeln der DNA.")
                 else:
-                    st.error("KI-Fehler: Konnte keine Vektoren aus deinem Text extrahieren.")
+                        st.error("Datenbank-Fehler beim Versiegeln der DNA.")
+             else:
+                st.error("KI-Fehler: Konnte keine Vektoren aus deinem Text extrahieren.")
 
     elif menu == "Login":
         st.subheader("Resonanz-Zentrale")
