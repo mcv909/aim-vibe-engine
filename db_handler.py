@@ -90,36 +90,50 @@ def init_db():
         conn.close()
 
 def save_profile(data):
-    """Speichert oder aktualisiert ein Profil."""
+    """
+    Versiegelt die digitale DNA in der PostgreSQL Matrix.
+    Nutzt UPSERT (Update or Insert) basierend auf der telegram_id.
+    """
     conn = get_connection()
     cur = conn.cursor()
+    
+    # Hinweis: Wir nutzen 'vector_string' als Spaltenname, wie in deiner logic.py definiert.
+    # Stelle sicher, dass u_height, u_age etc. via ALTER TABLE in der DB existieren!
+    
+    sql = """
+    INSERT INTO profiles (
+        telegram_id, name_enc, contact_enc, password_hash, manifesto_enc, 
+        vector_string, coords, stature, target_stature, radius, 
+        u_age, u_gender, u_looking_for, u_age_min, u_age_max, u_intent, u_height
+    ) VALUES (
+        %(telegram_id)s, %(name_enc)s, %(contact_enc)s, %(password_hash)s, %(manifesto_enc)s, 
+        %(vector)s, %(coords)s, %(stature)s, %(target_stature)s, %(radius)s, 
+        %(u_age)s, %(u_gender)s, %(u_looking_for)s, %(u_age_min)s, %(u_age_max)s, %(u_intent)s, %(u_height)s
+    )
+    ON CONFLICT (telegram_id) DO UPDATE SET
+        name_enc = EXCLUDED.name_enc,
+        contact_enc = EXCLUDED.contact_enc,
+        manifesto_enc = EXCLUDED.manifesto_enc,
+        vector_string = EXCLUDED.vector_string,
+        coords = EXCLUDED.coords,
+        stature = EXCLUDED.stature,
+        target_stature = EXCLUDED.target_stature,
+        radius = EXCLUDED.radius,
+        u_age = EXCLUDED.u_age,
+        u_gender = EXCLUDED.u_gender,
+        u_looking_for = EXCLUDED.u_looking_for,
+        u_age_min = EXCLUDED.u_age_min,
+        u_age_max = EXCLUDED.u_age_max,
+        u_intent = EXCLUDED.u_intent,
+        u_height = EXCLUDED.u_height;
+    """
+    
     try:
-        cur.execute("""
-            INSERT INTO profiles (
-                telegram_id, name_enc, contact_enc, password_hash, 
-                manifesto_enc, vector_string, is_active, early_adopter, 
-                coords, stature, target_stature, radius
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (telegram_id) DO UPDATE SET
-                name_enc = EXCLUDED.name_enc,
-                contact_enc = EXCLUDED.contact_enc,
-                password_hash = EXCLUDED.password_hash,
-                manifesto_enc = EXCLUDED.manifesto_enc,
-                vector_string = EXCLUDED.vector_string,
-                coords = EXCLUDED.coords,
-                stature = EXCLUDED.stature,
-                target_stature = EXCLUDED.target_stature,
-                radius = EXCLUDED.radius;
-        """, (
-            data['telegram_id'], data['name_enc'], data['contact_enc'], 
-            data['password_hash'], data['manifesto_enc'], data['vector'], 
-            True, data.get('early_adopter', False), json.dumps(data['coords']),
-            data['stature'], data['target_stature'], data['radius']
-        ))
+        cur.execute(sql, data)
         conn.commit()
         return True
     except Exception as e:
-        print(f"Fehler beim Speichern: {e}")
+        print(f"Datenbank-Fehler in save_profile: {e}")
         conn.rollback()
         return False
     finally:
