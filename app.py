@@ -118,7 +118,7 @@ def main():
         # Anti-Frust Airbag (Session State)
         if 'manifesto_cache' not in st.session_state: st.session_state.manifesto_cache = ""
 
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
             u_name = st.text_input("Name / Alias", placeholder="Wie sollen wir dich nennen?")
             
@@ -132,13 +132,17 @@ def main():
             u_location = st.text_input("Standort", placeholder="Stadt...")
             u_height = st.slider("Deine Körpergröße (cm)", 140, 220, 175) # NEU
             u_radius = st.slider("Radius (km)", 5, 500, 50)
+            u_stature = st.selectbox("Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"])
+            
+        with col3:
+            u_radius = st.slider("Radius (km)", 5, 500, 50)
             u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190)) # NEU
+            u_intent = st.selectbox("Absicht", ["partner", "friends", "both"], index=2)
+            u_radius = st.number_input("Suchradius (km)", value=50)
+            u_target_stature = st.multiselect("Gesuchte Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"], default=["durchschnittlich"])
 
         manifesto = st.text_area("Dein Manifesto", value=st.session_state.manifesto_buffer if 'manifesto_buffer' in st.session_state else "", height=300)
         st.session_state.manifesto_buffer = manifesto
-
-        u_stature = st.selectbox("Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"])
-        u_target_stature = st.multiselect("Gesuchte Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"], default=["durchschnittlich"])
 
         # Nur EIN Button für alles!
         if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):

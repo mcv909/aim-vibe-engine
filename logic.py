@@ -37,54 +37,71 @@ def calculate_distance(coord1, coord2):
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
 
 # --- MATCHING LOGIK (BATCH) ---
-# incl der abfrage ob matches schon vorhanden sind
-def run_batch_matching():
+def run_batch_matching(current_user_id=None): # Optionaler Parameter für Einzel-Check
     conn = get_connection()
     cur = conn.cursor()
     
     try:
-        # 1. Wir nutzen die UUID (id) als internen Anker
-        cur.execute("SELECT id, telegram_id, vector_string, coords, stature, target_stature, radius FROM profiles WHERE is_active = true AND is_vectorized = true")
+        # 1. Wir holen alle aktiven User und ihre Filter-Kriterien
+        # Falls current_user_id gesetzt ist, matchen wir nur für einen (Performance!)
+        sql_base = """
+            SELECT id, telegram_id, vector_string, u_age, u_gender, 
+                   u_looking_for, u_age_min, u_age_max, u_intent 
+            FROM profiles 
+            WHERE is_active = true AND is_vectorized = true
+        """
+        if current_user_id:
+            cur.execute(sql_base + " AND telegram_id = %s", (current_user_id,))
+        else:
+            cur.execute(sql_base)
+            
         users = cur.fetchall()
         
         for user in users:
-            u_uuid, u_tid, u_vec, u_coords, u_stature, u_target_stature, u_radius = user
+            u_uuid, u_tid, u_vec, u_age, u_gen, u_look, u_min, u_max, u_int = user
             
-            # 2. pgvector Suche (Top 10)
+            # 2. Die verschärfte pgvector-Suche mit Hard-Filtern
+            # Wir prüfen: 
+            # - Passt Kandidat in MEIN Raster? 
+            # - Passe ICH in das Raster des Kandidaten?
             cur.execute("""
-                SELECT id, telegram_id, coords, stature, target_stature, (1 - (vector_string <=> %s)) as similarity 
+                SELECT id, telegram_id, (1 - (vector_string <=> %s)) as similarity 
                 FROM profiles 
-                WHERE id != %s AND is_active = true 
-                ORDER BY vector_string <=> %s 
-                LIMIT 10
-            """, (u_vec, u_uuid, u_vec))
+                WHERE id != %s 
+                AND is_active = true 
+                
+                -- GATE 1: Passt der Kandidat in MEIN Raster?
+                AND u_age BETWEEN %s AND %s                -- Alter
+                AND (u_gender = %s OR %s = 'egal')         -- Geschlecht
+                AND (u_intent = %s OR u_intent = 'both')   -- Intent
+                
+                -- GATE 2: Passe ICH in das Raster des Kandidaten? (Reziprozität)
+                AND %s BETWEEN u_age_min AND u_age_max     -- Mein Alter in deren Range
+                AND (u_looking_for = %s OR u_looking_for = 'egal') -- Mein Geschlecht in deren Suche
+                
+                ORDER BY similarity DESC 
+                LIMIT 15
+            """, (u_vec, u_uuid, u_min, u_max, u_look, u_look, u_int, u_age, u_gen))
             
             candidates = cur.fetchall()
             
             for cand in candidates:
-                c_uuid, c_tid, c_coords, c_stature, c_target_stature, c_sim = cand
+                c_uuid, c_tid, c_sim = cand
                 
-                # ... (Deine Distanz- und Statur-Checks bleiben hier gleich) ...
-                resonance_score = c_sim 
-                # (Hier baust du deine Abzüge für Distanz/Statur ein, wie im vorigen Code)
-
-                if resonance_score >= 0.88:
-                    # DIE ANTI-SPAM LOGIK:
-                    # Wir prüfen, ob dieses Paar schon in der matches-Tabelle steht
+                # Schwellenwert für Vektor-Resonanz
+                if c_sim >= 0.88:
                     cur.execute("""
                         SELECT id FROM matches 
                         WHERE (user_a = %s AND user_b = %s) OR (user_a = %s AND user_b = %s)
                     """, (u_uuid, c_uuid, c_uuid, u_uuid))
                     
                     if not cur.fetchone():
-                        # Neues Match! Speichern und User pingen
                         cur.execute("""
                             INSERT INTO matches (user_a, user_b, resonance_score) 
                             VALUES (%s, %s, %s)
-                        """, (u_uuid, c_uuid, resonance_score))
+                        """, (u_uuid, c_uuid, c_sim))
                         conn.commit()
-                        
-                        notify_match(u_tid, c_tid, resonance_score)
+                        notify_match(u_tid, c_tid, c_sim)
                         
     finally:
         cur.close()
