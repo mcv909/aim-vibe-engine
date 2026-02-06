@@ -143,6 +143,10 @@ def main():
             u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
             u_intent = st.selectbox("Absicht", ["partner", "friends", "both"], index=2)
             u_radius = st.slider("Suchradius (km)", 5, 500, 50) # Nur noch EINMAL hier
+
+            # DER VERMISSTE SLIDER:
+            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190))
+
             u_target_stature = st.multiselect("Gesuchte Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"], default=["durchschnittlich"])
 
         manifesto = st.text_area("Dein Manifesto (Der qualitative Anker)", value=st.session_state.manifesto_buffer, height=300)
@@ -171,8 +175,8 @@ def main():
                     'manifesto_enc': security.encrypt_data(manifesto, v_key),
                     'vector': real_vector,
                     'coords': coords,
-                    'stature': u_stature,
-                    'target_stature': u_target_stature,
+                    'stature': ", ".join(u_stature), # LISTE ZU STRING WANDELN!
+                    'target_stature': ", ".join(u_target_stature), # LISTE ZU STRING WANDELN!
                     'radius': u_radius,
                     'u_age': u_age,
                     'u_gender': u_gender,
@@ -181,6 +185,8 @@ def main():
                     'u_age_max': u_age_range[1],
                     'u_intent': u_intent,
                     'u_height': u_height,
+                    'u_target_height_min': u_target_height[0], # Untergrenze vom Slider
+                    'u_target_height_max': u_target_height[1], # Obergrenze vom Slider
                     'early_adopter': True
                 }
                 

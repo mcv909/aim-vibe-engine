@@ -104,11 +104,13 @@ def save_profile(data):
     INSERT INTO profiles (
         telegram_id, name_enc, contact_enc, password_hash, manifesto_enc, 
         vector_string, coords, stature, target_stature, radius, 
-        u_age, u_gender, u_looking_for, u_age_min, u_age_max, u_intent, u_height
+        u_age, u_gender, u_looking_for, u_age_min, u_age_max, u_intent, u_height,
+        u_target_height_min, u_target_height_max
     ) VALUES (
         %(telegram_id)s, %(name_enc)s, %(contact_enc)s, %(password_hash)s, %(manifesto_enc)s, 
         %(vector)s, %(coords)s, %(stature)s, %(target_stature)s, %(radius)s, 
-        %(u_age)s, %(u_gender)s, %(u_looking_for)s, %(u_age_min)s, %(u_age_max)s, %(u_intent)s, %(u_height)s
+        %(u_age)s, %(u_gender)s, %(u_looking_for)s, %(u_age_min)s, %(u_age_max)s, %(u_intent)s, %(u_height)s,
+        %(u_target_height_min)s, %(u_target_height_max)s
     )
     ON CONFLICT (telegram_id) DO UPDATE SET
         name_enc = EXCLUDED.name_enc,
@@ -125,9 +127,22 @@ def save_profile(data):
         u_age_min = EXCLUDED.u_age_min,
         u_age_max = EXCLUDED.u_age_max,
         u_intent = EXCLUDED.u_intent,
-        u_height = EXCLUDED.u_height;
+        u_height = EXCLUDED.u_height,
+        u_target_height_min = EXCLUDED.u_target_height_min,
+        u_target_height_max = EXCLUDED.u_target_height_max;
     """
-    
+    try:
+        cur.execute(sql, data)
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"DEBUG DB-ERROR: {e}") # Das hilft uns im Log extrem weiter!
+        conn.rollback()
+        return False
+    finally:
+        cur.close()
+        conn.close()
+   
     try:
         cur.execute(sql, data)
         conn.commit()
