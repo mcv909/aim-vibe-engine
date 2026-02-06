@@ -175,7 +175,7 @@ def main():
                     'manifesto_enc': security.encrypt_data(manifesto, v_key),
                     'vector': real_vector,
                     'coords': coords,
-                    'stature': ", ".join(u_stature), # LISTE ZU STRING WANDELN!
+                    'stature': u_stature,                         # Bleibt so (ist schon ein String)
                     'target_stature': ", ".join(u_target_stature), # LISTE ZU STRING WANDELN!
                     'radius': u_radius,
                     'u_age': u_age,
