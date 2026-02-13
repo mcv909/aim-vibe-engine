@@ -165,56 +165,57 @@ def main():
 
 # ... im Bereich "Manifesto erstellen" nach der Validierung ...
 
-if st.button("DNA SICHERN & RESONANZ STARTEN"):
-    with st.spinner("Lokalisiere & Übertrage..."):
-        coords = logic.geocode_city(u_location)
-        if not coords:
-            st.error("Standort nicht gefunden.")
-            return
+if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):
+            if u_tid == 0 or not u_name or not u_location or len(manifesto) < 10:
+                st.warning("Pflichtfelder prüfen!")
+                return
 
-        # Daten vorbereiten (Vektor bleibt erst mal leer/None)
-        data = {
-            'telegram_id': u_tid,
-            'name_enc': security.encrypt_data(u_name, v_key),
-            'contact_enc': security.encrypt_data(u_contact, v_key),
-            'password_hash': security.hash_key(v_key),
-            'manifesto_enc': security.encrypt_data(manifesto, v_key),
-            'vector': None,  # Hier kommt später der MacAir-Worker ins Spiel
-            'coords': coords,
-            'stature': u_stature,
-            'target_stature': ", ".join(u_target_stature),
-            'radius': u_radius,
-            'u_age': u_age,
-            'u_gender': u_gender,
-            'u_looking_for': u_looking_for,
-            'u_age_min': u_age_range[0],
-            'u_age_max': u_age_range[1],
-            'u_intent': u_intent,
-            'u_height': u_height,
-            'u_target_height_min': u_target_height[0],
-            'u_target_height_max': u_target_height[1],
-            'early_adopter': True
-        }
-        
-        # Profil speichern
-        new_profile_id = db_handler.save_profile(data)
-        
-        if new_profile_id:
-            # Jetzt erst für den Worker verschlüsseln und in die Queue!
-            worker_pub_key = os.getenv("WORKER_PUBLIC_KEY")
-            enc_for_worker = security.encrypt_for_worker(manifesto, worker_pub_key)
-            
-            if db_handler.add_to_embedding_queue(new_profile_id, enc_for_worker):
-                st.success(f"DNA stabilisiert, {u_name}!")
-                st.info("Dein 1536-D Vibe wird lokal berechnet. Du kriegst eine Telegram-Nachricht, sobald alles aktiv ist.")
-                st.balloons()
-            else:
-                st.error("Fehler beim Einstellen in die Queue. Bitte Admin kontaktieren.")
-        else:
-            st.error("Datenbank-Fehler beim Versiegeln der DNA.")
+            with st.spinner("Lokalisiere & Übertrage..."):
+                coords = logic.geocode_city(u_location)
+                if not coords:
+                    st.error("Standort nicht gefunden.")
+                    return
 
-    elif menu == "Login":
-        st.subheader("Resonanz-Zentrale")
+                # 1. Daten für die Haupttabelle (Vektor ist initial None)
+                data = {
+                    'telegram_id': u_tid,
+                    'name_enc': security.encrypt_data(u_name, v_key),
+                    'contact_enc': security.encrypt_data(u_contact, v_key),
+                    'password_hash': security.hash_key(v_key),
+                    'manifesto_enc': security.encrypt_data(manifesto, v_key),
+                    'vector': None, 
+                    'coords': coords,
+                    'stature': u_stature,
+                    'target_stature': ", ".join(u_target_stature),
+                    'radius': u_radius,
+                    'u_age': u_age,
+                    'u_gender': u_gender,
+                    'u_looking_for': u_looking_for,
+                    'u_age_min': u_age_range[0],
+                    'u_age_max': u_age_range[1],
+                    'u_intent': u_intent,
+                    'u_height': u_height,
+                    'u_target_height_min': u_target_height[0],
+                    'u_target_height_max': u_target_height[1],
+                    'early_adopter': True
+                }
+                
+                # 2. Profil speichern und UUID erhalten
+                new_id = db_handler.save_profile(data)
+                
+                if new_id:
+                    # 3. Für Worker verschlüsseln & in Queue werfen
+                    pub_key = os.getenv("WORKER_PUBLIC_KEY")
+                    enc_manifesto = security.encrypt_for_worker(manifesto, pub_key)
+                    
+                    if db_handler.add_to_embedding_queue(new_id, enc_manifesto):
+                        st.success(f"DNA stabilisiert, {u_name}!")
+                        st.info("Dein 1536-D Vibe wird lokal berechnet. Du kriegst eine Nachricht via Telegram, sobald alles aktiv ist.")
+                        st.balloons()
+                    else:
+                        st.error("Fehler beim Queue-Eintrag.")
+                else:
+                    st.error("Datenbank-Fehler beim Versiegeln.")
         
         # 1. Login-Logik (Nur anzeigen, wenn NICHT eingeloggt)
         if not st.session_state.get('logged_in'):

@@ -90,7 +90,7 @@ def init_db():
         conn.close()
 
 def save_profile(data):
-    """Speichert ein Profil und gibt die neue ID zurück."""
+    """Speichert ein Profil und gibt die neue UUID zurück."""
     conn = get_connection()
     cur = conn.cursor()
     try:
@@ -113,15 +113,32 @@ def save_profile(data):
             data['u_height'], data['u_target_height_min'], data['u_target_height_max'],
             data.get('early_adopter', True)
         ))
-        
-        # Hier fangen wir die ID ab
-        new_id = cur.fetchone()[0]
+        new_uuid = cur.fetchone()[0]
         conn.commit()
-        return new_id # <--- Rückgabe der echten ID statt nur True
+        return new_uuid
     except Exception as e:
         print(f"Fehler beim Speichern: {e}")
         conn.rollback()
-        return None # <--- Im Fehlerfall None zurückgeben
+        return None
+    finally:
+        cur.close()
+        conn.close()
+
+def add_to_embedding_queue(profile_id, encrypted_text):
+    """Schiebt das RSA-verschlüsselte Manifesto in die Queue."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            INSERT INTO embedding_queue (profile_id, encrypted_manifesto, status)
+            VALUES (%s, %s, 'pending')
+        """, (profile_id, encrypted_text))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Fehler in Queue-Eintrag: {e}")
+        conn.rollback()
+        return False
     finally:
         cur.close()
         conn.close()

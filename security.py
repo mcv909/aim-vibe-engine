@@ -6,6 +6,24 @@ import hashlib
 import streamlit as st
 from argon2 import PasswordHasher
 from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import serialization
+import base64
+
+def encrypt_for_worker(text, public_key_pem):
+    """Verschlüsselt Text mit dem RSA Public Key des Workers."""
+    if not text or not public_key_pem: return None
+    pub_key = serialization.load_pem_public_key(public_key_pem.encode())
+    encrypted = pub_key.encrypt(
+        text.encode(),
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    return base64.b64encode(encrypted).decode()
 
 # Initialisierung des Argon2-Hashers
 ph = PasswordHasher()
