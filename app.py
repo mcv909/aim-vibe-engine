@@ -47,13 +47,22 @@ def render_founding_dashboard():
     st.markdown(html_content, unsafe_allow_html=True)
 
 def get_embedding(text):
-    """Verwandelt Text via OpenAI in einen 1536-D Vektor."""
-    try:
-        response = client.embeddings.create(input=text, model="text-embedding-3-small")
-        return response.data[0].embedding
-    except Exception as e:
-        st.error(f"DNA-Analyse fehlgeschlagen: {e}")
-        return None
+    """Verwandelt Text via lokaler KI in einen 1536-D Vektor."""
+    # In app.py - Beim Speichern des Profils
+    if st.form_submit_button("DNA STABILISIEREN"):
+    # 1. Das Manifesto für den Worker verschlüsseln
+    worker_pub_key = os.getenv("WORKER_PUBLIC_KEY")
+    # Wir nutzen die Funktion aus der neuen security.py
+    enc_for_worker = security.encrypt_for_worker(u_manifesto, worker_pub_key)
+    
+    # 2. Profil in der Haupttabelle anlegen (is_vectorized bleibt FALSE)
+    new_profile_id = db_handler.save_profile(new_data) # Du musst save_profile evtl. so anpassen, dass es die ID zurückgibt
+    
+        if new_profile_id:
+        # 3. Ab in die Queue!
+            if db_handler.add_to_embedding_queue(new_profile_id, enc_for_worker):
+                st.success("Manifesto sicher in die Matrix übertragen!")
+                st.info("Dein 1536-D Vibe wird gerade lokal berechnet. Sobald wir ein Match finden, meldet sich dein Bot!")
 
 def main():
     style.apply_custom_style() # Das helle Design (Light Mode)
@@ -152,51 +161,57 @@ def main():
         manifesto = st.text_area("Dein Manifesto (Der qualitative Anker)", value=st.session_state.manifesto_buffer, height=300)
         st.session_state.manifesto_buffer = manifesto
 
-        if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):
-            # Validierung & Geocoding
-            if u_tid == 0 or not u_name or not u_location or len(manifesto) < 10:
-                st.warning("Pflichtfelder prüfen: Name, ID, Standort und Manifesto (min. 10 Zeichen)!")
-                return
+        # 1. Die Funktion get_embedding wird überflüssig, wir machen das direkt im Flow:
 
-            with st.spinner("Lokalisiere..."):
-                coords = logic.geocode_city(u_location)
-                if not coords:
-                    st.error("Standort nicht gefunden.")
-                    return
+# ... im Bereich "Manifesto erstellen" nach der Validierung ...
 
-            # Vektorisierung & Speichern
-            real_vector = get_embedding(manifesto)
-            if real_vector:
-                data = {
-                    'telegram_id': u_tid,
-                    'name_enc': security.encrypt_data(u_name, v_key),
-                    'contact_enc': security.encrypt_data(u_contact, v_key),
-                    'password_hash': security.hash_key(v_key),
-                    'manifesto_enc': security.encrypt_data(manifesto, v_key),
-                    'vector': real_vector,
-                    'coords': coords,
-                    'stature': u_stature,                         # Bleibt so (ist schon ein String)
-                    'target_stature': ", ".join(u_target_stature), # LISTE ZU STRING WANDELN!
-                    'radius': u_radius,
-                    'u_age': u_age,
-                    'u_gender': u_gender,
-                    'u_looking_for': u_looking_for,
-                    'u_age_min': u_age_range[0],
-                    'u_age_max': u_age_range[1],
-                    'u_intent': u_intent,
-                    'u_height': u_height,
-                    'u_target_height_min': u_target_height[0], # Untergrenze vom Slider
-                    'u_target_height_max': u_target_height[1], # Obergrenze vom Slider
-                    'early_adopter': True
-                }
-                
-                if db_handler.save_profile(data):
-                    st.success(f"DNA stabilisiert, {u_name}!")
-                    st.balloons()
-                else:
-                        st.error("Datenbank-Fehler beim Versiegeln der DNA.")
+if st.button("DNA SICHERN & RESONANZ STARTEN"):
+    with st.spinner("Lokalisiere & Übertrage..."):
+        coords = logic.geocode_city(u_location)
+        if not coords:
+            st.error("Standort nicht gefunden.")
+            return
+
+        # Daten vorbereiten (Vektor bleibt erst mal leer/None)
+        data = {
+            'telegram_id': u_tid,
+            'name_enc': security.encrypt_data(u_name, v_key),
+            'contact_enc': security.encrypt_data(u_contact, v_key),
+            'password_hash': security.hash_key(v_key),
+            'manifesto_enc': security.encrypt_data(manifesto, v_key),
+            'vector': None,  # Hier kommt später der MacAir-Worker ins Spiel
+            'coords': coords,
+            'stature': u_stature,
+            'target_stature': ", ".join(u_target_stature),
+            'radius': u_radius,
+            'u_age': u_age,
+            'u_gender': u_gender,
+            'u_looking_for': u_looking_for,
+            'u_age_min': u_age_range[0],
+            'u_age_max': u_age_range[1],
+            'u_intent': u_intent,
+            'u_height': u_height,
+            'u_target_height_min': u_target_height[0],
+            'u_target_height_max': u_target_height[1],
+            'early_adopter': True
+        }
+        
+        # Profil speichern
+        new_profile_id = db_handler.save_profile(data)
+        
+        if new_profile_id:
+            # Jetzt erst für den Worker verschlüsseln und in die Queue!
+            worker_pub_key = os.getenv("WORKER_PUBLIC_KEY")
+            enc_for_worker = security.encrypt_for_worker(manifesto, worker_pub_key)
+            
+            if db_handler.add_to_embedding_queue(new_profile_id, enc_for_worker):
+                st.success(f"DNA stabilisiert, {u_name}!")
+                st.info("Dein 1536-D Vibe wird lokal berechnet. Du kriegst eine Telegram-Nachricht, sobald alles aktiv ist.")
+                st.balloons()
             else:
-                st.error("KI-Fehler: Konnte keine Vektoren aus deinem Text extrahieren.")
+                st.error("Fehler beim Einstellen in die Queue. Bitte Admin kontaktieren.")
+        else:
+            st.error("Datenbank-Fehler beim Versiegeln der DNA.")
 
     elif menu == "Login":
         st.subheader("Resonanz-Zentrale")

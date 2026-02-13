@@ -90,67 +90,38 @@ def init_db():
         conn.close()
 
 def save_profile(data):
-    """
-    Versiegelt die digitale DNA in der PostgreSQL Matrix.
-    Nutzt UPSERT (Update or Insert) basierend auf der telegram_id.
-    """
+    """Speichert ein Profil und gibt die neue ID zurück."""
     conn = get_connection()
     cur = conn.cursor()
-    
-    # Hinweis: Wir nutzen 'vector_string' als Spaltenname, wie in deiner logic.py definiert.
-    # Stelle sicher, dass u_height, u_age etc. via ALTER TABLE in der DB existieren!
-    
-    sql = """
-    INSERT INTO profiles (
-        telegram_id, name_enc, contact_enc, password_hash, manifesto_enc, 
-        vector_string, coords, stature, target_stature, radius, 
-        u_age, u_gender, u_looking_for, u_age_min, u_age_max, u_intent, u_height,
-        u_target_height_min, u_target_height_max
-    ) VALUES (
-        %(telegram_id)s, %(name_enc)s, %(contact_enc)s, %(password_hash)s, %(manifesto_enc)s, 
-        %(vector)s, %(coords)s, %(stature)s, %(target_stature)s, %(radius)s, 
-        %(u_age)s, %(u_gender)s, %(u_looking_for)s, %(u_age_min)s, %(u_age_max)s, %(u_intent)s, %(u_height)s,
-        %(u_target_height_min)s, %(u_target_height_max)s
-    )
-    ON CONFLICT (telegram_id) DO UPDATE SET
-        name_enc = EXCLUDED.name_enc,
-        contact_enc = EXCLUDED.contact_enc,
-        manifesto_enc = EXCLUDED.manifesto_enc,
-        vector_string = EXCLUDED.vector_string,
-        coords = EXCLUDED.coords,
-        stature = EXCLUDED.stature,
-        target_stature = EXCLUDED.target_stature,
-        radius = EXCLUDED.radius,
-        u_age = EXCLUDED.u_age,
-        u_gender = EXCLUDED.u_gender,
-        u_looking_for = EXCLUDED.u_looking_for,
-        u_age_min = EXCLUDED.u_age_min,
-        u_age_max = EXCLUDED.u_age_max,
-        u_intent = EXCLUDED.u_intent,
-        u_height = EXCLUDED.u_height,
-        u_target_height_min = EXCLUDED.u_target_height_min,
-        u_target_height_max = EXCLUDED.u_target_height_max;
-    """
     try:
-        cur.execute(sql, data)
+        cur.execute("""
+            INSERT INTO profiles (
+                telegram_id, name_enc, contact_enc, password_hash, 
+                manifesto_enc, vibe_vector, coords, stature, 
+                target_stature, radius, u_age, u_gender, 
+                u_looking_for, u_age_min, u_age_max, u_intent, 
+                u_height, u_target_height_min, u_target_height_max, 
+                early_adopter
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            ) RETURNING id; 
+        """, (
+            data['telegram_id'], data['name_enc'], data['contact_enc'], data['password_hash'],
+            data['manifesto_enc'], data['vector'], data.get('coords'), data['stature'],
+            data['target_stature'], data['radius'], data['u_age'], data['u_gender'],
+            data['u_looking_for'], data['u_age_min'], data['u_age_max'], data['u_intent'],
+            data['u_height'], data['u_target_height_min'], data['u_target_height_max'],
+            data.get('early_adopter', True)
+        ))
+        
+        # Hier fangen wir die ID ab
+        new_id = cur.fetchone()[0]
         conn.commit()
-        return True
+        return new_id # <--- Rückgabe der echten ID statt nur True
     except Exception as e:
-        print(f"DEBUG DB-ERROR: {e}") # Das hilft uns im Log extrem weiter!
+        print(f"Fehler beim Speichern: {e}")
         conn.rollback()
-        return False
-    finally:
-        cur.close()
-        conn.close()
-   
-    try:
-        cur.execute(sql, data)
-        conn.commit()
-        return True
-    except Exception as e:
-        print(f"Datenbank-Fehler in save_profile: {e}")
-        conn.rollback()
-        return False
+        return None # <--- Im Fehlerfall None zurückgeben
     finally:
         cur.close()
         conn.close()
@@ -218,6 +189,25 @@ def save_feedback(user_id, rating, comment, match_id=None):
     except Exception as e:
         # Fehlerlogging für die spätere Optimierung
         print(f"Fehler beim Speichern des Feedbacks: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cur.close()
+        conn.close()
+
+def add_to_embedding_queue(profile_id, encrypted_text):
+    """Schiebt ein verschlüsseltes Manifesto in die Warteschlange."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            INSERT INTO embedding_queue (profile_id, encrypted_manifesto, status)
+            VALUES (%s, %s, 'pending')
+        """, (profile_id, encrypted_text))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Fehler in der Queue: {e}")
         conn.rollback()
         return False
     finally:
