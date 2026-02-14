@@ -46,21 +46,6 @@ def render_founding_dashboard():
 
     st.markdown(html_content, unsafe_allow_html=True)
 
-# DAS HIER BITTE KOMPLETT LÖSCHEN:
-def get_embedding(text):
-    """Verwandelt Text via lokaler KI in einen 1536-D Vektor."""
-    # In app.py - Beim Speichern des Profils
-    if st.form_submit_button("DNA STABILISIEREN"):
-    # 1. Das Manifesto für den Worker verschlüsseln
-    worker_pub_key = os.getenv("WORKER_PUBLIC_KEY")
-    # ... und so weiter ...
-    
-        if new_profile_id:
-        # 3. Ab in die Queue!
-            if db_handler.add_to_embedding_queue(new_profile_id, enc_for_worker):
-                st.success("Manifesto sicher in die Matrix übertragen!")
-                st.info("Dein 1536-D Vibe wird gerade lokal berechnet. Sobald wir ein Match finden, meldet sich dein Bot!")
-
 def main():
     style.apply_custom_style() 
     style.render_header()
