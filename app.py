@@ -46,17 +46,14 @@ def render_founding_dashboard():
 
     st.markdown(html_content, unsafe_allow_html=True)
 
+# DAS HIER BITTE KOMPLETT LÖSCHEN:
 def get_embedding(text):
     """Verwandelt Text via lokaler KI in einen 1536-D Vektor."""
     # In app.py - Beim Speichern des Profils
     if st.form_submit_button("DNA STABILISIEREN"):
     # 1. Das Manifesto für den Worker verschlüsseln
     worker_pub_key = os.getenv("WORKER_PUBLIC_KEY")
-    # Wir nutzen die Funktion aus der neuen security.py
-    enc_for_worker = security.encrypt_for_worker(u_manifesto, worker_pub_key)
-    
-    # 2. Profil in der Haupttabelle anlegen (is_vectorized bleibt FALSE)
-    new_profile_id = db_handler.save_profile(new_data) # Du musst save_profile evtl. so anpassen, dass es die ID zurückgibt
+    # ... und so weiter ...
     
         if new_profile_id:
         # 3. Ab in die Queue!
