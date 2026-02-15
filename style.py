@@ -1,7 +1,7 @@
 import streamlit as st
 
-def apply_custom_style(): # Name angepasst an deinen app.py Call!
-    """Wiederherstellung des hellen Produktions-Looks (v0.4.2 Style)."""
+def apply_custom_style(): 
+    """Wiederherstellung des hellen Produktions-Looks mit Lesbarkeits-Fix."""
     st.markdown(
         """
         <style>
@@ -9,12 +9,16 @@ def apply_custom_style(): # Name angepasst an deinen app.py Call!
             background-color: #FFFFFF;
             color: #262730;
         }
+        
+        /* Überschriften (Basis, Identität, Suche) */
         h1, h2, h3 {
             color: #000000 !important;
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-weight: 200;
+            font-weight: 600 !important; /* Etwas dicker für bessere Sichtbarkeit */
             text-align: center;
+            letter-spacing: 1px;
         }
+
         /* Card-Optik für Formulare */
         div[data-testid="stForm"] {
             background-color: #F0F2F6;
@@ -22,10 +26,19 @@ def apply_custom_style(): # Name angepasst an deinen app.py Call!
             border-radius: 10px;
             border: 1px solid #E6E9EF;
         }
-        /* Input Felder weiß */
+
+        /* Input Felder: Hintergrund WEISS, Schrift SCHWARZ */
         .stTextInput input, .stTextArea textarea, .stSelectbox div {
             background-color: white !important;
+            color: #111111 !important; /* FIX: Schriftfarbe in den Feldern */
         }
+        
+        /* Labels (Die kleinen Texte über den Feldern) */
+        label p {
+            color: #262730 !important;
+            font-weight: 500 !important;
+        }
+
         /* Spezieller Beta-Footer Style */
         .beta-container {
             background-color: #F0F2F6;

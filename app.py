@@ -52,6 +52,16 @@ def main():
     
     render_founding_dashboard()
 
+    def main():
+        st.write("DEBUG 1: Start") # Test-Ausgabe
+        style.apply_custom_style() 
+        
+        st.write("DEBUG 2: Style geladen") # Test-Ausgabe
+        style.render_header()
+        
+        st.write("DEBUG 3: Header fertig") # Test-Ausgabe
+        render_founding_dashboard()
+
     menu = st.sidebar.selectbox("Navigation", ["Manifesto erstellen", "Login", "Q&A / Resonanz", "Über AIM", "Admin"])
 
     if menu == "Admin":
@@ -178,3 +188,6 @@ def main():
                 st.rerun()
 
     style.render_beta_footer()
+
+if __name__ == "__main__":
+    main()
