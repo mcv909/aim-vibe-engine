@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import json
 import textwrap
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -9,36 +10,36 @@ import security
 import db_handler
 import logic
 import style
-# In deiner app.py oder style.py
-import json
+
+# --- KONFIGURATION & PFADE ---
+# Absoluter Pfad zur status.json sicherstellen
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATUS_PATH = os.path.join(BASE_DIR, 'status.json')
 
 # 1. Page Config (muss immer zuerst kommen)
 st.set_page_config(page_title="aim-vibe-test", layout="wide")
 
-# 2. Styles laden
+# 2. Styles laden (WICHTIG: Prüfe, ob in style.py die Klasse .aim-ribbon definiert ist!)
 st.markdown(style.CSS_STÖRER, unsafe_allow_html=True)
 
-# 3. Der Ribbon-Check (deine neue Funktion)
+# 3. Der Ribbon-Check (Die einzig wahre Version)
 def render_ribbon():
+    if not os.path.exists(STATUS_PATH):
+        return
+        
     try:
-        with open('status.json', 'r') as f:
+        with open(STATUS_PATH, 'r') as f:
             config = json.load(f)
+        
         if config.get("msg_active"):
-            st.markdown(f'<div class="aim-störer">{config.get("msg_text")}</div>', unsafe_allow_html=True)
-    except:
-        pass
+            # Wir nutzen 'aim-ribbon' statt 'störer' wegen Encodings/Umlauten
+            st.markdown(f'<div class="aim-ribbon">{config.get("msg_text")}</div>', unsafe_allow_html=True)
+    except Exception as e:
+        # Falls es knallt, wollen wir es jetzt sehen!
+        st.error(f"Ribbon-Fehler: {e}")
 
 # 4. Ribbon ausführen
 render_ribbon()
-
-def render_ribbon():
-    try:
-        with open('status.json', 'r') as f:
-            config = json.load(f)
-        if config.get("msg_active"):
-            st.markdown(f'<div class="aim-störer">{config.get("msg_text")}</div>', unsafe_allow_html=True)
-    except:
-        pass # Wenn die Datei fehlt, bleibt die UI sauber
 
 load_dotenv()
 

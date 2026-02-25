@@ -84,7 +84,7 @@ def render_beta_footer():
 CSS_STÖRER = """
 <style>
 /* Der AIM Info-Ribbon oben rechts */
-.aim-störer {
+.aim-ribbon {
     position: fixed;
     top: 20px;
     right: -35px;
