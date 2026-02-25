@@ -9,6 +9,36 @@ import security
 import db_handler
 import logic
 import style
+# In deiner app.py oder style.py
+import json
+
+# 1. Page Config (muss immer zuerst kommen)
+st.set_page_config(page_title="aim-vibe-test", layout="wide")
+
+# 2. Styles laden
+st.markdown(style.CSS_STÖRER, unsafe_allow_html=True)
+
+# 3. Der Ribbon-Check (deine neue Funktion)
+def render_ribbon():
+    try:
+        with open('status.json', 'r') as f:
+            config = json.load(f)
+        if config.get("msg_active"):
+            st.markdown(f'<div class="aim-störer">{config.get("msg_text")}</div>', unsafe_allow_html=True)
+    except:
+        pass
+
+# 4. Ribbon ausführen
+render_ribbon()
+
+def render_ribbon():
+    try:
+        with open('status.json', 'r') as f:
+            config = json.load(f)
+        if config.get("msg_active"):
+            st.markdown(f'<div class="aim-störer">{config.get("msg_text")}</div>', unsafe_allow_html=True)
+    except:
+        pass # Wenn die Datei fehlt, bleibt die UI sauber
 
 load_dotenv()
 

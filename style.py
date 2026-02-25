@@ -78,3 +78,25 @@ def render_beta_footer():
         </div>
         """, unsafe_allow_html=True
     )
+
+# In style.py
+
+CSS_STÖRER = """
+<style>
+/* Der AIM Info-Ribbon oben rechts */
+.aim-störer {
+    position: fixed;
+    top: 20px;
+    right: -35px;
+    background-color: #ff4b4b; /* Warn-Rot */
+    color: white;
+    padding: 5px 40px;
+    transform: rotate(45deg);
+    z-index: 1000;
+    font-weight: bold;
+    font-family: 'Courier New', Courier, monospace;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    pointer-events: none; /* Klicks gehen durch auf die App */
+}
+</style>
+"""
