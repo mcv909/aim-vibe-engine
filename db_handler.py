@@ -56,7 +56,6 @@ def get_connection():
     )
 
 def init_db():
-    """Initialisiert die Datenbank-Struktur (Einmalig/Idempotent)."""
     conn = get_connection()
     cur = conn.cursor()
     try:
@@ -69,18 +68,27 @@ def init_db():
                 contact_enc TEXT,
                 password_hash TEXT,
                 manifesto_enc TEXT,
-                vector_string vector(1536),
+                vibe_vector vector(1536),  -- Name angepasst an save_profile
                 is_vectorized BOOLEAN DEFAULT false,
                 is_active BOOLEAN DEFAULT true,
-                early_adopter BOOLEAN DEFAULT false,
+                early_adopter BOOLEAN DEFAULT true,
                 coords JSONB,
                 stature TEXT,
                 target_stature TEXT[],
                 radius INTEGER DEFAULT 50,
+                u_age INTEGER,             -- Neue Felder ergänzt
+                u_gender TEXT,
+                u_looking_for TEXT,
+                u_age_min INTEGER,
+                u_age_max INTEGER,
+                u_intent TEXT,
+                u_height INTEGER,
+                u_target_height_min INTEGER,
+                u_target_height_max INTEGER,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_vector ON profiles USING hnsw (vector_string vector_cosine_ops);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_vector ON profiles USING hnsw (vibe_vector vector_cosine_ops);")
         conn.commit()
     except Exception as e:
         print(f"DB-Init Fehler: {e}")
