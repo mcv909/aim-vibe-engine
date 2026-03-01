@@ -72,7 +72,7 @@ def init_db():
                 is_vectorized BOOLEAN DEFAULT false,
                 is_active BOOLEAN DEFAULT true,
                 early_adopter BOOLEAN DEFAULT true,
-                coords JSONB,
+                coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
                 stature TEXT,
                 target_stature TEXT[],
                 radius INTEGER DEFAULT 50,
