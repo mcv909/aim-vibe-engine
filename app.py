@@ -10,6 +10,17 @@ import security
 import db_handler
 import logic
 import style
+import subprocess
+
+def get_git_hash():
+    try:
+        # Holt die ersten 7 Zeichen der aktuellen Commit-ID
+        return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+    except:
+        return "Unknown"
+
+# In der Sidebar oder im Footer anzeigen
+st.sidebar.markdown(f"**System-DNA:** `{get_git_hash()}`")
 
 # --- KONFIGURATION & PFADE ---
 # Absoluter Pfad zur status.json sicherstellen
