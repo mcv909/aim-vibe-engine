@@ -22,9 +22,6 @@ def get_system_dna():
 # In der Sidebar anzeigen
 st.sidebar.markdown(f"**System-DNA:** `{get_system_dna()}`")
 
-# In der Sidebar oder im Footer anzeigen
-st.sidebar.markdown(f"**System-DNA:** `{get_git_hash()}`")
-
 # --- KONFIGURATION & PFADE ---
 # Absoluter Pfad zur status.json sicherstellen
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
