@@ -12,18 +12,29 @@ from cryptography.hazmat.primitives import serialization
 import base64
 
 def encrypt_for_worker(text, public_key_pem):
-    """Verschlüsselt Text mit dem RSA Public Key des Workers."""
+    """Hybride Verschlüsselung: Manifesto per AES, AES-Key per RSA."""
     if not text or not public_key_pem: return None
+    
+    # 1. AES-Key generieren & Manifesto verschlüsseln
+    aes_key = Fernet.generate_key()
+    cipher_aes = Fernet(aes_key)
+    encrypted_text = cipher_aes.encrypt(text.encode())
+    
+    # 2. RSA Public Key laden & AES-Key verschlüsseln
     pub_key = serialization.load_pem_public_key(public_key_pem.encode())
-    encrypted = pub_key.encrypt(
-        text.encode(),
+    encrypted_aes_key = pub_key.encrypt(
+        aes_key,
         padding.OAEP(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
             algorithm=hashes.SHA256(),
             label=None
         )
     )
-    return base64.b64encode(encrypted).decode()
+    
+    # 3. Paket schnüren: [Verschlüsselter Key]:[Verschlüsseltes Manifesto]
+    # Das Format muss dein Worker (aim_worker.py) später wieder trennen können!
+    package = base64.b64encode(encrypted_aes_key).decode() + ":" + encrypted_text.decode()
+    return package
 
 # Initialisierung des Argon2-Hashers
 ph = PasswordHasher()

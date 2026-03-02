@@ -165,8 +165,18 @@ def main():
         st.session_state.manifesto_buffer = manifesto
 
         if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):
-            if u_tid == 0 or not u_name or not u_location or len(manifesto) < 10:
-                st.warning("Pflichtfelder prüfen!")
+            # Einzelprüfung für bessere User-Experience
+            if u_tid == 0:
+                st.warning("Deine Telegram-ID fehlt noch!")
+                return
+            if not u_name:
+                st.warning("Ohne Name kein Anker – wie sollen wir dich nennen?")
+                return
+            if not u_location:
+                st.warning("Wo steckst du? Der Standort fehlt.")
+                return
+            if len(manifesto) < 10:
+                st.warning("Bitte mehr Butter bei die Fisch! Dein Manifesto ist zu kurz ;)")
                 return
 
             with st.spinner("Lokalisiere & Übertrage..."):
