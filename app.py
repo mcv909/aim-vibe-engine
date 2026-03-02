@@ -182,7 +182,7 @@ def main():
                     'password_hash': security.hash_key(v_key),
                     'manifesto_enc': security.encrypt_data(manifesto, v_key),
                     'vector': None, # Initial leer, M4 übernimmt
-                    'coords': coords,
+                    'coords_json': coords,
                     'stature': u_stature,
                     'target_stature': ", ".join(u_target_stature),
                     'radius': u_radius,
