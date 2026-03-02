@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from psycopg2 import errors # Ganz oben ergänzen
 import os
 import json
 from dotenv import load_dotenv # <--- DAS FEHLTE!
@@ -134,13 +135,20 @@ def save_profile(data):
             data['u_height'], data['u_target_height_min'], data['u_target_height_max'],
             data.get('early_adopter', True)
         ))
+
         new_uuid = cur.fetchone()[0]
         conn.commit()
-        return new_uuid
+        return new_uuid, "success" # Wir geben jetzt ein Status-Tupel zurück
+    except errors.UniqueViolation as e:
+        conn.rollback()
+        # Wir extrahieren, welches Feld genau doppelt ist
+        if "telegram_id" in str(e): return None, "duplicate_id"
+        if "name_enc" in str(e): return None, "duplicate_name"
+        return None, "duplicate_entry"
     except Exception as e:
         print(f"Fehler beim Speichern: {e}")
         conn.rollback()
-        return None
+        return None, "error"
     finally:
         cur.close()
         conn.close()
