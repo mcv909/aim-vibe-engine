@@ -209,18 +209,32 @@ def main():
                     'early_adopter': True
                 }
                 
-                new_id = db_handler.save_profile(data)
-                if new_id:
+                # --- DER FINALE VERSIGELUNGS-BLOCK ---
+                # Wir entpacken die Rückgabe: ID und den spezifischen Status
+                profile_id, status = db_handler.save_profile(data)
+
+                if status == "success":
+                    # Nur bei Erfolg geht es weiter zur Verschlüsselung und Queue
                     pub_key = os.getenv("WORKER_PUBLIC_KEY")
                     enc_manifesto = security.encrypt_for_worker(manifesto, pub_key)
-                    if db_handler.add_to_embedding_queue(new_id, enc_manifesto):
+                    
+                    # WICHTIG: Hier wird nur die profile_id übergeben, kein Tupel!
+                    if db_handler.add_to_embedding_queue(profile_id, enc_manifesto):
                         st.success(f"DNA stabilisiert, {u_name}!")
                         st.info("Dein 1536-D Vibe wird lokal berechnet.")
                         st.balloons()
                     else:
-                        st.error("Fehler beim Queue-Eintrag.")
+                        st.error("DNA gesichert, aber Fehler beim Queue-Eintrag. AIM-Technik ist informiert.")
+
+                elif status == "duplicate_id":
+                    st.error("Diese Telegram-ID ist bereits im Orbit. Willst du dich einloggen?")
+
+                elif status == "duplicate_contact":
+                    st.error("Dieser Kontakt (@Telegram) wird bereits von einem anderen Profil genutzt.")
+
                 else:
-                    st.error("Datenbank-Fehler beim Versiegeln.")
+                    # Allgemeiner Fall für "error" oder unbekannte Probleme
+                    st.error(f"Datenbank-Fehler beim Versiegeln: {status}")
 
     elif menu == "Login":
         st.subheader("Resonanz-Zentrale")

@@ -138,12 +138,12 @@ def save_profile(data):
 
         new_uuid = cur.fetchone()[0]
         conn.commit()
-        return new_uuid, "success" # Wir geben jetzt ein Status-Tupel zurück
+        return new_uuid, "success" # Gibt UUID und Status zurück
     except errors.UniqueViolation as e:
         conn.rollback()
-        # Wir extrahieren, welches Feld genau doppelt ist
-        if "telegram_id" in str(e): return None, "duplicate_id"
-        if "name_enc" in str(e): return None, "duplicate_name"
+        err_msg = str(e)
+        if "telegram_id" in err_msg: return None, "duplicate_id"
+        if "contact_enc" in err_msg: return None, "duplicate_contact" # Neu!
         return None, "duplicate_entry"
     except Exception as e:
         print(f"Fehler beim Speichern: {e}")
