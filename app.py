@@ -12,12 +12,15 @@ import logic
 import style
 import subprocess
 
-def get_git_hash():
+def get_system_dna():
     try:
-        # Holt die ersten 7 Zeichen der aktuellen Commit-ID
-        return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
-    except:
-        return "Unknown"
+        # %h = Kurz-Hash, %s = Betreffzeile der Commit-Message
+        return subprocess.check_output(['git', 'log', '-1', '--format=%h | %s']).decode('utf-8').strip()
+    except Exception:
+        return "DNA-Sequenz korrupt"
+
+# In der Sidebar anzeigen
+st.sidebar.markdown(f"**System-DNA:** `{get_system_dna()}`")
 
 # In der Sidebar oder im Footer anzeigen
 st.sidebar.markdown(f"**System-DNA:** `{get_git_hash()}`")
