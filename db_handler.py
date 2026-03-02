@@ -56,6 +56,7 @@ def get_connection():
     )
 
 def init_db():
+    """Initialisiert die Datenbank-Struktur mit 1536 Dimensionen."""
     conn = get_connection()
     cur = conn.cursor()
     try:
@@ -67,16 +68,16 @@ def init_db():
                 name_enc TEXT,
                 contact_enc TEXT,
                 password_hash TEXT,
-                manifesto_enc TEXT,
-                vibe_vector vector(1536),  -- Name angepasst an save_profile
+                manifest_enc TEXT,
+                vibe_vector vector(1536),
                 is_vectorized BOOLEAN DEFAULT false,
                 is_active BOOLEAN DEFAULT true,
                 early_adopter BOOLEAN DEFAULT true,
-                coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
+                coords JSONB,
                 stature TEXT,
                 target_stature TEXT[],
                 radius INTEGER DEFAULT 50,
-                u_age INTEGER,             -- Neue Felder ergänzt
+                u_age INTEGER,
                 u_gender TEXT,
                 u_looking_for TEXT,
                 u_age_min INTEGER,
@@ -98,10 +99,22 @@ def init_db():
         conn.close()
 
 def save_profile(data):
-    """Speichert ein Profil und gibt die neue UUID zurück."""
+    """Speichert ein Profil und löst Koordinaten- & Array-Konflikte."""
     conn = get_connection()
     cur = conn.cursor()
     try:
+        # FIX 1: JSON-Konvertierung für die JSONB-Spalte 'coords'
+        # Wir nehmen 'coords' oder 'coords_json', je nachdem was app.py liefert
+        raw_coords = data.get('coords') or data.get('coords_json')
+        coords_json = json.dumps(raw_coords) if raw_coords else None
+        
+        # FIX 2: Sicherstellen, dass target_stature eine echte Liste ist (für TEXT[])
+        ts_data = data.get('target_stature', [])
+        if isinstance(ts_data, str):
+            ts_list = [s.strip() for s in ts_data.split(',')]
+        else:
+            ts_list = ts_data
+
         cur.execute("""
             INSERT INTO profiles (
                 telegram_id, name_enc, contact_enc, password_hash, 
@@ -115,8 +128,8 @@ def save_profile(data):
             ) RETURNING id; 
         """, (
             data['telegram_id'], data['name_enc'], data['contact_enc'], data['password_hash'],
-            data['manifesto_enc'], data['vector'], data.get('coords'), data['stature'],
-            data['target_stature'], data['radius'], data['u_age'], data['u_gender'],
+            data['manifesto_enc'], data['vector'], coords_json, data['stature'],
+            ts_list, data['radius'], data['u_age'], data['u_gender'],
             data['u_looking_for'], data['u_age_min'], data['u_age_max'], data['u_intent'],
             data['u_height'], data['u_target_height_min'], data['u_target_height_max'],
             data.get('early_adopter', True)

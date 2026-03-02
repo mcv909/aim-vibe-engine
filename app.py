@@ -175,21 +175,27 @@ def main():
                     st.error("Standort nicht gefunden.")
                     return
 
+  
                 data = {
                     'telegram_id': u_tid,
                     'name_enc': security.encrypt_data(u_name, v_key),
                     'contact_enc': security.encrypt_data(u_contact, v_key),
                     'password_hash': security.hash_key(v_key),
                     'manifesto_enc': security.encrypt_data(manifesto, v_key),
-                    'vector': None, # Initial leer, M4 übernimmt
-                    'coords_json': coords,
+                    'vector': None, 
+                    'coords': coords,            # Einfach die Liste [lat, lon] lassen
                     'stature': u_stature,
-                    'target_stature': ", ".join(u_target_stature),
+                    'target_stature': u_target_stature, # Die Liste direkt übergeben!
                     'radius': u_radius,
-                    'u_age': u_age, 'u_gender': u_gender, 'u_looking_for': u_looking_for,
-                    'u_age_min': u_age_range[0], 'u_age_max': u_age_range[1],
-                    'u_intent': u_intent, 'u_height': u_height,
-                    'u_target_height_min': u_target_height[0], 'u_target_height_max': u_target_height[1],
+                    'u_age': u_age, 
+                    'u_gender': u_gender, 
+                    'u_looking_for': u_looking_for,
+                    'u_age_min': u_age_range[0], 
+                    'u_age_max': u_age_range[1],
+                    'u_intent': u_intent, 
+                    'u_height': u_height,
+                    'u_target_height_min': u_target_height[0], 
+                    'u_target_height_max': u_target_height[1],
                     'early_adopter': True
                 }
                 
