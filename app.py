@@ -211,7 +211,11 @@ def main():
                 
                 # --- DER FINALE VERSIGELUNGS-BLOCK ---
                 # Wir entpacken die Rückgabe: ID und den spezifischen Status
-                profile_id, status = db_handler.save_profile(data)
+                # Wir laden den Key für die hybride Verschlüsselung
+                pub_key = os.getenv("WORKER_PUBLIC_KEY")
+
+                # Der neue, atomare Aufruf mit allen drei benötigten Variablen
+                profile_id, status = db_handler.save_profile_atomic(data, manifesto, pub_key)
 
                 if status == "success":
                     # Nur bei Erfolg geht es weiter zur Verschlüsselung und Queue
