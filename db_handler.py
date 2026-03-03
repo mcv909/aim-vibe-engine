@@ -294,37 +294,41 @@ def add_to_embedding_queue(profile_id, encrypted_text):
         cur.close()
         conn.close()
 
-def fetch_pending_jobs():
-    """Holt die aktuellsten pending Jobs aus der Queue (Latest-Only)."""
-    conn = db_handler.get_connection()
-    cur = conn.cursor(cursor_factory=db_handler.RealDictCursor) # Für lesbare Dicts
+def fetch_pending_jobs_latest_only():
+    """Holt pro User nur den aktuellsten 'pending' Job."""
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        # Der magische SQL-Befehl: 
-        # 1. Nimm nur 'pending'
-        # 2. Gruppiere nach profile_id (DISTINCT ON)
-        # 3. Sortiere so, dass der neueste (DESC) oben liegt
+        # DISTINCT ON sorgt dafür, dass wir pro profile_id nur eine Zeile bekommen.
+        # ORDER BY sorgt dafür, dass es die NEUESTE (DESC) ist. [cite: 2026-03-03]
         cur.execute("""
-            SELECT DISTINCT ON (profile_id) 
-                id, 
-                profile_id, 
-                encrypted_manifesto 
+            SELECT DISTINCT ON (profile_id) id, profile_id, encrypted_manifesto 
             FROM embedding_queue 
             WHERE status = 'pending' 
             ORDER BY profile_id, created_at DESC;
         """)
-        jobs = cur.fetchall()
+        return cur.fetchall()
+    finally:
+        cur.close()
+        conn.close()
+
+def finalize_vibe_vector(profile_id, task_id, vector):
+    """Schreibt Vektor ins Profil und räumt die Queue für diesen User komplett auf."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        # 1. Vektor speichern [cite: 2026-02-07]
+        cur.execute("UPDATE profiles SET vibe_vector = %s, is_vectorized = TRUE WHERE id = %s", (vector, profile_id))
         
-        # Markiere die abgeholten Jobs direkt als 'processing'
-        if jobs:
-            job_ids = [job['id'] for job in jobs]
-            cur.execute("UPDATE embedding_queue SET status = 'processing' WHERE id = ANY(%s)", (job_ids,))
-            conn.commit()
-            
-        return jobs
+        # 2. ALLE pending Jobs dieses Users löschen (da wir ja den neuesten berechnet haben) [cite: 2026-03-03]
+        cur.execute("DELETE FROM embedding_queue WHERE profile_id = %s", (profile_id,))
+        
+        conn.commit()
+        return True
     except Exception as e:
-        print(f"Fehler beim Job-Fetch: {e}")
+        print(f"Finalisierungs-Fehler: {e}")
         conn.rollback()
-        return []
+        return False
     finally:
         cur.close()
         conn.close()
