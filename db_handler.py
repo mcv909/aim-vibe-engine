@@ -150,15 +150,15 @@ def save_profile_atomic(data, manifesto_raw, pub_key):
         cur.execute("""
             INSERT INTO embedding_queue (profile_id, encrypted_manifesto, status)
             VALUES (%s, %s, 'pending');
-        """, (p_id, enc_manifesto)) [cite: 2026-03-03]
+        """, (p_id, enc_manifesto))
 
         conn.commit()
-        return p_id, "success" [cite: 2026-03-03]
+        return p_id, "success"
 
     except Exception as e:
         conn.rollback()
         print(f"Atomarer Fehler: {e}")
-        return None, str(e) [cite: 2026-03-03]
+        return None, str(e)
     finally:
         cur.close()
         conn.close()
