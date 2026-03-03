@@ -99,56 +99,66 @@ def init_db():
         cur.close()
         conn.close()
 
-def save_profile(data):
-    """Speichert ein Profil und löst Koordinaten- & Array-Konflikte."""
+def save_profile_atomic(data, manifesto_raw, pub_key):
+    """
+    Speichert das Profil und den Queue-Eintrag atomar. 
+    Nutzt ein UPSERT für das Profil und ein INSERT für die Queue.
+    """
     conn = get_connection()
     cur = conn.cursor()
     try:
-        # FIX 1: JSON-Konvertierung für die JSONB-Spalte 'coords'
-        # Wir nehmen 'coords' oder 'coords_json', je nachdem was app.py liefert
+        # 1. Hybride Verschlüsselung des Manifestos erzeugen
+        enc_manifesto = security.encrypt_for_worker(manifesto_raw, pub_key)
+        
+        # 2. Koordinaten und Statur-Liste vorbereiten
         raw_coords = data.get('coords') or data.get('coords_json')
         coords_json = json.dumps(raw_coords) if raw_coords else None
         
-        # FIX 2: Sicherstellen, dass target_stature eine echte Liste ist (für TEXT[])
         ts_data = data.get('target_stature', [])
-        if isinstance(ts_data, str):
-            ts_list = [s.strip() for s in ts_data.split(',')]
-        else:
-            ts_list = ts_data
+        ts_list = [s.strip() for s in ts_data.split(',')] if isinstance(ts_data, str) else ts_data
 
+        # 3. Profil-UPSERT: Erstellt Profil oder aktualisiert bestehendes
         cur.execute("""
             INSERT INTO profiles (
                 telegram_id, name_enc, contact_enc, password_hash, 
-                manifesto_enc, vibe_vector, coords, stature, 
-                target_stature, radius, u_age, u_gender, 
-                u_looking_for, u_age_min, u_age_max, u_intent, 
-                u_height, u_target_height_min, u_target_height_max, 
-                early_adopter
+                manifesto_enc, coords, stature, target_stature, 
+                radius, u_age, u_gender, u_looking_for, 
+                u_age_min, u_age_max, u_intent, u_height, 
+                u_target_height_min, u_target_height_max, early_adopter
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) RETURNING id; 
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            ) ON CONFLICT (telegram_id) DO UPDATE SET
+                name_enc = EXCLUDED.name_enc,
+                contact_enc = EXCLUDED.contact_enc,
+                manifesto_enc = EXCLUDED.manifesto_enc,
+                coords = EXCLUDED.coords,
+                stature = EXCLUDED.stature,
+                target_stature = EXCLUDED.target_stature,
+                u_age = EXCLUDED.u_age,
+                u_intent = EXCLUDED.u_intent
+            RETURNING id;
         """, (
             data['telegram_id'], data['name_enc'], data['contact_enc'], data['password_hash'],
-            data['manifesto_enc'], data['vector'], coords_json, data['stature'],
-            ts_list, data['radius'], data['u_age'], data['u_gender'],
-            data['u_looking_for'], data['u_age_min'], data['u_age_max'], data['u_intent'],
-            data['u_height'], data['u_target_height_min'], data['u_target_height_max'],
-            data.get('early_adopter', True)
+            enc_manifesto, coords_json, data['stature'], ts_list,
+            data['radius'], data['u_age'], data['u_gender'], data['u_looking_for'],
+            data['u_age_min'], data['u_age_max'], data['u_intent'], data['u_height'],
+            data['u_target_height_min'], data['u_target_height_max'], data.get('early_adopter', True)
         ))
+        p_id = cur.fetchone()[0]
 
-        new_uuid = cur.fetchone()[0]
+        # 4. Queue-Eintrag: Stumpfes INSERT für die Historie
+        cur.execute("""
+            INSERT INTO embedding_queue (profile_id, encrypted_manifesto, status)
+            VALUES (%s, %s, 'pending');
+        """, (p_id, enc_manifesto)) [cite: 2026-03-03]
+
         conn.commit()
-        return new_uuid, "success" # Gibt UUID und Status zurück
-    except errors.UniqueViolation as e:
-        conn.rollback()
-        err_msg = str(e)
-        if "telegram_id" in err_msg: return None, "duplicate_id"
-        if "contact_enc" in err_msg: return None, "duplicate_contact" # Neu!
-        return None, "duplicate_entry"
+        return p_id, "success" [cite: 2026-03-03]
+
     except Exception as e:
-        print(f"Fehler beim Speichern: {e}")
         conn.rollback()
-        return None, "error"
+        print(f"Atomarer Fehler: {e}")
+        return None, str(e) [cite: 2026-03-03]
     finally:
         cur.close()
         conn.close()
@@ -256,6 +266,41 @@ def add_to_embedding_queue(profile_id, encrypted_text):
         print(f"Fehler in der Queue: {e}")
         conn.rollback()
         return False
+    finally:
+        cur.close()
+        conn.close()
+
+def fetch_pending_jobs():
+    """Holt die aktuellsten pending Jobs aus der Queue (Latest-Only)."""
+    conn = db_handler.get_connection()
+    cur = conn.cursor(cursor_factory=db_handler.RealDictCursor) # Für lesbare Dicts
+    try:
+        # Der magische SQL-Befehl: 
+        # 1. Nimm nur 'pending'
+        # 2. Gruppiere nach profile_id (DISTINCT ON)
+        # 3. Sortiere so, dass der neueste (DESC) oben liegt
+        cur.execute("""
+            SELECT DISTINCT ON (profile_id) 
+                id, 
+                profile_id, 
+                encrypted_manifesto 
+            FROM embedding_queue 
+            WHERE status = 'pending' 
+            ORDER BY profile_id, created_at DESC;
+        """)
+        jobs = cur.fetchall()
+        
+        # Markiere die abgeholten Jobs direkt als 'processing'
+        if jobs:
+            job_ids = [job['id'] for job in jobs]
+            cur.execute("UPDATE embedding_queue SET status = 'processing' WHERE id = ANY(%s)", (job_ids,))
+            conn.commit()
+            
+        return jobs
+    except Exception as e:
+        print(f"Fehler beim Job-Fetch: {e}")
+        conn.rollback()
+        return []
     finally:
         cur.close()
         conn.close()

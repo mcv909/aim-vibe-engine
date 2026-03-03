@@ -60,7 +60,7 @@ def render_header():
         """
         <div style="text-align: center; margin-top: 50px; margin-bottom: 20px;">
             <h1 style="letter-spacing: 5px;">[ I  A  M ]  |  A I M</h1>
-            <p style="opacity: 0.6;">AI-Matching basierend auf Resonanz, nicht auf Checklisten.</p>
+            <p style="opacity: 0.6;">AI-Matching basierend auf Resonanz.</p>
         </div>
         """, unsafe_allow_html=True
     )
