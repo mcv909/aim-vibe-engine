@@ -19,18 +19,40 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
 def load_db():
-    """Überbrückt die Postgres-DB für die app.py Matching-Logik."""
+    """Lädt alle Profile und entschlüsselt die Basis-Daten für die Admin-Ansicht."""
     conn = get_connection()
-    # RealDictCursor sorgt dafür, dass wir Dictionaries wie früher bekommen
+    # Wir nutzen RealDictCursor, damit wir über Spaltennamen zugreifen können
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        cur.execute("SELECT * FROM profiles WHERE is_active = true;")
+        cur.execute("""
+            SELECT id, telegram_id, name_enc, contact_enc, coords, 
+                   u_age, u_gender, created_at 
+            FROM profiles 
+            ORDER BY created_at DESC;
+        """)
         rows = cur.fetchall()
-        # Wir müssen 'password_hash' zu 'key_hash' umbenennen für app.py Kompatibilität
+        
+        # Die Daten für die UI aufbereiten
+        decrypted_profiles = []
         for row in rows:
-            row['key_hash'] = row.pop('password_hash')
-#            row['name'] = decrypt_data(row.pop('name_enc')) # Direkt entschlüsseln für UI
-        return rows
+            # Wir wandeln das Row-Objekt in ein normales Dict um
+            p = dict(row)
+            try:
+                # Entschlüsselung der Basis-Daten
+                p['name'] = security.decrypt_data(p['name_enc'])
+                p['contact'] = security.decrypt_data(p['contact_enc'])
+            except Exception as e:
+                # Falls ein Key fehlt oder Daten korrupt sind
+                p['name'] = "[Decryption Error]"
+                p['contact'] = "[Hidden]"
+                print(f"Admin-Ansicht Fehler für ID {p['id']}: {e}")
+            
+            decrypted_profiles.append(p)
+            
+        return decrypted_profiles
+    except Exception as e:
+        print(f"Fehler beim Laden der Admin-DB: {e}")
+        return []
     finally:
         cur.close()
         conn.close()
