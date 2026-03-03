@@ -1,10 +1,10 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from psycopg2 import errors # Ganz oben ergänzen
+from psycopg2 import errors
 import os
 import json
-from dotenv import load_dotenv # <--- DAS FEHLTE!
-from security import decrypt_data # <--- Wichtig für load_db()
+from dotenv import load_dotenv
+import security  # Wichtig: Das gesamte Modul importieren! [cite: 2026-03-03]
 
 # HIER DIREKT LADEN
 load_dotenv()
@@ -100,24 +100,20 @@ def init_db():
         conn.close()
 
 def save_profile_atomic(data, manifesto_raw, pub_key):
-    """
-    Speichert das Profil und den Queue-Eintrag atomar. 
-    Nutzt ein UPSERT für das Profil und ein INSERT für die Queue.
-    """
+    """Speichert Profil und Queue-Eintrag in einer einzigen Transaktion."""
     conn = get_connection()
     cur = conn.cursor()
     try:
-        # 1. Hybride Verschlüsselung des Manifestos erzeugen
+        # 1. Hybride Verschlüsselung erzeugen
         enc_manifesto = security.encrypt_for_worker(manifesto_raw, pub_key)
         
-        # 2. Koordinaten und Statur-Liste vorbereiten
+        # 2. Daten für DB vorbereiten
         raw_coords = data.get('coords') or data.get('coords_json')
         coords_json = json.dumps(raw_coords) if raw_coords else None
-        
         ts_data = data.get('target_stature', [])
         ts_list = [s.strip() for s in ts_data.split(',')] if isinstance(ts_data, str) else ts_data
 
-        # 3. Profil-UPSERT: Erstellt Profil oder aktualisiert bestehendes
+        # 3. Profil-UPSERT (In die 'profiles' Tabelle!) [cite: 2026-03-03]
         cur.execute("""
             INSERT INTO profiles (
                 telegram_id, name_enc, contact_enc, password_hash, 
@@ -146,7 +142,7 @@ def save_profile_atomic(data, manifesto_raw, pub_key):
         ))
         p_id = cur.fetchone()[0]
 
-        # 4. Queue-Eintrag: Stumpfes INSERT für die Historie
+        # 4. Queue-Eintrag (Stumpfes INSERT für die Historie) [cite: 2026-03-03]
         cur.execute("""
             INSERT INTO embedding_queue (profile_id, encrypted_manifesto, status)
             VALUES (%s, %s, 'pending');
@@ -155,10 +151,16 @@ def save_profile_atomic(data, manifesto_raw, pub_key):
         conn.commit()
         return p_id, "success"
 
+    except errors.UniqueViolation as e:
+        conn.rollback()
+        err_msg = str(e)
+        if "telegram_id" in err_msg: return None, "duplicate_id"
+        if "contact_enc" in err_msg: return None, "duplicate_contact"
+        return None, "duplicate_entry"
     except Exception as e:
         conn.rollback()
         print(f"Atomarer Fehler: {e}")
-        return None, str(e)
+        return None, "system_error"
     finally:
         cur.close()
         conn.close()
