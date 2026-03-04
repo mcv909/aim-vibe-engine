@@ -12,24 +12,30 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import base64
 
-def decrypt_for_worker(encrypted_data_b64, private_key_pem):
-    """Entschlüsselt das hybride Paket für den Worker."""
-    # Private Key Objekt laden
+def encrypt_for_worker(cleartext, public_key_pem):
+    """Verschlüsselt das Manifesto hybrid (RSA + AES)."""
     from cryptography.hazmat.primitives import serialization
-    private_key = serialization.load_pem_private_key(
-        private_key_pem.encode() if isinstance(private_key_pem, str) else private_key_pem,
-        password=None
-    )
+    from cryptography.hazmat.primitives.asymmetric import padding
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    import os
+    import base64
 
-    # Paket dekodieren
-    package = base64.b64decode(encrypted_data_b64)
+    # 1. AES Key (32 Bytes = 256 Bit) & IV generieren
+    aes_key = os.urandom(32) # WICHTIG: Rohdaten, kein Base64! [cite: 2026-03-04]
+    iv = os.urandom(16)
     
-    # RSA-Teil (die ersten 256 Bytes sind der verschlüsselte AES-Key)
-    encrypted_aes_key = package[:256]
-    ciphertext = package[256:]
+    # 2. Manifesto mit AES (CFB Mode) verschlüsseln
+    cipher = Cipher(algorithms.AES(aes_key), modes.CFB(iv))
+    encryptor = cipher.encryptor()
+    encrypted_manifesto = encryptor.update(cleartext.encode()) + encryptor.finalize()
     
-    aes_key = private_key.decrypt(
-        encrypted_aes_key,
+    # 3. Den rohen AES-Key mit RSA verschlüsseln
+    public_key = serialization.load_pem_public_key(
+        public_key_pem.encode() if isinstance(public_key_pem, str) else public_key_pem
+    )
+    encrypted_aes_key = public_key.encrypt(
+        aes_key, # Hier gehen jetzt exakt 32 Bytes rein
         padding.OAEP(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
             algorithm=hashes.SHA256(),
@@ -37,12 +43,9 @@ def decrypt_for_worker(encrypted_data_b64, private_key_pem):
         )
     )
     
-    # AES-Entschlüsselung des Manifestos
-    iv = ciphertext[:16]
-    actual_ciphertext = ciphertext[16:]
-    cipher = Cipher(algorithms.AES(aes_key), modes.CFB(iv))
-    decryptor = cipher.decryptor()
-    return (decryptor.update(actual_ciphertext) + decryptor.finalize()).decode('utf-8')
+    # 4. Paket packen: RSA (256 Bytes) + IV (16 Bytes) + Ciphertext
+    package = encrypted_aes_key + iv + encrypted_manifesto
+    return base64.b64encode(package).decode('utf-8')
 
 # Initialisierung des Argon2-Hashers
 ph = PasswordHasher()

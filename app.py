@@ -214,30 +214,18 @@ def main():
                 # Wir laden den Key für die hybride Verschlüsselung
                 pub_key = os.getenv("WORKER_PUBLIC_KEY")
 
-                # Der neue, atomare Aufruf mit allen drei benötigten Variablen
+                # Der atomare Aufruf erledigt ALLES (Profil + Verschlüsselung + Queue)
                 profile_id, status = db_handler.save_profile_atomic(data, manifesto, pub_key)
 
                 if status == "success":
-                    # Nur bei Erfolg geht es weiter zur Verschlüsselung und Queue
-                    pub_key = os.getenv("WORKER_PUBLIC_KEY")
-                    enc_manifesto = security.encrypt_for_worker(manifesto, pub_key)
-                    
-                    # WICHTIG: Hier wird nur die profile_id übergeben, kein Tupel!
-                    if db_handler.add_to_embedding_queue(profile_id, enc_manifesto):
-                        st.success(f"DNA stabilisiert, {u_name}!")
-                        st.info("Dein 1536-D Vibe wird lokal berechnet.")
-                        st.balloons()
-                    else:
-                        st.error("DNA gesichert, aber Fehler beim Queue-Eintrag. AIM-Technik ist informiert.")
-
+                    st.success(f"DNA stabilisiert, {u_name}! Der Marc-Anker sitzt.")
+                    st.info("Dein 1536-D Vibe wird lokal berechnet.")
+                    st.balloons()
                 elif status == "duplicate_id":
                     st.error("Diese Telegram-ID ist bereits im Orbit. Willst du dich einloggen?")
-
                 elif status == "duplicate_contact":
                     st.error("Dieser Kontakt (@Telegram) wird bereits von einem anderen Profil genutzt.")
-
                 else:
-                    # Allgemeiner Fall für "error" oder unbekannte Probleme
                     st.error(f"Datenbank-Fehler beim Versiegeln: {status}")
 
     elif menu == "Login":
