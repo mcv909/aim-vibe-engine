@@ -17,6 +17,7 @@ model_id = 'Alibaba-NLP/gte-Qwen2-1.5B-instruct'
 print(f"Lade und patche {model_id}...")
 config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
 config.rope_theta = 10000.0 # Der Fix für den Fehler [cite: 2026-03-03]
+config.use_cache = False  # <--- DIESE ZEILE HINZUFÜGEN (Fix für DynamicCache) [cite: 2026-03-04]
 
 # Wir laden das Modell physikalisch mit der korrekten Config
 transformer_model = AutoModel.from_pretrained(
