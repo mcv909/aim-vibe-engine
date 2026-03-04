@@ -111,3 +111,43 @@ def handle_hacker():
     """Der finale Rauswurf mit dem gewünschten Wording [cite: 2026-01-18]."""
     st.error("Hacker? Deine Mudda!")
     st.stop()
+
+# --- 4. WORKER-SPECIFIC HYBRID DECRYPTION ---
+def decrypt_for_worker(encrypted_data_b64, private_key_pem):
+    """
+    Entschlüsselt das vom Server kommende Paket für den lokalen AI-Worker.
+    Nutzt RSA zur Key-Übertragung und AES-256 für die Daten.
+    """
+    from cryptography.hazmat.primitives import serialization, hashes
+    from cryptography.hazmat.primitives.asymmetric import padding
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+    # Paket dekodieren
+    package = base64.b64decode(encrypted_data_b64)
+    
+    # Slicing des Pakets: 
+    # RSA-verschlüsselter AES-Key (256 Bytes) | IV (16 Bytes) | Ciphertext
+    encrypted_aes_key = package[:256]
+    iv = package[256:272]
+    ciphertext = package[272:]
+    
+    # 1. Private Key laden
+    private_key = serialization.load_pem_private_key(
+        private_key_pem.encode() if isinstance(private_key_pem, str) else private_key_pem,
+        password=None
+    )
+    
+    # 2. Den AES-Key mit RSA entschlüsseln
+    aes_key = private_key.decrypt(
+        encrypted_aes_key,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    
+    # 3. Das Manifesto mit dem AES-Key entschlüsseln (CFB Mode)
+    cipher = Cipher(algorithms.AES(aes_key), modes.CFB(iv))
+    decryptor = cipher.decryptor()
+    return (decryptor.update(ciphertext) + decryptor.finalize()).decode('utf-8')
