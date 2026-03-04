@@ -9,21 +9,27 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import base64
 
-def encrypt_for_worker(text, public_key_pem):
-    """Hybride Verschlüsselung: Manifesto per AES, AES-Key per RSA."""
-    if not text or not public_key_pem: return None
+def decrypt_for_worker(encrypted_data_b64, private_key_pem):
+    """Entschlüsselt das hybride Paket für den Worker."""
+    # Private Key Objekt laden
+    from cryptography.hazmat.primitives import serialization
+    private_key = serialization.load_pem_private_key(
+        private_key_pem.encode() if isinstance(private_key_pem, str) else private_key_pem,
+        password=None
+    )
+
+    # Paket dekodieren
+    package = base64.b64decode(encrypted_data_b64)
     
-    # 1. AES-Key generieren & Manifesto verschlüsseln
-    aes_key = Fernet.generate_key()
-    cipher_aes = Fernet(aes_key)
-    encrypted_text = cipher_aes.encrypt(text.encode())
+    # RSA-Teil (die ersten 256 Bytes sind der verschlüsselte AES-Key)
+    encrypted_aes_key = package[:256]
+    ciphertext = package[256:]
     
-    # 2. RSA Public Key laden & AES-Key verschlüsseln
-    pub_key = serialization.load_pem_public_key(public_key_pem.encode())
-    encrypted_aes_key = pub_key.encrypt(
-        aes_key,
+    aes_key = private_key.decrypt(
+        encrypted_aes_key,
         padding.OAEP(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
             algorithm=hashes.SHA256(),
@@ -31,10 +37,12 @@ def encrypt_for_worker(text, public_key_pem):
         )
     )
     
-    # 3. Paket schnüren: [Verschlüsselter Key]:[Verschlüsseltes Manifesto]
-    # Das Format muss dein Worker (aim_worker.py) später wieder trennen können!
-    package = base64.b64encode(encrypted_aes_key).decode() + ":" + encrypted_text.decode()
-    return package
+    # AES-Entschlüsselung des Manifestos
+    iv = ciphertext[:16]
+    actual_ciphertext = ciphertext[16:]
+    cipher = Cipher(algorithms.AES(aes_key), modes.CFB(iv))
+    decryptor = cipher.decryptor()
+    return (decryptor.update(actual_ciphertext) + decryptor.finalize()).decode('utf-8')
 
 # Initialisierung des Argon2-Hashers
 ph = PasswordHasher()

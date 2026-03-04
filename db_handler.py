@@ -332,3 +332,14 @@ def finalize_vibe_vector(profile_id, task_id, vector):
     finally:
         cur.close()
         conn.close()
+
+def mark_job_failed(job_id):
+    """Markiert einen Job in der Queue als gescheitert."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("UPDATE embedding_queue SET status = 'error' WHERE id = %s", (job_id,))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
