@@ -118,48 +118,54 @@ def init_db():
 
 def save_profile_atomic(data, manifesto_raw):
     """
-    Speichert das Profil und bereitet die Vektorisierung vor.
-    Nutzt Email als Anker und trennt Hard-Facts von Vektoren.
+    Speichert das vollständige Profil (Hard-Facts + Manifesto) und 
+    setzt die Flags für Mail-Aktivierung und 12-Monats-Ping.
     """
     conn = get_connection()
     cur = conn.cursor()
     try:
-        # 1. Koordinaten-Check (Wir bleiben bei JSONB für Hetzner)
+        # 1. Koordinaten-Check (Bleibt JSONB für Hetzner-Stabilität)
         coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
         
         # 2. Profil-UPSERT in 'profiles'
+        # Wir setzen is_email_verified und is_active initial auf FALSE. [cite: 2026-03-08]
         cur.execute("""
             INSERT INTO profiles (
                 email, identity, search_for, age, height, stature_id, 
-                coords, is_ukrainian, key_hash, last_seen
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                coords, is_ukrainian, key_hash, messenger_contact,
+                is_email_verified, is_active, last_interaction
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, FALSE, FALSE, CURRENT_TIMESTAMP)
             ON CONFLICT (email) DO UPDATE SET
+                identity = EXCLUDED.identity,
+                search_for = EXCLUDED.search_for,
                 age = EXCLUDED.age,
                 height = EXCLUDED.height,
                 stature_id = EXCLUDED.stature_id,
                 coords = EXCLUDED.coords,
-                last_seen = CURRENT_TIMESTAMP
+                is_ukrainian = EXCLUDED.is_ukrainian,
+                messenger_contact = EXCLUDED.messenger_contact,
+                last_interaction = CURRENT_TIMESTAMP
             RETURNING id;
         """, (
             data['email'], data['identity'], data['search_for'], 
             data['age'], data['height'], data['stature_id'], 
-            coords_json, data.get('is_ukrainian', False), data.get('key_hash')
+            coords_json, data.get('is_ukrainian', False), data.get('key_hash'),
+            data.get('messenger_contact')
         ))
         profile_id = cur.fetchone()[0]
 
-        # 3. Manifesto & Queue (Verschlüsselung für den Worker)
-        # Wir speichern den Text erst mal flach, bis der Vektor da ist.
+        # 3. Manifesto in die separate Vektor-Tabelle (Text-Ebene) [cite: 2026-03-08]
+        # Der Vektor selbst bleibt NULL, bis das MacAir rechnet. [cite: 2025-12-20, 2026-03-04]
         cur.execute("""
             INSERT INTO manifesto_vectors (profile_id, manifesto_text)
             VALUES (%s, %s)
             ON CONFLICT (profile_id) DO UPDATE SET manifesto_text = EXCLUDED.manifesto_text;
         """, (profile_id, manifesto_raw))
 
-        # 4. Ab in die Queue für das gte-Qwen2-1.5B Modell [cite: 2026-02-07]
-        # (Hier könntest du deine bestehende embedding_queue nutzen)
-        
         conn.commit()
-        return profile_id, "success"
+        # Wir geben "needs_verification" zurück, damit das Frontend weiß: Mail abschicken!
+        return profile_id, "needs_verification"
+
     except Exception as e:
         conn.rollback()
         print(f"Fehler beim Speichern: {e}")
