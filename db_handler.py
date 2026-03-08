@@ -204,31 +204,6 @@ def get_profile_by_email(email):
         cur.close()
         conn.close()
 
-def delete_profile(telegram_id):
-    """Löscht ein Profil und alle zugehörigen Matches unwiderruflich."""
-    conn = get_connection()
-    cur = conn.cursor()
-    try:
-        # Erst die Matches löschen, damit es keinen Foreign-Key-Fehler gibt
-        cur.execute("""
-            DELETE FROM matches 
-            WHERE user_a = (SELECT id FROM profiles WHERE telegram_id = %s) 
-               OR user_b = (SELECT id FROM profiles WHERE telegram_id = %s)
-        """, (telegram_id, telegram_id))
-        
-        # Dann das Profil selbst löschen
-        cur.execute("DELETE FROM profiles WHERE telegram_id = %s", (telegram_id,))
-        
-        conn.commit()
-        return True
-    except Exception as e:
-        print(f"Datenbank-Fehler beim Löschen: {e}")
-        conn.rollback()
-        return False
-    finally:
-        cur.close()
-        conn.close()
-
 def get_match_count():
     """Gibt die Gesamtanzahl der gefundenen Resonanzen zurück."""
     conn = get_connection()
@@ -326,6 +301,34 @@ def mark_job_failed(job_id):
     try:
         cur.execute("UPDATE embedding_queue SET status = 'error' WHERE id = %s", (job_id,))
         conn.commit()
+    finally:
+        cur.close()
+        conn.close()
+
+def verify_email_by_token(token):
+    """Setzt is_email_verified auf True und bereitet Vektorisierung vor."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        # 1. Profil anhand des Tokens finden und verifizieren
+        cur.execute("""
+            UPDATE profiles 
+            SET is_email_verified = TRUE, last_interaction = CURRENT_TIMESTAMP
+            WHERE verification_token = %s
+            RETURNING id;
+        """, (token,))
+        result = cur.fetchone()
+        
+        if result:
+            profile_id = result[0]
+            # 2. Hier könntest du jetzt ein Signal an die Queue senden, 
+            # dass der MacAir-Worker loslegen darf. [cite: 2025-12-20, 2026-03-04]
+            conn.commit()
+            return True, profile_id
+        return False, None
+    except Exception as e:
+        conn.rollback()
+        return False, None
     finally:
         cur.close()
         conn.close()
