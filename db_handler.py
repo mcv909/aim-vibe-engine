@@ -119,7 +119,7 @@ def init_db():
 def save_profile_atomic(data, manifesto_raw):
     """
     Speichert das Profil und bereitet die Vektorisierung vor.
-    Nutzt Email als Anker und trennt Hard-Facts von Vektoren. [cite: 2026-03-08]
+    Nutzt Email als Anker und trennt Hard-Facts von Vektoren.
     """
     conn = get_connection()
     cur = conn.cursor()
@@ -294,7 +294,7 @@ def fetch_pending_jobs_latest_only():
         conn.close()
 
 def finalize_vibe_vector(profile_id, vector):
-    """Schreibt den 1536-D Vektor in die manifesto_vectors Tabelle.""" [cite: 2026-02-07]
+    """Schreibt den 1536-D Vektor in die manifesto_vectors Tabelle.""" # [cite: 2026-02-07]
     conn = get_connection()
     cur = conn.cursor()
     try:
