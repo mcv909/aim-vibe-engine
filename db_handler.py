@@ -69,13 +69,8 @@ def get_user_count():
         conn.close()
 
 def get_connection():
-    """Baut die Verbindung zur Postgres-DB auf."""
     return psycopg2.connect(
-        dbname=DB_NAME, 
-        user=DB_USER, 
-        password=DB_PASS, 
-        host=DB_HOST, 
-        port=DB_PORT
+        dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT
     )
 
 def init_db():
@@ -121,67 +116,53 @@ def init_db():
         cur.close()
         conn.close()
 
-def save_profile_atomic(data, manifesto_raw, pub_key):
-    """Speichert Profil und Queue-Eintrag in einer einzigen Transaktion."""
+def save_profile_atomic(data, manifesto_raw):
+    """
+    Speichert das Profil und bereitet die Vektorisierung vor.
+    Nutzt Email als Anker und trennt Hard-Facts von Vektoren. [cite: 2026-03-08]
+    """
     conn = get_connection()
     cur = conn.cursor()
     try:
-        # 1. Hybride Verschlüsselung erzeugen
-        enc_manifesto = security.encrypt_for_worker(manifesto_raw, pub_key)
+        # 1. Koordinaten-Check (Wir bleiben bei JSONB für Hetzner)
+        coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
         
-        # 2. Daten für DB vorbereiten
-        raw_coords = data.get('coords') or data.get('coords_json')
-        coords_json = json.dumps(raw_coords) if raw_coords else None
-        ts_data = data.get('target_stature', [])
-        ts_list = [s.strip() for s in ts_data.split(',')] if isinstance(ts_data, str) else ts_data
-
-        # 3. Profil-UPSERT (In die 'profiles' Tabelle!) [cite: 2026-03-03]
+        # 2. Profil-UPSERT in 'profiles'
         cur.execute("""
             INSERT INTO profiles (
-                telegram_id, name_enc, contact_enc, password_hash, 
-                manifesto_enc, coords, stature, target_stature, 
-                radius, u_age, u_gender, u_looking_for, 
-                u_age_min, u_age_max, u_intent, u_height, 
-                u_target_height_min, u_target_height_max, early_adopter
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON CONFLICT (telegram_id) DO UPDATE SET
-                name_enc = EXCLUDED.name_enc,
-                contact_enc = EXCLUDED.contact_enc,
-                manifesto_enc = EXCLUDED.manifesto_enc,
+                email, identity, search_for, age, height, stature_id, 
+                coords, is_ukrainian, key_hash, last_seen
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+            ON CONFLICT (email) DO UPDATE SET
+                age = EXCLUDED.age,
+                height = EXCLUDED.height,
+                stature_id = EXCLUDED.stature_id,
                 coords = EXCLUDED.coords,
-                stature = EXCLUDED.stature,
-                target_stature = EXCLUDED.target_stature,
-                u_age = EXCLUDED.u_age,
-                u_intent = EXCLUDED.u_intent
+                last_seen = CURRENT_TIMESTAMP
             RETURNING id;
         """, (
-            data['telegram_id'], data['name_enc'], data['contact_enc'], data['password_hash'],
-            enc_manifesto, coords_json, data['stature'], ts_list,
-            data['radius'], data['u_age'], data['u_gender'], data['u_looking_for'],
-            data['u_age_min'], data['u_age_max'], data['u_intent'], data['u_height'],
-            data['u_target_height_min'], data['u_target_height_max'], data.get('early_adopter', True)
+            data['email'], data['identity'], data['search_for'], 
+            data['age'], data['height'], data['stature_id'], 
+            coords_json, data.get('is_ukrainian', False), data.get('key_hash')
         ))
-        p_id = cur.fetchone()[0]
+        profile_id = cur.fetchone()[0]
 
-        # 4. Queue-Eintrag (Stumpfes INSERT für die Historie) [cite: 2026-03-03]
+        # 3. Manifesto & Queue (Verschlüsselung für den Worker)
+        # Wir speichern den Text erst mal flach, bis der Vektor da ist.
         cur.execute("""
-            INSERT INTO embedding_queue (profile_id, encrypted_manifesto, status)
-            VALUES (%s, %s, 'pending');
-        """, (p_id, enc_manifesto))
+            INSERT INTO manifesto_vectors (profile_id, manifesto_text)
+            VALUES (%s, %s)
+            ON CONFLICT (profile_id) DO UPDATE SET manifesto_text = EXCLUDED.manifesto_text;
+        """, (profile_id, manifesto_raw))
 
+        # 4. Ab in die Queue für das gte-Qwen2-1.5B Modell [cite: 2026-02-07]
+        # (Hier könntest du deine bestehende embedding_queue nutzen)
+        
         conn.commit()
-        return p_id, "success"
-
-    except errors.UniqueViolation as e:
-        conn.rollback()
-        err_msg = str(e)
-        if "telegram_id" in err_msg: return None, "duplicate_id"
-        if "contact_enc" in err_msg: return None, "duplicate_contact"
-        return None, "duplicate_entry"
+        return profile_id, "success"
     except Exception as e:
         conn.rollback()
-        print(f"Atomarer Fehler: {e}")
+        print(f"Fehler beim Speichern: {e}")
         return None, "system_error"
     finally:
         cur.close()
@@ -206,12 +187,12 @@ def add_to_embedding_queue(profile_id, encrypted_text):
         cur.close()
         conn.close()
 
-def get_profile_by_telegram_id(tid):
-    """Lädt ein Profil für den Login."""
+def get_profile_by_email(email):
+    """Lädt ein Profil für den Login oder Abgleich via Email.""" [cite: 2026-03-08]
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        cur.execute("SELECT * FROM profiles WHERE telegram_id = %s", (tid,))
+        cur.execute("SELECT * FROM profiles WHERE email = %s", (email,))
         return cur.fetchone()
     finally:
         cur.close()
@@ -312,21 +293,20 @@ def fetch_pending_jobs_latest_only():
         cur.close()
         conn.close()
 
-def finalize_vibe_vector(profile_id, task_id, vector):
-    """Schreibt Vektor ins Profil und räumt die Queue für diesen User komplett auf."""
+def finalize_vibe_vector(profile_id, vector):
+    """Schreibt den 1536-D Vektor in die manifesto_vectors Tabelle.""" [cite: 2026-02-07]
     conn = get_connection()
     cur = conn.cursor()
     try:
-        # 1. Vektor speichern [cite: 2026-02-07]
-        cur.execute("UPDATE profiles SET vibe_vector = %s, is_vectorized = TRUE WHERE id = %s", (vector, profile_id))
-        
-        # 2. ALLE pending Jobs dieses Users löschen (da wir ja den neuesten berechnet haben) [cite: 2026-03-03]
-        cur.execute("DELETE FROM embedding_queue WHERE profile_id = %s", (profile_id,))
-        
+        cur.execute("""
+            UPDATE manifesto_vectors 
+            SET embedding = %s 
+            WHERE profile_id = %s
+        """, (vector, profile_id))
         conn.commit()
         return True
     except Exception as e:
-        print(f"Finalisierungs-Fehler: {e}")
+        print(f"Vektor-Finalisierung Fehler: {e}")
         conn.rollback()
         return False
     finally:

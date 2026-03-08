@@ -74,7 +74,7 @@ def render_beta_footer():
             <p>Wir befinden uns aktuell im <b>Beta-Stadium</b>. Bitte seht es uns nach, falls noch nicht alles 100% rund läuft.<br>
             <b>Wichtig:</b> Notiert euch euren persönlichen Code, um euren Eintrag später anzupassen.</p>
             <p><b>Datenschutz:</b> Anonymität ist Key. Selbst als Admins können wir keine direkten Bezüge von Einträgen zu realen Personen herstellen.</p>
-            <p>Anregungen an: <a href="mailto:marc.c.vietor@gmail.com">marc.c.vietor@gmail.com</a></p>
+            <p>Anregungen an: <a href="mailto:feedback@iam-aim.com">feedback@iam-aim.com</a></p>
         </div>
         """, unsafe_allow_html=True
     )

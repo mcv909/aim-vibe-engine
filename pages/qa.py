@@ -45,7 +45,7 @@ def main():
         },
         {
             "q": "An wen kann ich mich wenden, wenn ich Hilfe benötige?",
-            "a": "Unser Support-Team (Marc) ist erreichbar unter: marc.c.vietor@gmail.com. Bitte beachte, dass wir ein Beta-Projekt sind und die Antwortzeiten variieren können."
+            "a": "Das Team (Ivee, Jens, Marc) ist erreichbar unter: support@iam-aim.com. Bitte beachte, dass wir ein Beta-Projekt sind und die Antwortzeiten variieren können."
         },
         {
             "q": "Kann ich meine KI einen Text über mich schreiben lassen?",

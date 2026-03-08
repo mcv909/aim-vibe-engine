@@ -39,7 +39,24 @@ with open("worker_private_key.pem", "r") as f:
     private_key_pem = f.read()
 
 def run_worker():
+    # 1. Status direkt abrufen (ohne Unter-Funktion)
+    conn = db_handler.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT status, COUNT(*) FROM embedding_queue GROUP BY status;")
+    stats = dict(cur.fetchall())
+    cur.execute("SELECT COUNT(*) FROM profiles WHERE is_vectorized = true;")
+    vibes = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+
+    # 2. Die Statistik ausgeben
+    print(f"\n--- 🛰️ Matrix-Status Report ---")
+    print(f"⏳ Pending: {stats.get('pending', 0)} | ⚠️ Error: {stats.get('error', 0)} | 💀 Fatal: {stats.get('fatal', 0)}")
+    print(f"✨ Vibes im Raum: {vibes}")
+    print(f"-------------------------------\n")
+    
     print(f"AIM Worker aktiv ({device}). Warte auf Matrix-Vibes...")
+
     while True:
         # Latest-Only Logik: Wir berechnen nur den aktuellsten Stand
         jobs = db_handler.fetch_pending_jobs_latest_only()
@@ -47,19 +64,26 @@ def run_worker():
         if jobs:
             for job in jobs:
                 try:
-                    # Entschlüsseln
+                    # 1. Entschlüsseln
                     cleartext = security.decrypt_for_worker(job['encrypted_manifesto'], private_key_pem)
                     
-                    # Der "Kopf" für die GTE-Modelle [cite: 2026-03-03]
-                    input_text = f"Retrieve semantically similar documents: {cleartext}"
-                    
-                    # Vektorisieren
+                    # 2. # Die neue, schärfere AIM-Instruktion
+                    instruction = (
+                        "Instruct: Identify user profiles that exhibit high personal resonance and shared philosophical worldviews. "
+                        "Focus on finding people who belong together based on their core values and lifestyle, "
+                        "while distinguishing clearly between opposing ideological poles.\nQuery: "
+                    )
+                    input_text = instruction + cleartext
+
+                    # 3. Vektorisieren mit MPS-Power [cite: 2025-12-20]
                     vector = model.encode(input_text).tolist()
                     
-                    # In die DB schreiben
+                    # 4. In die DB schreiben & Finalisieren [cite: 2026-03-04]
                     if db_handler.finalize_vibe_vector(job['profile_id'], job['id'], vector):
                         print(f"✅ Profil {job['profile_id']} erfolgreich vektorisiert.")
                 except Exception as e:
+                    print(f"❌ Fehler bei Job {job['id']}: {e}")
+                    db_handler.mark_job_failed(job['id'])
                     print(f"❌ Fehler bei Job {job['id']}: {e}")
                     db_handler.mark_job_failed(job['id'])
         
