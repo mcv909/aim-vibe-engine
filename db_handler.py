@@ -188,7 +188,7 @@ def add_to_embedding_queue(profile_id, encrypted_text):
         conn.close()
 
 def get_profile_by_email(email):
-    """Lädt ein Profil für den Login oder Abgleich via Email.""" [cite: 2026-03-08]
+    """Lädt ein Profil für den Login oder Abgleich via Email.""" # [cite: 2026-03-08]
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
