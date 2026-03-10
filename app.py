@@ -171,6 +171,15 @@ def main():
     elif menu == "Manifesto erstellen":
         st.subheader("Deine Digitale DNA")
         
+        # 1. Das Mapping muss bekannt sein, bevor wir es nutzen [cite: 2026-03-08]
+        STATURE_MAP = {
+            "Sehr schlank": 1,
+            "Schlank / Sportlich": 2,
+            "Normal / Durchschnitt": 3,
+            "Ein paar Kilos mehr": 4,
+            "Curvy / Plus Size": 5
+        }
+
         if 'manifesto_buffer' not in st.session_state: 
             st.session_state.manifesto_buffer = ""
 
@@ -178,18 +187,20 @@ def main():
         with col1:
             st.markdown("### Basis")
             u_name = st.text_input("Name / Alias", placeholder="Wie sollen wir dich nennen?")
-            u_email = st.text_input("Deine E-Mail (für die Aktivierung)") # Pflicht! [cite: 2026-03-08]
+            u_email = st.text_input("Deine E-Mail (für die Aktivierung)") # Wichtig für den neuen Flow! [cite: 2026-03-08]
             v_key = st.text_input("Vibe Key", type="password")
             u_messenger = st.text_input("Messenger-Kontakt (optional)", placeholder="z.B. Threema ID, Signal...")
-            
+
         with col2:
             st.markdown("### Identität")
             u_age = st.slider("Dein Alter", 18, 99, 25)
             u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"])
             u_location = st.text_input("Standort", placeholder="Stadt...")
             u_height = st.slider("Größe (cm)", 140, 220, 175)
-            u_stature = st.selectbox("Deine Statur", list(STATURE_MAP.keys())) # Nutzt jetzt das Mapping!
-            u_stature_id = STATURE_MAP[u_stature_label] # Wir speichern die ID!
+            # HIER WAR DER FEHLER: Variable u_stature_label definiert...
+            u_stature_label = st.selectbox("Deine Statur", list(STATURE_MAP.keys()))
+            # ... und hier wird sie jetzt korrekt genutzt:
+            u_stature_id = STATURE_MAP[u_stature_label]
             
         with col3:
             st.markdown("### Suche")
@@ -198,42 +209,35 @@ def main():
             u_intent = st.selectbox("Absicht", ["partner", "friends", "both"], index=2)
             u_radius = st.slider("Suchradius (km)", 5, 500, 50)
             u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190))
-            u_target_stature = st.multiselect("Gesuchte Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"], default=["durchschnittlich"])
+            # Für die gesuchte Statur nutzen wir vorerst eine Liste der IDs
+            u_target_statures = st.multiselect("Gesuchte Statur", list(STATURE_MAP.keys()), default=["Normal / Durchschnitt"])
 
+        # Manifesto Feld (Jetzt wieder sichtbar, da der Code darüber nicht mehr crasht)
         manifesto = st.text_area("Dein Manifesto", value=st.session_state.manifesto_buffer, height=300)
         st.session_state.manifesto_buffer = manifesto
 
         if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):
-            # Einzelprüfung für bessere User-Experience
-            if u_tid == 0:
-                st.warning("Deine Telegram-ID fehlt noch!")
+            # Validierung
+            if not u_email or "@" not in u_email:
+                st.warning("Ohne gültige E-Mail kein Vibe-Check!")
                 return
-            if not u_name:
-                st.warning("Ohne Name kein Anker – wie sollen wir dich nennen?")
-                return
-            if not u_location:
-                st.warning("Wo steckst du? Der Standort fehlt.")
-                return
-            if len(manifesto) < 10:
-                st.warning("Bitte mehr Butter bei die Fisch! Dein Manifesto ist zu kurz ;)")
-                return
-
+            
             with st.spinner("Lokalisiere & Übertrage..."):
-                coords = logic.geocode_city(u_location)
+                coords = logic.geocode_city(u_location) #
                 if not coords:
                     st.error("Standort nicht gefunden.")
                     return
 
-  
-                data = {
+                # Daten-Paket für den db_handler
+                user_data = {
                     'email': u_email,
-                    'identity': 1, # Hier ggf. Mapping für m/w/d einbauen
+                    'identity': 1, # Platzhalter, später Mapping
                     'search_for': 2, 
                     'age': u_age, 
                     'height': u_height,
-                    'stature_id': STATURE_MAP[u_stature], # Die ID (1-5) [cite: 2026-03-08]
-                    'coords': coords, # Bleibt JSONB
-                    'is_ukrainian': is_ukrainian,
+                    'stature_id': u_stature_id,
+                    'coords': coords,
+                    'is_ukrainian': st.session_state.get('is_ukrainian', False),
                     'messenger_contact': u_messenger,
                     'key_hash': security.hash_key(v_key),
                     'u_age_min': u_age_range[0],
@@ -243,15 +247,16 @@ def main():
                     'radius': u_radius
                 }
                 
-                # Der Aufruf an den neuen db_handler
-                v_token, status = db_handler.save_profile_atomic(data, manifesto, pub_key)
+                pub_key = os.getenv("WORKER_PUBLIC_KEY")
+                # Aufruf der neuen atomaren Funktion
+                v_token, status = db_handler.save_profile_atomic(user_data, manifesto, pub_key)
 
                 if status == "needs_verification":
-                    # HIER kommt die mail_logic zum Einsatz! [cite: 2026-03-08]
                     if mail_logic.send_activation_mail(u_email, v_token):
                         st.success(f"DNA stabilisiert! Bitte prüfe dein Postfach ({u_email}).")
+                        st.balloons()
                     else:
-                        st.error("Mail konnte nicht gesendet werden. Google-Setup prüfen!")
+                        st.error("Mail-Versand fehlgeschlagen. Google-Setup prüfen!")
 
                 # --- DER FINALE VERSIGELUNGS-BLOCK ---
                 # Wir entpacken die Rückgabe: ID und den spezifischen Status
