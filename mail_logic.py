@@ -1,29 +1,34 @@
 import smtplib
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def send_activation_mail(user_email, token):
-    """Versendet den Aktivierungslink via Google SMTP."""
-    sender_email = "deine-mail@deine-domain.de" 
-    mail_password = "dein-google-app-passwort" # In .env auslagern!
+    """Versendet den Aktivierungslink via Google SMTP Relay."""
+    sender_email = os.getenv("MAIL_SENDER", "vibe@iam-aim.com")
+    mail_password = os.getenv("MAIL_PASSWORD") # Dein 16-stelliges App-Passwort
     
-    # Der Link für das Frontend (Streamlit-URL)
-    link = f"https://deine-aim-app.de/?token={token}"
+    # URL der App (z.B. https://iam-aim.com)
+    base_url = os.getenv("APP_URL", "http://localhost:8501") 
+    link = f"{base_url}/?token={token}"
     
     msg = MIMEMultipart()
     msg['From'] = f"AIM - Authentic Intelligence Mate <{sender_email}>"
     msg['To'] = user_email
-    msg['Subject'] = "Aktivierung deines 1536-D Vibe-Profils" [cite: 2026-02-07]
+    msg['Subject'] = "Aktivierung deines 1536-D Vibe-Profils"
 
     body = f"""
     Moin!
     
-    Fast geschafft. Klicke auf den Link, um dein Profil zu verifizieren.
-    Danach berechnet unser MacAir-Worker deine Resonanz im 1536-dimensionalen Raum. [cite: 2026-02-07, 2025-12-20]
+    Dein Vibe-Profil ist fast bereit. Klicke auf den Link, um deine E-Mail zu bestätigen:
     
-    Link: {link}
+    {link}
     
-    Wir freuen uns auf deinen Vibe.
+    Sobald du verifiziert bist, berechnet unser System deine Resonanz-Werte.
+    
     Dein AIM
     """
     msg.attach(MIMEText(body, 'plain'))
@@ -31,7 +36,7 @@ def send_activation_mail(user_email, token):
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
-        server.login(sender_email, password)
+        server.login(sender_email, mail_password)
         server.send_message(msg)
         server.quit()
         return True

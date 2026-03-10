@@ -54,47 +54,53 @@ def get_connection():
     )
 
 def init_db():
-    """Initialisiert die neue Business-Struktur von AIM."""
+    """Initialisiert die neue Business-Struktur (Email-First)."""
     conn = get_connection()
     cur = conn.cursor()
     try:
         cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-        # Die Haupttabelle für Hard-Facts und Security
         cur.execute("""
             CREATE TABLE IF NOT EXISTS profiles (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 email VARCHAR(255) UNIQUE NOT NULL,
-                identity INT NOT NULL, 
-                search_for INT NOT NULL, 
+                identity INT, 
+                search_for INT, 
                 age INT,
                 height INT, 
                 stature_id INT, 
-                coords JSONB,
-                is_ukrainian BOOLEAN DEFAULT FALSE,
+                coords JSONB, -- Deine stabile JSONB-Lösung
+                
+                -- Hard-Filter Parameter
+                u_age_min INTEGER,
+                u_age_max INTEGER,
+                u_height_min INTEGER,
+                u_height_max INTEGER,
+                radius INTEGER DEFAULT 50,
+                
+                -- Status & Security
+                is_ukrainian BOOLEAN DEFAULT FALSE, --
                 is_email_verified BOOLEAN DEFAULT FALSE,
                 is_active BOOLEAN DEFAULT FALSE,
-                key_hash TEXT,
-                messenger_contact TEXT,
+                key_hash TEXT, --
+                messenger_contact TEXT, -- Optional
                 verification_token UUID DEFAULT gen_random_uuid(),
-                last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Für 12-Monats-Ping
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        # Die Vektor-Tabelle (Strikte Trennung für Performance)
+        # Die Vektor-Tabelle bleibt für die Performance separat
         cur.execute("""
             CREATE TABLE IF NOT EXISTS manifesto_vectors (
                 profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-                manifesto_enc TEXT, -- Verschlüsseltes Manifesto für den Worker
-                embedding vector(1536)
+                manifesto_enc TEXT, -- Verschlüsselt für MacAir-Worker
+                embedding vector(1536) -- gte-Qwen2-1.5B
             );
         """)
         conn.commit()
     except Exception as e:
-        print(f"DB-Init Fehler: {e}")
-        conn.rollback()
+        print(f"DB-Init Fehler: {e}"); conn.rollback()
     finally:
-        cur.close()
-        conn.close()
+        cur.close(); conn.close()
 
 def save_profile_atomic(data, manifesto_raw, pub_key):
     """Speichert Profil und bereitet Vektorisierung nach Mail-Check vor."""
