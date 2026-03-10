@@ -19,37 +19,17 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
 def load_db():
-    """Lädt alle Profile und entschlüsselt die Basis-Daten für die Admin-Ansicht."""
+    """Lädt Profile für die Admin-Ansicht (E-Mail basiert)."""
     conn = get_connection()
-    # Wir nutzen RealDictCursor, damit wir über Spaltennamen zugreifen können
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
         cur.execute("""
-            SELECT id, telegram_id, name_enc, contact_enc, coords, 
-                   u_age, u_gender, created_at 
+            SELECT id, email, coords, age, identity, is_ukrainian, 
+                   is_email_verified, is_active, created_at 
             FROM profiles 
             ORDER BY created_at DESC;
         """)
-        rows = cur.fetchall()
-        
-        # Die Daten für die UI aufbereiten
-        decrypted_profiles = []
-        for row in rows:
-            # Wir wandeln das Row-Objekt in ein normales Dict um
-            p = dict(row)
-            try:
-                # Entschlüsselung der Basis-Daten
-                p['name'] = security.decrypt_data(p['name_enc'])
-                p['contact'] = security.decrypt_data(p['contact_enc'])
-            except Exception as e:
-                # Falls ein Key fehlt oder Daten korrupt sind
-                p['name'] = "[Decryption Error]"
-                p['contact'] = "[Hidden]"
-                print(f"Admin-Ansicht Fehler für ID {p['id']}: {e}")
-            
-            decrypted_profiles.append(p)
-            
-        return decrypted_profiles
+        return cur.fetchall()
     except Exception as e:
         print(f"Fehler beim Laden der Admin-DB: {e}")
         return []
@@ -74,40 +54,40 @@ def get_connection():
     )
 
 def init_db():
-    """Initialisiert die Datenbank-Struktur mit 1536 Dimensionen."""
+    """Initialisiert die neue Business-Struktur von AIM."""
     conn = get_connection()
     cur = conn.cursor()
     try:
         cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+        # Die Haupttabelle für Hard-Facts und Security
         cur.execute("""
             CREATE TABLE IF NOT EXISTS profiles (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                telegram_id BIGINT UNIQUE,
-                name_enc TEXT,
-                contact_enc TEXT,
-                password_hash TEXT,
-                manifest_enc TEXT,
-                vibe_vector vector(1536),
-                is_vectorized BOOLEAN DEFAULT false,
-                is_active BOOLEAN DEFAULT true,
-                early_adopter BOOLEAN DEFAULT true,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                identity INT NOT NULL, 
+                search_for INT NOT NULL, 
+                age INT,
+                height INT, 
+                stature_id INT, 
                 coords JSONB,
-                stature TEXT,
-                target_stature TEXT[],
-                radius INTEGER DEFAULT 50,
-                u_age INTEGER,
-                u_gender TEXT,
-                u_looking_for TEXT,
-                u_age_min INTEGER,
-                u_age_max INTEGER,
-                u_intent TEXT,
-                u_height INTEGER,
-                u_target_height_min INTEGER,
-                u_target_height_max INTEGER,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                is_ukrainian BOOLEAN DEFAULT FALSE,
+                is_email_verified BOOLEAN DEFAULT FALSE,
+                is_active BOOLEAN DEFAULT FALSE,
+                key_hash TEXT,
+                messenger_contact TEXT,
+                verification_token UUID DEFAULT gen_random_uuid(),
+                last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_vector ON profiles USING hnsw (vibe_vector vector_cosine_ops);")
+        # Die Vektor-Tabelle (Strikte Trennung für Performance)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS manifesto_vectors (
+                profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+                manifesto_enc TEXT, -- Verschlüsseltes Manifesto für den Worker
+                embedding vector(1536)
+            );
+        """)
         conn.commit()
     except Exception as e:
         print(f"DB-Init Fehler: {e}")
@@ -116,28 +96,25 @@ def init_db():
         cur.close()
         conn.close()
 
-def save_profile_atomic(data, manifesto_raw):
-    """
-    Speichert das vollständige Profil (Hard-Facts + Manifesto) und 
-    setzt die Flags für Mail-Aktivierung und 12-Monats-Ping.
-    """
+def save_profile_atomic(data, manifesto_raw, pub_key):
+    """Speichert Profil und bereitet Vektorisierung nach Mail-Check vor."""
     conn = get_connection()
     cur = conn.cursor()
     try:
-        # 1. Koordinaten-Check (Bleibt JSONB für Hetzner-Stabilität)
-        coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
+        # 1. Manifesto verschlüsseln (Nur der User/Worker kann es lesen) [cite: 2026-01-18]
+        enc_manifesto = security.encrypt_for_worker(manifesto_raw, pub_key)
         
-        # 2. Profil-UPSERT in 'profiles'
-        # Wir setzen is_email_verified und is_active initial auf FALSE. [cite: 2026-03-08]
+        # 2. Koordinaten-Logik (Stabile JSONB Lösung)
+        coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
+
+        # 3. Profil-UPSERT
         cur.execute("""
             INSERT INTO profiles (
                 email, identity, search_for, age, height, stature_id, 
                 coords, is_ukrainian, key_hash, messenger_contact,
-                is_email_verified, is_active, last_interaction
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, FALSE, FALSE, CURRENT_TIMESTAMP)
+                last_interaction
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
             ON CONFLICT (email) DO UPDATE SET
-                identity = EXCLUDED.identity,
-                search_for = EXCLUDED.search_for,
                 age = EXCLUDED.age,
                 height = EXCLUDED.height,
                 stature_id = EXCLUDED.stature_id,
@@ -145,30 +122,27 @@ def save_profile_atomic(data, manifesto_raw):
                 is_ukrainian = EXCLUDED.is_ukrainian,
                 messenger_contact = EXCLUDED.messenger_contact,
                 last_interaction = CURRENT_TIMESTAMP
-            RETURNING id;
+            RETURNING id, verification_token;
         """, (
             data['email'], data['identity'], data['search_for'], 
             data['age'], data['height'], data['stature_id'], 
             coords_json, data.get('is_ukrainian', False), data.get('key_hash'),
             data.get('messenger_contact')
         ))
-        profile_id = cur.fetchone()[0]
+        p_id, v_token = cur.fetchone()
 
-        # 3. Manifesto in die separate Vektor-Tabelle (Text-Ebene) [cite: 2026-03-08]
-        # Der Vektor selbst bleibt NULL, bis das MacAir rechnet. [cite: 2025-12-20, 2026-03-04]
+        # 4. Manifesto verschlüsselt ablegen
         cur.execute("""
-            INSERT INTO manifesto_vectors (profile_id, manifesto_text)
+            INSERT INTO manifesto_vectors (profile_id, manifesto_enc)
             VALUES (%s, %s)
-            ON CONFLICT (profile_id) DO UPDATE SET manifesto_text = EXCLUDED.manifesto_text;
-        """, (profile_id, manifesto_raw))
+            ON CONFLICT (profile_id) DO UPDATE SET manifesto_enc = EXCLUDED.manifesto_enc;
+        """, (p_id, enc_manifesto))
 
         conn.commit()
-        # Wir geben "needs_verification" zurück, damit das Frontend weiß: Mail abschicken!
-        return profile_id, "needs_verification"
-
+        return v_token, "needs_verification"
     except Exception as e:
         conn.rollback()
-        print(f"Fehler beim Speichern: {e}")
+        print(f"Fehler: {e}")
         return None, "system_error"
     finally:
         cur.close()
