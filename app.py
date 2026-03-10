@@ -217,46 +217,56 @@ def main():
         st.session_state.manifesto_buffer = manifesto
 
         if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):
-            # Validierung
+            # Vorab-Check ohne 'return'
             if not u_email or "@" not in u_email:
-                st.warning("Ohne gültige E-Mail kein Vibe-Check!")
-                return
-            
-            with st.spinner("Lokalisiere & Übertrage..."):
-                coords = logic.geocode_city(u_location) #
-                if not coords:
-                    st.error("Standort nicht gefunden.")
-                    return
-
-                # Daten-Paket für den db_handler
-                user_data = {
-                    'email': u_email,
-                    'identity': 1, # Platzhalter, später Mapping
-                    'search_for': 2, 
-                    'age': u_age, 
-                    'height': u_height,
-                    'stature_id': u_stature_id,
-                    'coords': coords,
-                    'is_ukrainian': st.session_state.get('is_ukrainian', False),
-                    'messenger_contact': u_messenger,
-                    'key_hash': security.hash_key(v_key),
-                    'u_age_min': u_age_range[0],
-                    'u_age_max': u_age_range[1],
-                    'u_height_min': u_target_height[0],
-                    'u_height_max': u_target_height[1],
-                    'radius': u_radius
-                }
-                
-                pub_key = os.getenv("WORKER_PUBLIC_KEY")
-                # Aufruf der neuen atomaren Funktion
-                v_token, status = db_handler.save_profile_atomic(user_data, manifesto, pub_key)
-
-                if status == "needs_verification":
-                    if mail_logic.send_activation_mail(u_email, v_token):
-                        st.success(f"DNA stabilisiert! Bitte prüfe dein Postfach ({u_email}).")
-                        st.balloons()
+                st.warning("Bitte gib eine gültige E-Mail an.")
+            elif len(manifesto) < 10:
+                st.warning("Dein Manifesto ist noch etwas zu kurz.")
+            else:
+                with st.status("Verarbeite digitale DNA...", expanded=True) as status:
+                    # Schritt 1: Geocoding
+                    st.write("Lokalisiere Standort...")
+                    coords = logic.geocode_city(u_location)
+                    
+                    if not coords:
+                        status.update(label="Standort-Fehler!", state="error")
+                        st.error("Wohnort konnte nicht gefunden werden.")
                     else:
-                        st.error("Mail-Versand fehlgeschlagen. Google-Setup prüfen!")
+                        st.write("Verschlüssele Daten & Speichere Profil...")
+                        user_data = {
+                            'email': u_email,
+                            'identity': 1, # Später Mapping nutzen
+                            'search_for': 2, 
+                            'age': u_age, 
+                            'height': u_height,
+                            'stature_id': u_stature_id,
+                            'coords': coords,
+                            'is_ukrainian': is_ukrainian, # [cite: 2026-01-15]
+                            'messenger_contact': u_messenger,
+                            'key_hash': security.hash_key(v_key),
+                            'u_age_min': u_age_range[0],
+                            'u_age_max': u_age_range[1],
+                            'u_height_min': u_target_height[0],
+                            'u_height_max': u_target_height[1],
+                            'radius': u_radius
+                        }
+                        
+                        pub_key = os.getenv("WORKER_PUBLIC_KEY")
+                        #
+                        v_token, db_status = db_handler.save_profile_atomic(user_data, manifesto, pub_key)
+                        
+                        if db_status == "needs_verification":
+                            st.write("Sende Aktivierungs-Mail via Google...")
+                            if mail_logic.send_activation_mail(u_email, v_token): # [cite: 2026-03-08]
+                                status.update(label="DNA erfolgreich gesichert!", state="complete")
+                                st.success(f"Moin! Bitte bestätige die Mail an {u_email}.")
+                                st.balloons()
+                            else:
+                                status.update(label="Mail-Fehler!", state="error")
+                                st.error("Konnte Aktivierungs-Mail nicht senden.")
+                        else:
+                            status.update(label="Datenbank-Fehler!", state="error")
+                            st.error(f"Fehler beim Speichern: {db_status}")
 
                 # --- DER FINALE VERSIGELUNGS-BLOCK ---
                 # Wir entpacken die Rückgabe: ID und den spezifischen Status
@@ -276,17 +286,21 @@ def main():
         st.subheader("Resonanz-Zentrale")
         if not st.session_state.get('logged_in'):
             with st.form("login_form"):
-                l_email = st.text_input("E-Mail Adresse") # Wechsel von TID auf Email [cite: 2026-03-08]
+                l_email = st.text_input("E-Mail Adresse") # Pivot auf Email [cite: 2026-03-08]
                 l_key = st.text_input("Vibe Key", type="password")
+                
                 if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
-                    user = db_handler.get_profile_by_email(l_email) # Neue Funktion [cite: 2026-03-08]
-                    if user and security.verify_key(l_key, user['key_hash']):
+                    # Wir holen das Profil über die neue E-Mail-Funktion [cite: 2026-03-08]
+                    user = db_handler.get_profile_by_email(l_email)
+                    
+                    if user and security.verify_key(l_key, user['key_hash']): # [cite: 2026-01-18]
                         st.session_state.logged_in = True
                         st.session_state.user_data = user
                         st.session_state.v_key = l_key
+                        st.success("Login erfolgreich!")
                         st.rerun()
                     else:
-                        st.error("Zugriff verweigert.")
+                        st.error("Zugriff verweigert. E-Mail oder Key nicht korrekt.")
 
         if st.session_state.get('logged_in'):
             # Hier käme der Edit-Modus (analog zu Manifesto erstellen, nur mit UPDATE)

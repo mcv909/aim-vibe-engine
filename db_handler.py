@@ -217,25 +217,6 @@ def save_feedback(user_id, rating, comment, match_id=None):
         cur.close()
         conn.close()
 
-def add_to_embedding_queue(profile_id, encrypted_text):
-    """Schiebt ein verschlüsseltes Manifesto in die Warteschlange."""
-    conn = get_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute("""
-            INSERT INTO embedding_queue (profile_id, encrypted_manifesto, status)
-            VALUES (%s, %s, 'pending')
-        """, (profile_id, encrypted_text))
-        conn.commit()
-        return True
-    except Exception as e:
-        print(f"Fehler in der Queue: {e}")
-        conn.rollback()
-        return False
-    finally:
-        cur.close()
-        conn.close()
-
 def fetch_pending_jobs_latest_only():
     """Holt pro User nur den aktuellsten 'pending' Job."""
     conn = get_connection()
