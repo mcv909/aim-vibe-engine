@@ -11,6 +11,26 @@ import db_handler
 import logic
 import style
 import subprocess
+import mail_logic
+
+# 1. URL-Parameter abgreifen
+query_params = st.query_params
+
+if "token" in query_params:
+    token = query_params["token"]
+    
+    # 2. Verifizierung in der DB anstoßen [cite: 2026-03-08]
+    success, p_id = db_handler.verify_email_by_token(token)
+    
+    if success:
+        st.balloons()
+        st.success("### Deine E-Mail wurde erfolgreich verifiziert! 🎉")
+        st.info("Dein Manifesto wird nun im 1536-dimensionalen Raum verortet. [cite: 2026-02-07] "
+                "Sobald die Resonanz-Berechnung abgeschlossen ist, schwingst du voll mit.")
+        # Hier triggern wir optional den Worker-Hinweis
+        st.query_params.clear() # Token aus der URL putzen
+    else:
+        st.error("Dieser Aktivierunglink ist leider ungültig oder abgelaufen.")
 
 def get_system_dna():
     try:
@@ -92,6 +112,16 @@ def main():
     style.apply_custom_style() 
     style.render_header()
     
+    # --- NEU: E-MAIL VERIFIZIERUNG ÜBER URL-TOKEN --- [cite: 2026-03-08]
+    if "token" in st.query_params:
+        token = st.query_params["token"]
+        success, p_id = db_handler.verify_email_by_token(token)
+        if success:
+            st.balloons()
+            st.success("### E-Mail erfolgreich verifiziert! 🎉")
+            st.info("Dein Manifesto wird nun im 1536-D Raum verortet. Sobald der MacAir-Worker fertig ist, bist du aktiv.") [cite: 2026-02-07]
+            st.query_params.clear() # Token aus URL entfernen
+    
     render_founding_dashboard()
 
     def main():
@@ -103,6 +133,15 @@ def main():
         
         st.write("DEBUG 3: Header fertig") # Test-Ausgabe
         render_founding_dashboard()
+
+    # Mapping für die Statur-Logik (ID 1-5) [cite: 2026-03-08]
+    STATURE_MAP = {
+        "Sehr schlank": 1,
+        "Schlank / Sportlich": 2,
+        "Normal / Durchschnitt": 3,
+        "Ein paar Kilos mehr": 4,
+        "Curvy / Plus Size": 5
+    }
 
     menu = st.sidebar.selectbox("Navigation", ["Manifesto erstellen", "Login", "Q&A / Resonanz", "Über AIM", "Admin"])
 
@@ -139,18 +178,18 @@ def main():
         with col1:
             st.markdown("### Basis")
             u_name = st.text_input("Name / Alias", placeholder="Wie sollen wir dich nennen?")
-            st.markdown(f"[🆔 ID-Bot](https://t.me/aim_vibe_bot)") 
-            u_tid = st.number_input("Telegram ID", step=1, value=0)
+            u_email = st.text_input("Deine E-Mail (für die Aktivierung)") # Pflicht! [cite: 2026-03-08]
             v_key = st.text_input("Vibe Key", type="password")
-            u_contact = st.text_input("Kontakt (@Telegram)", placeholder="@handle")
-
+            u_messenger = st.text_input("Messenger-Kontakt (optional)", placeholder="z.B. Threema ID, Signal...")
+            
         with col2:
             st.markdown("### Identität")
             u_age = st.slider("Dein Alter", 18, 99, 25)
             u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"])
             u_location = st.text_input("Standort", placeholder="Stadt...")
             u_height = st.slider("Größe (cm)", 140, 220, 175)
-            u_stature = st.selectbox("Statur", ["zierlich", "sportlich", "durchschnittlich", "kräftig", "curvy"])
+            u_stature = st.selectbox("Deine Statur", list(STATURE_MAP.keys())) # Nutzt jetzt das Mapping!
+            u_stature_id = STATURE_MAP[u_stature_label] # Wir speichern die ID!
             
         with col3:
             st.markdown("### Suche")
@@ -187,56 +226,56 @@ def main():
 
   
                 data = {
-                    'telegram_id': u_tid,
-                    'name_enc': security.encrypt_data(u_name, v_key),
-                    'contact_enc': security.encrypt_data(u_contact, v_key),
-                    'password_hash': security.hash_key(v_key),
-                    'manifesto_enc': security.encrypt_data(manifesto, v_key),
-                    'vector': None, 
-                    'coords': coords,            # Einfach die Liste [lat, lon] lassen
-                    'stature': u_stature,
-                    'target_stature': u_target_stature, # Die Liste direkt übergeben!
-                    'radius': u_radius,
-                    'u_age': u_age, 
-                    'u_gender': u_gender, 
-                    'u_looking_for': u_looking_for,
-                    'u_age_min': u_age_range[0], 
+                    'email': u_email,
+                    'identity': 1, # Hier ggf. Mapping für m/w/d einbauen
+                    'search_for': 2, 
+                    'age': u_age, 
+                    'height': u_height,
+                    'stature_id': STATURE_MAP[u_stature], # Die ID (1-5) [cite: 2026-03-08]
+                    'coords': coords, # Bleibt JSONB
+                    'is_ukrainian': is_ukrainian, [cite: 2026-01-15]
+                    'messenger_contact': u_messenger,
+                    'key_hash': security.hash_key(v_key), [cite: 2026-01-18]
+                    'u_age_min': u_age_range[0],
                     'u_age_max': u_age_range[1],
-                    'u_intent': u_intent, 
-                    'u_height': u_height,
-                    'u_target_height_min': u_target_height[0], 
-                    'u_target_height_max': u_target_height[1],
-                    'early_adopter': True
+                    'u_height_min': u_target_height[0],
+                    'u_height_max': u_target_height[1],
+                    'radius': u_radius
                 }
                 
+                # Der Aufruf an den neuen db_handler
+                v_token, status = db_handler.save_profile_atomic(data, manifesto, pub_key)
+
+                if status == "needs_verification":
+                    # HIER kommt die mail_logic zum Einsatz! [cite: 2026-03-08]
+                    if mail_logic.send_activation_mail(u_email, v_token):
+                        st.success(f"DNA stabilisiert! Bitte prüfe dein Postfach ({u_email}).")
+                    else:
+                        st.error("Mail konnte nicht gesendet werden. Google-Setup prüfen!")
+
                 # --- DER FINALE VERSIGELUNGS-BLOCK ---
                 # Wir entpacken die Rückgabe: ID und den spezifischen Status
                 # Wir laden den Key für die hybride Verschlüsselung
                 pub_key = os.getenv("WORKER_PUBLIC_KEY")
+                v_token, status = db_handler.save_profile_atomic(user_data, manifesto, pub_key)
 
-                # Der atomare Aufruf erledigt ALLES (Profil + Verschlüsselung + Queue)
-                profile_id, status = db_handler.save_profile_atomic(data, manifesto, pub_key)
-
-                if status == "success":
-                    st.success(f"DNA stabilisiert, {u_name}! Der Marc-Anker sitzt.")
-                    st.info("Dein 1536-D Vibe wird lokal berechnet.")
-                    st.balloons()
-                elif status == "duplicate_id":
-                    st.error("Diese Telegram-ID ist bereits im Orbit. Willst du dich einloggen?")
-                elif status == "duplicate_contact":
-                    st.error("Dieser Kontakt (@Telegram) wird bereits von einem anderen Profil genutzt.")
-                else:
-                    st.error(f"Datenbank-Fehler beim Versiegeln: {status}")
+            
+                if status == "needs_verification":
+                    # Mail-Versand via Google Workspace SMTP [cite: 2026-03-08]
+                    if mail_logic.send_activation_mail(u_email, v_token):
+                        st.success(f"DNA stabilisiert! Bitte prüfe dein Postfach: {u_email}")
+                    else:
+                        st.error("Mail-Versand fehlgeschlagen. Bitte Admin kontaktieren.")
 
     elif menu == "Login":
         st.subheader("Resonanz-Zentrale")
         if not st.session_state.get('logged_in'):
             with st.form("login_form"):
-                l_tid = st.number_input("Telegram ID", step=1)
+                l_email = st.text_input("E-Mail Adresse") # Wechsel von TID auf Email [cite: 2026-03-08]
                 l_key = st.text_input("Vibe Key", type="password")
                 if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
-                    user = db_handler.get_profile_by_telegram_id(l_tid)
-                    if user and security.verify_key(l_key, user['password_hash']):
+                    user = db_handler.get_profile_by_email(l_email) # Neue Funktion [cite: 2026-03-08]
+                    if user and security.verify_key(l_key, user['key_hash']):
                         st.session_state.logged_in = True
                         st.session_state.user_data = user
                         st.session_state.v_key = l_key
