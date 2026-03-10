@@ -124,16 +124,6 @@ def main():
     
     render_founding_dashboard()
 
-    def main():
-        st.write("DEBUG 1: Start") # Test-Ausgabe
-        style.apply_custom_style() 
-        
-        st.write("DEBUG 2: Style geladen") # Test-Ausgabe
-        style.render_header()
-        
-        st.write("DEBUG 3: Header fertig") # Test-Ausgabe
-        render_founding_dashboard()
-
     # Mapping für die Statur-Logik (ID 1-5) [cite: 2026-03-08]
     STATURE_MAP = {
         "Sehr schlank": 1,
@@ -212,21 +202,21 @@ def main():
             # Für die gesuchte Statur nutzen wir vorerst eine Liste der IDs
             u_target_statures = st.multiselect("Gesuchte Statur", list(STATURE_MAP.keys()), default=["Normal / Durchschnitt"])
 
-        # Manifesto Feld (Jetzt wieder sichtbar, da der Code darüber nicht mehr crasht)
+        # --- HIER STARTET DER FIX ---
+        is_ukrainian = st.checkbox("Ich bin Ukrainer/in (lebenslang kostenlos)") # [cite: 2026-01-15]
+        
         manifesto = st.text_area("Dein Manifesto", value=st.session_state.manifesto_buffer, height=300)
         st.session_state.manifesto_buffer = manifesto
 
         if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):
-            # Vorab-Check ohne 'return'
             if not u_email or "@" not in u_email:
-                st.warning("Bitte gib eine gültige E-Mail an.")
+                st.warning("Bitte gib eine gültige E-Mail für die Aktivierung an.")
             elif len(manifesto) < 10:
-                st.warning("Dein Manifesto ist noch etwas zu kurz.")
+                st.warning("Dein Manifesto ist noch ein bisschen zu kurz für eine echte Resonanz.")
             else:
                 with st.status("Verarbeite digitale DNA...", expanded=True) as status:
-                    # Schritt 1: Geocoding
                     st.write("Lokalisiere Standort...")
-                    coords = logic.geocode_city(u_location)
+                    coords = logic.geocode_city(u_location) #
                     
                     if not coords:
                         status.update(label="Standort-Fehler!", state="error")
@@ -235,15 +225,15 @@ def main():
                         st.write("Verschlüssele Daten & Speichere Profil...")
                         user_data = {
                             'email': u_email,
-                            'identity': 1, # Später Mapping nutzen
+                            'identity': 1, # Hier ggf. später Geschlecht-ID mappen
                             'search_for': 2, 
                             'age': u_age, 
                             'height': u_height,
                             'stature_id': u_stature_id,
                             'coords': coords,
-                            'is_ukrainian': is_ukrainian, # [cite: 2026-01-15]
+                            'is_ukrainian': is_ukrainian, # Jetzt sicher im Scope!
                             'messenger_contact': u_messenger,
-                            'key_hash': security.hash_key(v_key),
+                            'key_hash': security.hash_key(v_key), # [cite: 2026-01-18]
                             'u_age_min': u_age_range[0],
                             'u_age_max': u_age_range[1],
                             'u_height_min': u_target_height[0],
@@ -252,36 +242,22 @@ def main():
                         }
                         
                         pub_key = os.getenv("WORKER_PUBLIC_KEY")
-                        #
+                        # Speichern in der DB
                         v_token, db_status = db_handler.save_profile_atomic(user_data, manifesto, pub_key)
                         
                         if db_status == "needs_verification":
-                            st.write("Sende Aktivierungs-Mail via Google...")
+                            st.write("Sende Aktivierungs-Mail...")
                             if mail_logic.send_activation_mail(u_email, v_token): # [cite: 2026-03-08]
                                 status.update(label="DNA erfolgreich gesichert!", state="complete")
                                 st.success(f"Moin! Bitte bestätige die Mail an {u_email}.")
                                 st.balloons()
                             else:
                                 status.update(label="Mail-Fehler!", state="error")
-                                st.error("Konnte Aktivierungs-Mail nicht senden.")
+                                st.error("Konnte Aktivierungs-Mail nicht senden. Google-Setup prüfen.")
                         else:
                             status.update(label="Datenbank-Fehler!", state="error")
                             st.error(f"Fehler beim Speichern: {db_status}")
-
-                # --- DER FINALE VERSIGELUNGS-BLOCK ---
-                # Wir entpacken die Rückgabe: ID und den spezifischen Status
-                # Wir laden den Key für die hybride Verschlüsselung
-                pub_key = os.getenv("WORKER_PUBLIC_KEY")
-                v_token, status = db_handler.save_profile_atomic(user_data, manifesto, pub_key)
-
-            
-                if status == "needs_verification":
-                    # Mail-Versand via Google Workspace SMTP [cite: 2026-03-08]
-                    if mail_logic.send_activation_mail(u_email, v_token):
-                        st.success(f"DNA stabilisiert! Bitte prüfe dein Postfach: {u_email}")
-                    else:
-                        st.error("Mail-Versand fehlgeschlagen. Bitte Admin kontaktieren.")
-
+ 
     elif menu == "Login":
         st.subheader("Resonanz-Zentrale")
         if not st.session_state.get('logged_in'):
