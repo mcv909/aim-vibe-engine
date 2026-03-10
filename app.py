@@ -25,7 +25,7 @@ if "token" in query_params:
     if success:
         st.balloons()
         st.success("### Deine E-Mail wurde erfolgreich verifiziert! 🎉")
-        st.info("Dein Manifesto wird nun im 1536-dimensionalen Raum verortet. [cite: 2026-02-07] "
+        st.info("Dein Manifesto wird nun im 1536-dimensionalen Raum verortet."
                 "Sobald die Resonanz-Berechnung abgeschlossen ist, schwingst du voll mit.")
         # Hier triggern wir optional den Worker-Hinweis
         st.query_params.clear() # Token aus der URL putzen
@@ -119,7 +119,7 @@ def main():
         if success:
             st.balloons()
             st.success("### E-Mail erfolgreich verifiziert! 🎉")
-            st.info("Dein Manifesto wird nun im 1536-D Raum verortet. Sobald der MacAir-Worker fertig ist, bist du aktiv.") [cite: 2026-02-07]
+            st.info("Dein Manifesto wird nun im 1536-D Raum verortet. Sobald der MacAir-Worker fertig ist, bist du aktiv.")
             st.query_params.clear() # Token aus URL entfernen
     
     render_founding_dashboard()
@@ -233,9 +233,9 @@ def main():
                     'height': u_height,
                     'stature_id': STATURE_MAP[u_stature], # Die ID (1-5) [cite: 2026-03-08]
                     'coords': coords, # Bleibt JSONB
-                    'is_ukrainian': is_ukrainian, [cite: 2026-01-15]
+                    'is_ukrainian': is_ukrainian,
                     'messenger_contact': u_messenger,
-                    'key_hash': security.hash_key(v_key), [cite: 2026-01-18]
+                    'key_hash': security.hash_key(v_key),
                     'u_age_min': u_age_range[0],
                     'u_age_max': u_age_range[1],
                     'u_height_min': u_target_height[0],
