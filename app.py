@@ -108,10 +108,6 @@ def render_founding_dashboard():
 
     st.markdown(html_content, unsafe_allow_html=True)
 
-import streamlit as st
-import db_handler, logic, mail_logic, security, style
-import os
-
 def main():
     # 1. Top Navigation (Fixiert)
     # Wir nutzen st.tabs oder eine Button-Reihe als Navigation oben
@@ -130,7 +126,7 @@ def main():
         if st.button("Admin"): st.session_state.menu = "Admin"
 
     # System DNA dezent unter der Nav oder in der Sidebar lassen [cite: 2026-02-22]
-    st.sidebar.markdown(f"**System-DNA:** `{logic.get_system_dna()}`")
+    st.sidebar.markdown(f"**System-DNA:** `{get_system_dna()}`")
 
     # Header-Bereich
     style.render_header()
