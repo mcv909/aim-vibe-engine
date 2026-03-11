@@ -136,7 +136,7 @@ def main():
     if menu == "Manifesto erstellen":
         # --- ERKLÄRUNGS-BLOCK ---
         st.markdown("<h3 style='text-align: center;'>Was ist AIM-Vibe?</h3>", unsafe_allow_html=True)
-        st.info("""
+        st.markdown("""
         Künstliche Intelligenz ist im Grunde ein irre mächtiger Vergleichsapparat. 
         Wir nutzen diese Kraft hier nicht für Werbung, sondern für dich: AIM vergleicht dein Manifesto 
         mit dem anderer Menschen im 1536-dimensionalen Vektorraum. [cite: 2026-02-07]
@@ -184,7 +184,7 @@ def main():
             u_radius = st.slider("Suchradius (km)", 5, 500, 50)
             # Alignment: Gesuchte Größe korrespondiert mit Größe
             u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190))
-            u_target_statures = st.multiselect("Gesuchte Statur", list(STATURE_MAP.keys()), default=["Normal"])
+            u_target_statures = st.multiselect("Gesuchte Statur", list(STATURE_MAP.keys()), default=["Normal / Durchschnitt"])
 
         if st.button("DNA SICHERN & RESONANZ STARTEN", type="primary"):
             if not u_email or "@" not in u_email:

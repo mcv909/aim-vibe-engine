@@ -1,24 +1,47 @@
 import streamlit as st
 
 def apply_custom_style(): 
-    """Erzwingt das helle Design und fixiert die Navigation."""
+    """Erzwingt das helle Design, macht Buttons lesbar und fixiert die Nav."""
     st.markdown(
         """
         <style>
-        /* 1. GLOBALER LIGHT-MODE FIX */
-        .stApp {
-            background-color: #FFFFFF !important;
-            color: #262730 !important;
+        /* FARB-DEFINITIONEN (Hier kannst du einfach ändern) */
+        :root {
+            --aim-bg: #FFFFFF;
+            --aim-text: #111111;
+            --aim-gray-light: #F0F2F6;
+            --aim-gray-medium: #DDDDDD;
+            --aim-accent: #FF00FF;
         }
 
-        /* 2. TOP-NAV FIXIERUNG & FARBE */
-        [data-testid="stHeader"] {
-            position: fixed;
-            top: 0;
-            z-index: 1000;
+        .stApp {
+            background-color: var(--aim-bg) !important;
+            color: var(--aim-text) !important;
+        }
+
+        /* 1. NAVIGATION BUTTONS (Grau, klar entzifferbar) */
+        div.stButton > button {
+            background-color: #EEEEEE !important;
+            color: #333333 !important;
+            border: 1px solid var(--aim-gray-medium) !important;
+            font-weight: 500 !important;
             width: 100%;
+        }
+        div.stButton > button:hover {
+            border-color: var(--aim-accent) !important;
+            color: var(--aim-accent) !important;
+        }
+
+        /* 2. INPUT FELDER (Weißer Hintergrund, schwarze Schrift) */
+        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
             background-color: #FFFFFF !important;
-            border-bottom: 1px solid #DDDDDD;
+            color: #000000 !important;
+            border: 1px solid var(--aim-gray-medium) !important;
+        }
+        
+        /* Fix für die Lesbarkeit im Dropdown-Menü */
+        div[data-baseweb="popover"] {
+            color: #000000 !important;
         }
 
         /* 3. ZENTRIERTE ELEMENTE */
@@ -27,29 +50,20 @@ def apply_custom_style():
             display: block;
             margin-top: 3rem;
             margin-bottom: 1.5rem;
-            color: #111111;
+            color: #000000;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 2px;
-            font-size: 1.4rem;
         }
 
-        h1, h2, h3 {
-            color: #000000 !important;
-            text-align: center !important;
-        }
-
-        /* 4. FORMULAR OPTIK (Hell & Klar) */
-        div[data-testid="stForm"] {
-            background-color: #F8F9FB;
-            border: 1px solid #E6E9EF;
-            border-radius: 12px;
-        }
-        
-        /* Input Felder */
-        .stTextInput input, .stTextArea textarea, .stSelectbox div {
-            background-color: white !important;
-            color: #111111 !important;
+        /* 4. TOP-NAV FIXIERUNG */
+        [data-testid="stHeader"] {
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+            background-color: #FFFFFF !important;
+            border-bottom: 1px solid var(--aim-gray-medium);
         }
         </style>
         """, 
