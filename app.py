@@ -126,9 +126,6 @@ def main():
     # Variable 'menu' für die nachfolgende Logik setzen
     menu = st.session_state.menu
 
-    # System DNA in der Sidebar (bleibt dort als dezenter Info-Anker) [cite: 2026-03-11]
-    st.sidebar.markdown(f"**System-DNA:** `{get_system_dna()}`")
-
     # Header & Founding Dashboard
     style.render_header()
     render_founding_dashboard()
@@ -143,6 +140,8 @@ def main():
         
         Wir suchen nicht nach Hobbys, wir suchen nach der **Resonanz in deinem Vibe**. 
         Dein Manifesto ist der qualitative Anker dieser Magie.
+        Und: Wir suchen verschlüsselt! Selbst als Admins haben wir keinen Zugriff auf deine Daten, dein Manifesto. Umso wichtiger ist dein Passwort (Vibe Key).
+        DU hast die Kontrolle über deine Daten. Punkt.
         """)
 
         # --- 4. DAS MANIFESTO (Wichtigster Part zuerst) [cite: 2026-03-11] ---
