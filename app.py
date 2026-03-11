@@ -132,7 +132,7 @@ def main():
 
     if menu == "Manifesto erstellen":
         # --- 3. ERKLÄRUNGS-BLOCK (User abholen) [cite: 2026-03-11] ---
-        st.markdown("### Was ist AIM-Vibe?")
+        st.markdown("<h2 style='text-align: center;'>Was ist AIM-Vibe?</h2>", unsafe_allow_html=True)
         st.info("""
         Künstliche Intelligenz ist im Grunde ein **irre mächtiger Vergleichsapparat**. 
         Wir nutzen diese Kraft hier nicht für Werbung, sondern für dich: AIM vergleicht dein Manifesto 
@@ -145,15 +145,15 @@ def main():
         """)
 
         # --- 4. DAS MANIFESTO (Wichtigster Part zuerst) [cite: 2026-03-11] ---
-        st.markdown("### Dein Manifesto")
-        manifesto = st.text_area(
+        st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
+        manifesto = st.text_area("", value=st.session_state.manifesto_buffer, height=300, label_visibility="collapsed")
+        st.session_state.manifesto_buffer = manifesto(
             "Was macht dich aus? Schreib frei von der Seele...", 
-            height=300, 
             placeholder="Deine Werte, dein Sound, deine Sicht auf die Welt..."
         )
 
         # --- 5. DIGITALE DNA (Hardfacts mit Alignment) [cite: 2026-03-11] ---
-        st.markdown("### Deine Digitale DNA - die hard Facts")
+        st.markdown('<p class="centered-header">Deine Digitale DNA</p>', unsafe_allow_header=True)
         STATURE_MAP = {"Sehr schlank": 1, "Schlank": 2, "Normal": 3, "Kilos+": 4, "Curvy": 5}
         
         c1, c2, c3 = st.columns(3)
