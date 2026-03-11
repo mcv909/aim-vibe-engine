@@ -146,7 +146,7 @@ def main():
     Dein Manifesto ist dein digitaler Fingerabdruck. Wir vergleichen diesen qualitativen Anker 
     im **1536-dimensionalen Raum**, um Menschen zu finden, die wirklich auf deiner Frequenz funken. 
     Kein Swipen nach Oberflächlichkeiten – sondern echte Resonanz.
-    """) [cite: 2026-02-07, 2025-12-30]
+    """) 
 
     # --- DAS MANIFESTO (Das wichtigste Feld zuerst) ---
     st.markdown("### 1. Dein Manifesto")
@@ -165,8 +165,8 @@ def main():
     with col1:
         st.markdown("**Basis**")
         u_name = st.text_input("Name / Alias")
-        u_email = st.text_input("E-Mail (für Aktivierung)") [cite: 2026-03-08]
-        v_key = st.text_input("Vibe Key", type="password") [cite: 2026-01-18]
+        u_email = st.text_input("E-Mail (für Aktivierung)")
+        v_key = st.text_input("Vibe Key", type="password")
         u_messenger = st.text_input("Messenger (optional)")
 
     with col2:
