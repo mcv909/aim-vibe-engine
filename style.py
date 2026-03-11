@@ -10,7 +10,7 @@ def apply_custom_style():
             --aim-bg: #FFFFFF;
             --aim-text: #111111;
             --aim-gray-light: #F0F2F6;
-            --aim-gray-medium: #DDDDDD;
+            --aim-gray-medium: #6B6B6B;
             --aim-accent: #FF00FF;
         }
 
