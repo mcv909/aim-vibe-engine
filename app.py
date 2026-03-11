@@ -109,125 +109,104 @@ def render_founding_dashboard():
     st.markdown(html_content, unsafe_allow_html=True)
 
 def main():
-    # 1. Top Navigation (Fixiert)
-    # Wir nutzen st.tabs oder eine Button-Reihe als Navigation oben
-    nav_cols = st.columns([1, 1, 1, 1, 1, 1])
-    with nav_cols[0]:
-        if st.button("Startseite"): st.session_state.menu = "Start"
-    with nav_cols[1]:
-        if st.button("Manifesto erstellen"): st.session_state.menu = "Create"
-    with nav_cols[2]:
-        if st.button("Login"): st.session_state.menu = "Login"
-    with nav_cols[3]:
-        if st.button("Q&A Resonanz"): st.session_state.menu = "QA"
-    with nav_cols[4]:
-        if st.button("Über AIM"): st.session_state.menu = "About"
-    with nav_cols[5]:
-        if st.button("Admin"): st.session_state.menu = "Admin"
+    # --- 1. INITIALISIERUNG DER NAVIGATION ---
+    if 'menu' not in st.session_state:
+        st.session_state.menu = "Manifesto erstellen"
 
-    # System DNA dezent unter der Nav oder in der Sidebar lassen [cite: 2026-02-22]
+    # --- 2. TOP-NAVIGATION (Fixiert) ---
+    # Wir nutzen Spalten für die horizontale Navigation [cite: 2026-03-11]
+    nav_cols = st.columns([1, 1.2, 0.8, 1.2, 1, 0.8])
+    if nav_cols[0].button("🏠 Startseite"): st.session_state.menu = "Start"
+    if nav_cols[1].button("📝 Manifesto"): st.session_state.menu = "Manifesto erstellen"
+    if nav_cols[2].button("🔑 Login"): st.session_state.menu = "Login"
+    if nav_cols[3].button("🎯 Resonanz"): st.session_state.menu = "QA"
+    if nav_cols[4].button("ℹ️ Über"): st.session_state.menu = "About"
+    if nav_cols[5].button("⚙️ Admin"): st.session_state.menu = "Admin"
+
+    # Variable 'menu' für die nachfolgende Logik setzen
+    menu = st.session_state.menu
+
+    # System DNA in der Sidebar (bleibt dort als dezenter Info-Anker) [cite: 2026-03-11]
     st.sidebar.markdown(f"**System-DNA:** `{get_system_dna()}`")
 
-    # Header-Bereich
+    # Header & Founding Dashboard
     style.render_header()
     render_founding_dashboard()
 
-    # --- DER NEUE ERKLÄRUNGS-BLOCK ---
-    st.markdown("""
-    ### Was ist AIM-Vibe genau?
-    Künstliche Intelligenz ist im Kern ein gigantischer, hochpräziser **Vergleichsapparat**. 
-    Während andere Algorithmen dir nur zeigen, was du gestern gekauft hast, nutzt AIM diese Kraft, 
-    um deinen **Vibe** zu verorten. 
-    
-    Dein Manifesto ist dein digitaler Fingerabdruck. Wir vergleichen diesen qualitativen Anker 
-    im **1536-dimensionalen Raum**, um Menschen zu finden, die wirklich auf deiner Frequenz funken. 
-    Kein Swipen nach Oberflächlichkeiten – sondern echte Resonanz.
-    """) 
+    if menu == "Manifesto erstellen":
+        # --- 3. ERKLÄRUNGS-BLOCK (User abholen) [cite: 2026-03-11] ---
+        st.markdown("### Was ist AIM-Vibe?")
+        st.info("""
+        Künstliche Intelligenz ist im Grunde ein **irre mächtiger Vergleichsapparat**. 
+        Wir nutzen diese Kraft hier nicht für Werbung, sondern für dich: AIM vergleicht dein Manifesto 
+        mit dem anderer Menschen im **1536-dimensionalen Vektorraum**.
+        
+        Wir suchen nicht nach Hobbys, wir suchen nach der **Resonanz in deinem Vibe**. 
+        Dein Manifesto ist der qualitative Anker dieser Magie.
+        """)
 
-    # --- DAS MANIFESTO (Das wichtigste Feld zuerst) ---
-    st.markdown("### 1. Dein Manifesto")
-    manifesto = st.text_area(
-        "Was macht dich aus? (Musik, Werte, Träume...)", 
-        height=250, 
-        placeholder="Schreib frei von der Seele..."
-    )
+        # --- 4. DAS MANIFESTO (Wichtigster Part zuerst) [cite: 2026-03-11] ---
+        st.markdown("### 1. Dein Manifesto")
+        manifesto = st.text_area(
+            "Was macht dich aus? Schreib frei von der Seele...", 
+            height=300, 
+            placeholder="Deine Werte, dein Sound, deine Sicht auf die Welt..."
+        )
 
-    # --- DIE HARDFACTS (Deine Digitale DNA) ---
-    st.markdown("### 2. Deine Digitale DNA")
-    STATURE_MAP = {"Sehr schlank": 1, "Schlank": 2, "Normal": 3, "Kilos+": 4, "Curvy": 5}
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("**Basis**")
-        u_name = st.text_input("Name / Alias")
-        u_email = st.text_input("E-Mail (für Aktivierung)")
-        v_key = st.text_input("Vibe Key", type="password")
-        u_messenger = st.text_input("Messenger (optional)")
+        # --- 5. DIGITALE DNA (Hardfacts mit Alignment) [cite: 2026-03-11] ---
+        st.markdown("### 2. Deine Digitale DNA")
+        STATURE_MAP = {"Sehr schlank": 1, "Schlank": 2, "Normal": 3, "Kilos+": 4, "Curvy": 5}
+        
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.markdown("**Basis**")
+            u_name = st.text_input("Name / Alias")
+            u_email = st.text_input("E-Mail (für Aktivierung)")
+            v_key = st.text_input("Vibe Key", type="password")
+            u_messenger = st.text_input("Messenger-Kontakt (optional)")
 
-    with col2:
-        st.markdown("**Identität**")
-        u_age = st.number_input("Dein Alter", 18, 99, 25)
-        u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"])
-        st.write("") # Leerzeile für Alignment
-        u_location = st.text_input("Standort") # Korrespondiert mit Suchradius
-        u_height = st.number_input("Größe (cm)", 140, 220, 175) # Korrespondiert mit gesuchter Größe
-        u_st_label = st.selectbox("Deine Statur", list(STATURE_MAP.keys()))
+        with c2:
+            st.markdown("**Identität**")
+            u_age = st.number_input("Dein Alter", 18, 99, 25)
+            u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"])
+            # LEERZEILE FÜR ALIGNMENT (Schiebt Standort auf Höhe von Suchradius) [cite: 2026-03-11]
+            st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True) 
+            u_location = st.text_input("Standort") 
+            u_height = st.number_input("Größe (cm)", 140, 220, 175)
+            u_st_label = st.selectbox("Deine Statur", list(STATURE_MAP.keys()))
+            u_stature_id = STATURE_MAP[u_st_label]
 
-    with col3:
-        st.markdown("**Suche**")
-        u_age_range = st.slider("Wunsch-Alter", 18, 99, (20, 40))
-        u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
-        # Alignment-Check: Ab hier stehen die Felder auf gleicher Höhe
-        u_radius = st.slider("Suchradius (km)", 5, 500, 50)
-        u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190))
-        u_target_st_labels = st.multiselect("Gesuchte Statur", list(STATURE_MAP.keys()), default=["Normal"])
+        with c3:
+            st.markdown("**Suche**")
+            u_age_range = st.slider("Wunsch-Alter", 18, 99, (20, 40))
+            u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
+            # Alignment: Suchradius korrespondiert mit Standort
+            u_radius = st.slider("Suchradius (km)", 5, 500, 50)
+            # Alignment: Gesuchte Größe korrespondiert mit Größe
+            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190))
+            u_target_statures = st.multiselect("Gesuchte Statur", list(STATURE_MAP.keys()), default=["Normal"])
 
-    if st.button("DNA SICHERN & RESONANZ STARTEN", type="primary"):
-        # Logik für Speichern und Mail-Versand
-        pass
-
-        if not u_email or "@" not in u_email:
-            st.warning("Bitte gib eine gültige E-Mail für die Aktivierung an.")
-        elif len(manifesto) < 10:
-            st.warning("Dein Manifesto ist noch ein bisschen zu kurz für eine echte Resonanz.")
-        else:
-                with st.status("Verarbeite digitale DNA...", expanded=True) as status:
-                    st.write("Lokalisiere Standort...")
-                    coords = logic.geocode_city(u_location) #
-                    
-                    if not coords:
-                        status.update(label="Standort-Fehler!", state="error")
-                        st.error("Wohnort konnte nicht gefunden werden.")
-                    else:
-                        st.write("Verschlüssele Daten & Speichere Profil...")
+        if st.button("DNA SICHERN & RESONANZ STARTEN", type="primary"):
+            if not u_email or "@" not in u_email:
+                st.warning("Ohne gültige E-Mail kein Vibe-Check!")
+            else:
+                with st.status("Verarbeite digitale DNA...") as status:
+                    coords = logic.geocode_city(u_location)
+                    if coords:
                         user_data = {
-                            'email': u_email,
-                            'identity': 1, # Hier ggf. später Geschlecht-ID mappen
-                            'search_for': 2, 
-                            'age': u_age, 
-                            'height': u_height,
-                            'stature_id': u_stature_id,
-                            'coords': coords,
-                            'is_ukrainian': False, # Vorerst deaktiviert
-                            'messenger_contact': u_messenger,
-                            'key_hash': security.hash_key(v_key), # [cite: 2026-01-18]
-                            'u_age_min': u_age_range[0],
-                            'u_age_max': u_age_range[1],
-                            'u_height_min': u_target_height[0],
-                            'u_height_max': u_target_height[1],
+                            'email': u_email, 'identity': 1, 'search_for': 2, 
+                            'age': u_age, 'height': u_height, 'stature_id': u_stature_id,
+                            'coords': coords, 'is_ukrainian': False, # DEAKTIVIERT [cite: 2026-03-11]
+                            'messenger_contact': u_messenger, 'key_hash': security.hash_key(v_key),
+                            'u_age_min': u_age_range[0], 'u_age_max': u_age_range[1],
+                            'u_height_min': u_target_height[0], 'u_height_max': u_target_height[1],
                             'radius': u_radius
                         }
-                        
-                        pub_key = os.getenv("WORKER_PUBLIC_KEY")
-                        # Speichern in der DB
-                        v_token, db_status = db_handler.save_profile_atomic(user_data, manifesto, pub_key)
-                        
+                        v_token, db_status = db_handler.save_profile_atomic(user_data, manifesto, os.getenv("WORKER_PUBLIC_KEY"))
                         if db_status == "needs_verification":
-                            st.write("Sende Aktivierungs-Mail...")
                             if mail_logic.send_activation_mail(u_email, v_token): # [cite: 2026-03-08]
-                                status.update(label="DNA erfolgreich gesichert!", state="complete")
-                                st.success(f"Moin! Bitte bestätige die Mail an {u_email}.")
+                                status.update(label="DNA gesichert!", state="complete")
+                                st.success(f"Moin! Bitte prüfe deine Mail: {u_email}")
                                 st.balloons()
                             else:
                                 status.update(label="Mail-Fehler!", state="error")
