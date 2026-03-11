@@ -1,17 +1,17 @@
 import streamlit as st
 
 def apply_custom_style(): 
-    """Erzwingt das helle Design, fixiert die Nav und zentriert Elemente."""
+    """Erzwingt das helle Design und fixiert die Navigation."""
     st.markdown(
         """
         <style>
-        /* 1. GLOBALER LIGHT-MODE & HINTERGRUND */
+        /* 1. GLOBALER LIGHT-MODE FIX */
         .stApp {
             background-color: #FFFFFF !important;
             color: #262730 !important;
         }
 
-        /* 2. FIXIERTE TOP-NAVIGATION */
+        /* 2. TOP-NAV FIXIERUNG & FARBE */
         [data-testid="stHeader"] {
             position: fixed;
             top: 0;
@@ -21,61 +21,35 @@ def apply_custom_style():
             border-bottom: 1px solid #DDDDDD;
         }
 
-        /* 3. ZENTRIERTE ÜBERSCHRIFTEN & TEXTE */
-        h1, h2, h3 {
-            color: #000000 !important;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-weight: 600 !important;
-            text-align: center !important;
-            letter-spacing: 1px;
-        }
-
+        /* 3. ZENTRIERTE ELEMENTE */
         .centered-header {
             text-align: center !important;
             display: block;
-            margin-top: 2rem;
+            margin-top: 3rem;
             margin-bottom: 1.5rem;
             color: #111111;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 2px;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
         }
 
-        /* 4. FORMULAR & INPUT STYLING */
+        h1, h2, h3 {
+            color: #000000 !important;
+            text-align: center !important;
+        }
+
+        /* 4. FORMULAR OPTIK (Hell & Klar) */
         div[data-testid="stForm"] {
             background-color: #F8F9FB;
-            padding: 30px;
-            border-radius: 12px;
             border: 1px solid #E6E9EF;
+            border-radius: 12px;
         }
-
+        
+        /* Input Felder */
         .stTextInput input, .stTextArea textarea, .stSelectbox div {
-            background-color: #FFFFFF !important;
+            background-color: white !important;
             color: #111111 !important;
-            border: 1px solid #CCCCCC !important;
-        }
-        
-        label p {
-            color: #262730 !important;
-            font-weight: 500 !important;
-        }
-
-        /* 5. BUTTONS (Top-Nav & Sichern) */
-        .stButton button {
-            border-radius: 5px;
-            transition: all 0.3s;
-        }
-        
-        /* 6. BETA-FOOTER */
-        .beta-container {
-            background-color: #F0F2F6;
-            padding: 25px;
-            border-radius: 5px;
-            margin-top: 50px;
-            color: #555;
-            font-size: 0.85rem;
-            line-height: 1.6;
         }
         </style>
         """, 

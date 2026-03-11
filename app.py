@@ -109,12 +109,18 @@ def render_founding_dashboard():
     st.markdown(html_content, unsafe_allow_html=True)
 
 def main():
-    # --- 1. INITIALISIERUNG DER NAVIGATION ---
+    # --- 1. INITIALISIERUNG (Ganz wichtig!) ---
     if 'menu' not in st.session_state:
         st.session_state.menu = "Manifesto erstellen"
+    
+    # Hier fixen wir deinen AttributeError:
+    if 'manifesto_buffer' not in st.session_state:
+        st.session_state.manifesto_buffer = ""
 
-    # --- 2. TOP-NAVIGATION (Fixiert) ---
-    # Wir nutzen Spalten für die horizontale Navigation [cite: 2026-03-11]
+    # --- 2. STYLES LADEN ---
+    style.apply_custom_style() 
+    
+    # --- 3. TOP-NAVIGATION ---
     nav_cols = st.columns([1, 1.2, 0.8, 1.2, 1, 0.8])
     if nav_cols[0].button("🏠 Startseite"): st.session_state.menu = "Start"
     if nav_cols[1].button("📝 Manifesto"): st.session_state.menu = "Manifesto erstellen"
@@ -123,39 +129,34 @@ def main():
     if nav_cols[4].button("ℹ️ Über"): st.session_state.menu = "About"
     if nav_cols[5].button("⚙️ Admin"): st.session_state.menu = "Admin"
 
-    # Variable 'menu' für die nachfolgende Logik setzen
     menu = st.session_state.menu
-
-    # Header & Founding Dashboard
     style.render_header()
     render_founding_dashboard()
 
     if menu == "Manifesto erstellen":
-        # --- 3. ERKLÄRUNGS-BLOCK (User abholen) [cite: 2026-03-11] ---
-        st.markdown("<h2 style='text-align: center;'>Was ist AIM-Vibe?</h2>", unsafe_allow_html=True)
+        # --- ERKLÄRUNGS-BLOCK ---
+        st.markdown("<h3 style='text-align: center;'>Was ist AIM-Vibe?</h3>", unsafe_allow_html=True)
         st.info("""
-        Künstliche Intelligenz ist im Grunde ein **irre mächtiger Vergleichsapparat**. 
+        Künstliche Intelligenz ist im Grunde ein irre mächtiger Vergleichsapparat. 
         Wir nutzen diese Kraft hier nicht für Werbung, sondern für dich: AIM vergleicht dein Manifesto 
-        mit dem anderer Menschen im **1536-dimensionalen Vektorraum**.
+        mit dem anderer Menschen im 1536-dimensionalen Vektorraum. [cite: 2026-02-07]
         
-        Wir suchen nicht nach Hobbys, wir suchen nach der **Resonanz in deinem Vibe**. 
-        Dein Manifesto ist der qualitative Anker dieser Magie.
-        Und: Wir suchen verschlüsselt! Selbst als Admins haben wir keinen Zugriff auf deine Daten, dein Manifesto. Umso wichtiger ist dein Passwort (Vibe Key).
-        DU hast die Kontrolle über deine Daten. Punkt.
+        Wir suchen nicht nach Hobbys, wir suchen nach der Resonanz in deinem Vibe. 
+        Dein Manifesto ist der qualitative Anker dieser Magie. [cite: 2025-12-30]
+        
+        Und: Wir suchen verschlüsselt! Selbst als Admins haben wir keinen Zugriff auf deine Daten. 
+        Umso wichtiger ist dein Passwort (Vibe Key). DU hast die Kontrolle. Punkt. [cite: 2026-01-18]
         """)
 
-        # --- 4. DAS MANIFESTO (Wichtigster Part zuerst) [cite: 2026-03-11] ---
+        # --- MANIFESTO (Zentriert & Ohne Nummer) ---
         st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
         manifesto = st.text_area("", value=st.session_state.manifesto_buffer, height=300, label_visibility="collapsed")
-        st.session_state.manifesto_buffer = manifesto(
-            "Was macht dich aus? Schreib frei von der Seele...", 
-            placeholder="Deine Werte, dein Sound, deine Sicht auf die Welt..."
-        )
+        st.session_state.manifesto_buffer = manifesto
 
-        # --- 5. DIGITALE DNA (Hardfacts mit Alignment) [cite: 2026-03-11] ---
-        st.markdown('<p class="centered-header">Deine Digitale DNA</p>', unsafe_allow_header=True)
-        STATURE_MAP = {"Sehr schlank": 1, "Schlank": 2, "Normal": 3, "Kilos+": 4, "Curvy": 5}
+        # --- DIGITALE DNA (Zentriert & Ohne Nummer) ---
+        st.markdown('<p class="centered-header">Deine Digitale DNA</p>', unsafe_allow_html=True)
         
+        STATURE_MAP = {"Sehr schlank": 1, "Schlank / Sportlich": 2, "Normal / Durchschnitt": 3, "Kilos+": 4, "Curvy": 5}
         c1, c2, c3 = st.columns(3)
         with c1:
             st.markdown("**Basis**")
