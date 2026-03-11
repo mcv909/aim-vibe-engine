@@ -108,112 +108,94 @@ def render_founding_dashboard():
 
     st.markdown(html_content, unsafe_allow_html=True)
 
+import streamlit as st
+import db_handler, logic, mail_logic, security, style
+import os
+
 def main():
-    style.apply_custom_style() 
+    # 1. Top Navigation (Fixiert)
+    # Wir nutzen st.tabs oder eine Button-Reihe als Navigation oben
+    nav_cols = st.columns([1, 1, 1, 1, 1, 1])
+    with nav_cols[0]:
+        if st.button("Startseite"): st.session_state.menu = "Start"
+    with nav_cols[1]:
+        if st.button("Manifesto erstellen"): st.session_state.menu = "Create"
+    with nav_cols[2]:
+        if st.button("Login"): st.session_state.menu = "Login"
+    with nav_cols[3]:
+        if st.button("Q&A Resonanz"): st.session_state.menu = "QA"
+    with nav_cols[4]:
+        if st.button("Über AIM"): st.session_state.menu = "About"
+    with nav_cols[5]:
+        if st.button("Admin"): st.session_state.menu = "Admin"
+
+    # System DNA dezent unter der Nav oder in der Sidebar lassen [cite: 2026-02-22]
+    st.sidebar.markdown(f"**System-DNA:** `{logic.get_system_dna()}`")
+
+    # Header-Bereich
     style.render_header()
-    
-    # --- NEU: E-MAIL VERIFIZIERUNG ÜBER URL-TOKEN --- [cite: 2026-03-08]
-    if "token" in st.query_params:
-        token = st.query_params["token"]
-        success, p_id = db_handler.verify_email_by_token(token)
-        if success:
-            st.balloons()
-            st.success("### E-Mail erfolgreich verifiziert! 🎉")
-            st.info("Dein Manifesto wird nun im 1536-D Raum verortet. Sobald der MacAir-Worker fertig ist, bist du aktiv.")
-            st.query_params.clear() # Token aus URL entfernen
-    
     render_founding_dashboard()
 
-    # Mapping für die Statur-Logik (ID 1-5) [cite: 2026-03-08]
-    STATURE_MAP = {
-        "Sehr schlank": 1,
-        "Schlank / Sportlich": 2,
-        "Normal / Durchschnitt": 3,
-        "Ein paar Kilos mehr": 4,
-        "Curvy / Plus Size": 5
-    }
+    # --- DER NEUE ERKLÄRUNGS-BLOCK ---
+    st.markdown("""
+    ### Was ist AIM-Vibe genau?
+    Künstliche Intelligenz ist im Kern ein gigantischer, hochpräziser **Vergleichsapparat**. 
+    Während andere Algorithmen dir nur zeigen, was du gestern gekauft hast, nutzt AIM diese Kraft, 
+    um deinen **Vibe** zu verorten. 
+    
+    Dein Manifesto ist dein digitaler Fingerabdruck. Wir vergleichen diesen qualitativen Anker 
+    im **1536-dimensionalen Raum**, um Menschen zu finden, die wirklich auf deiner Frequenz funken. 
+    Kein Swipen nach Oberflächlichkeiten – sondern echte Resonanz.
+    """) [cite: 2026-02-07, 2025-12-30]
 
-    menu = st.sidebar.selectbox("Navigation", ["Manifesto erstellen", "Login", "Q&A / Resonanz", "Über AIM", "Admin"])
+    # --- DAS MANIFESTO (Das wichtigste Feld zuerst) ---
+    st.markdown("### 1. Dein Manifesto")
+    manifesto = st.text_area(
+        "Was macht dich aus? (Musik, Werte, Träume...)", 
+        height=250, 
+        placeholder="Schreib frei von der Seele..."
+    )
 
-    if menu == "Admin":
-        st.subheader("Maschinenraum (Admin)")
-        admin_pw = st.text_input("Admin-Passwort", type="password")
-        if admin_pw == os.getenv("ADMIN_PASSWORD"):
-            st.success("Willkommen im Kern, Marc.")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("BATCH-MATCHING STARTEN"):
-                    with st.spinner("AIM scannt die Matrix..."):
-                        logic.run_batch_matching()
-                    st.balloons()
-            with col2:
-                try:
-                    user_count = db_handler.get_user_count()
-                    match_count = db_handler.get_match_count()
-                    st.metric("Aktive User", user_count)
-                    st.metric("Resonanzen im Feld", match_count)
-                except Exception as e:
-                    st.error(f"Statistik-Fehler: {e}")
+    # --- DIE HARDFACTS (Deine Digitale DNA) ---
+    st.markdown("### 2. Deine Digitale DNA")
+    STATURE_MAP = {"Sehr schlank": 1, "Schlank": 2, "Normal": 3, "Kilos+": 4, "Curvy": 5}
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("**Basis**")
+        u_name = st.text_input("Name / Alias")
+        u_email = st.text_input("E-Mail (für Aktivierung)") [cite: 2026-03-08]
+        v_key = st.text_input("Vibe Key", type="password") [cite: 2026-01-18]
+        u_messenger = st.text_input("Messenger (optional)")
 
-    elif menu == "Q&A / Resonanz":
-        st.switch_page("pages/qa.py")
+    with col2:
+        st.markdown("**Identität**")
+        u_age = st.number_input("Dein Alter", 18, 99, 25)
+        u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"])
+        st.write("") # Leerzeile für Alignment
+        u_location = st.text_input("Standort") # Korrespondiert mit Suchradius
+        u_height = st.number_input("Größe (cm)", 140, 220, 175) # Korrespondiert mit gesuchter Größe
+        u_st_label = st.selectbox("Deine Statur", list(STATURE_MAP.keys()))
 
-    elif menu == "Manifesto erstellen":
-        st.subheader("Deine Digitale DNA")
-        
-        # 1. Das Mapping muss bekannt sein, bevor wir es nutzen [cite: 2026-03-08]
-        STATURE_MAP = {
-            "Sehr schlank": 1,
-            "Schlank / Sportlich": 2,
-            "Normal / Durchschnitt": 3,
-            "Ein paar Kilos mehr": 4,
-            "Curvy / Plus Size": 5
-        }
+    with col3:
+        st.markdown("**Suche**")
+        u_age_range = st.slider("Wunsch-Alter", 18, 99, (20, 40))
+        u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
+        # Alignment-Check: Ab hier stehen die Felder auf gleicher Höhe
+        u_radius = st.slider("Suchradius (km)", 5, 500, 50)
+        u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190))
+        u_target_st_labels = st.multiselect("Gesuchte Statur", list(STATURE_MAP.keys()), default=["Normal"])
 
-        if 'manifesto_buffer' not in st.session_state: 
-            st.session_state.manifesto_buffer = ""
+    if st.button("DNA SICHERN & RESONANZ STARTEN", type="primary"):
+        # Logik für Speichern und Mail-Versand
+        pass
 
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.markdown("### Basis")
-            u_name = st.text_input("Name / Alias", placeholder="Wie sollen wir dich nennen?")
-            u_email = st.text_input("Deine E-Mail (für die Aktivierung)") # Wichtig für den neuen Flow! [cite: 2026-03-08]
-            v_key = st.text_input("Vibe Key", type="password")
-            u_messenger = st.text_input("Messenger-Kontakt (optional)", placeholder="z.B. Threema ID, Signal...")
-
-        with col2:
-            st.markdown("### Identität")
-            u_age = st.slider("Dein Alter", 18, 99, 25)
-            u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"])
-            u_location = st.text_input("Standort", placeholder="Stadt...")
-            u_height = st.slider("Größe (cm)", 140, 220, 175)
-            # HIER WAR DER FEHLER: Variable u_stature_label definiert...
-            u_stature_label = st.selectbox("Deine Statur", list(STATURE_MAP.keys()))
-            # ... und hier wird sie jetzt korrekt genutzt:
-            u_stature_id = STATURE_MAP[u_stature_label]
-            
-        with col3:
-            st.markdown("### Suche")
-            u_age_range = st.slider("Wunsch-Alter", 18, 99, (20, 40))
-            u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
-            u_intent = st.selectbox("Absicht", ["partner", "friends", "both"], index=2)
-            u_radius = st.slider("Suchradius (km)", 5, 500, 50)
-            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190))
-            # Für die gesuchte Statur nutzen wir vorerst eine Liste der IDs
-            u_target_statures = st.multiselect("Gesuchte Statur", list(STATURE_MAP.keys()), default=["Normal / Durchschnitt"])
-
-        # --- HIER STARTET DER FIX ---
-        is_ukrainian = st.checkbox("Ich bin Ukrainer/in (lebenslang kostenlos)") # [cite: 2026-01-15]
-        
-        manifesto = st.text_area("Dein Manifesto", value=st.session_state.manifesto_buffer, height=300)
-        st.session_state.manifesto_buffer = manifesto
-
-        if st.button("DNA SICHERN & RESONANZ STARTEN", key="btn_create_final"):
-            if not u_email or "@" not in u_email:
-                st.warning("Bitte gib eine gültige E-Mail für die Aktivierung an.")
-            elif len(manifesto) < 10:
-                st.warning("Dein Manifesto ist noch ein bisschen zu kurz für eine echte Resonanz.")
-            else:
+        if not u_email or "@" not in u_email:
+            st.warning("Bitte gib eine gültige E-Mail für die Aktivierung an.")
+        elif len(manifesto) < 10:
+            st.warning("Dein Manifesto ist noch ein bisschen zu kurz für eine echte Resonanz.")
+        else:
                 with st.status("Verarbeite digitale DNA...", expanded=True) as status:
                     st.write("Lokalisiere Standort...")
                     coords = logic.geocode_city(u_location) #
@@ -231,7 +213,7 @@ def main():
                             'height': u_height,
                             'stature_id': u_stature_id,
                             'coords': coords,
-                            'is_ukrainian': is_ukrainian, # Jetzt sicher im Scope!
+                            'is_ukrainian': False, # Vorerst deaktiviert
                             'messenger_contact': u_messenger,
                             'key_hash': security.hash_key(v_key), # [cite: 2026-01-18]
                             'u_age_min': u_age_range[0],

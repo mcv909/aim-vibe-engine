@@ -1,6 +1,33 @@
 import streamlit as st
 
 def apply_custom_style(): 
+
+    # In style.py ergänzen:
+    
+    CSS_TOP_NAV = """
+    <style>
+        .stAppHeader {
+            background-color: #0E1117;
+            border-bottom: 1px solid #333;
+        }
+        /* Fixiert die Navigation oben */
+        [data-testid="stHeader"] {
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+        }
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 10px;
+            background-color: #111;
+            border-bottom: 2px solid #FF00FF;
+        }
+    </style>
+    """
+
     """Wiederherstellung des hellen Produktions-Looks mit Lesbarkeits-Fix."""
     st.markdown(
         """
