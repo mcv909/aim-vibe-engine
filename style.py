@@ -1,69 +1,73 @@
 import streamlit as st
 
+import streamlit as st
+
 def apply_custom_style(): 
-    """Erzwingt das helle Design, macht Buttons lesbar und fixiert die Nav."""
+    """Erzwingt das helle Design und optimiert die Lesbarkeit massiv."""
     st.markdown(
         """
         <style>
-        /* FARB-DEFINITIONEN (Hier kannst du einfach ändern) */
-        :root {
-            --aim-bg: #FFFFFF;
-            --aim-text: #111111;
-            --aim-gray-light: #F0F2F6;
-            --aim-gray-medium: #6B6B6B;
-            --aim-accent: #FF00FF;
-        }
-
+        /* 1. GLOBALER LOOK */
         .stApp {
-            background-color: var(--aim-bg) !important;
-            color: var(--aim-text) !important;
+            background-color: #FFFFFF !important;
+            color: #111111 !important;
         }
 
-        /* 1. NAVIGATION BUTTONS (Grau, klar entzifferbar) */
+        /* 2. LABELS (Die Texte ÜBER den Eingabefeldern) */
+        /* Wir zielen direkt auf die Streamlit-Markdown-Absätze in Labels ab */
+        .stWidgetLabel p, label p {
+            color: #000000 !important; /* Tiefschwarz */
+            font-weight: 700 !important; /* Fett für bessere Sichtbarkeit */
+            font-size: 1.05rem !important;
+            opacity: 1 !important;
+        }
+
+        /* 3. PLACEHOLDER (Die Beispieltexte INNERHALB der Felder) */
+        /* Diese müssen dunkler sein als der Standard, aber heller als die Labels */
+        ::placeholder {
+            color: #555555 !important; /* Deutliches Dunkelgrau */
+            opacity: 1 !important;
+        }
+        input::placeholder, textarea::placeholder {
+            color: #555555 !important;
+            opacity: 1 !important;
+        }
+
+        /* 4. NAVIGATION BUTTONS OBEN (Grau & Lesbar) */
         div.stButton > button {
-            background-color: #EEEEEE !important;
-            color: #333333 !important;
-            border: 1px solid var(--aim-gray-medium) !important;
+            background-color: #F0F2F6 !important; /* Helles Grau */
+            color: #333333 !important; /* Dunkle Schrift */
+            border: 1px solid #CCCCCC !important;
             font-weight: 500 !important;
-            width: 100%;
+            transition: all 0.2s ease-in-out;
         }
         div.stButton > button:hover {
-            border-color: var(--aim-accent) !important;
-            color: var(--aim-accent) !important;
+            border-color: #FF00FF !important; /* AIM-Pink beim Hover */
+            color: #FF00FF !important;
         }
 
-        /* 2. INPUT FELDER (Weißer Hintergrund, schwarze Schrift) */
+        /* 5. INPUT FELDER (Inhalt schwarz auf weiß) */
         .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
             background-color: #FFFFFF !important;
-            color: var(--aim-gray-medium); !important;
-            border: 1px solid var(--aim-gray-medium) !important;
+            color: #000000 !important;
+            border: 1px solid #BBBBBB !important;
         }
         
-        /* Fix für die Lesbarkeit im Dropdown-Menü */
-        div[data-baseweb="popover"] {
+        /* Dropdown-Listen Fix (Inhalt schwarz) */
+        div[data-baseweb="popover"], div[data-baseweb="menu"] {
             color: #000000 !important;
         }
 
-        /* 3. ZENTRIERTE ELEMENTE */
+        /* 6. ZENTRIERTE HEADER */
         .centered-header {
             text-align: center !important;
             display: block;
-            margin-top: 3rem;
-            margin-bottom: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
             color: #000000;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 2px;
-        }
-
-        /* 4. TOP-NAV FIXIERUNG */
-        [data-testid="stHeader"] {
-            position: fixed;
-            top: 0;
-            z-index: 1000;
-            width: 100%;
-            background-color: #FFFFFF !important;
-            border-bottom: 1px solid var(--aim-gray-medium);
         }
         </style>
         """, 
