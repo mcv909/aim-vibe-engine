@@ -145,7 +145,7 @@ def main():
         """)
 
         # --- 4. DAS MANIFESTO (Wichtigster Part zuerst) [cite: 2026-03-11] ---
-        st.markdown("### 1. Dein Manifesto")
+        st.markdown("### Dein Manifesto")
         manifesto = st.text_area(
             "Was macht dich aus? Schreib frei von der Seele...", 
             height=300, 
@@ -153,7 +153,7 @@ def main():
         )
 
         # --- 5. DIGITALE DNA (Hardfacts mit Alignment) [cite: 2026-03-11] ---
-        st.markdown("### 2. Deine Digitale DNA")
+        st.markdown("### Deine Digitale DNA - die hard Facts")
         STATURE_MAP = {"Sehr schlank": 1, "Schlank": 2, "Normal": 3, "Kilos+": 4, "Curvy": 5}
         
         c1, c2, c3 = st.columns(3)
