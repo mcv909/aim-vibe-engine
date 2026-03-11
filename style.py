@@ -34,8 +34,8 @@ def apply_custom_style():
 
         /* 2. INPUT FELDER (Weißer Hintergrund, schwarze Schrift) */
         .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
-            background-color: #DDDDDD !important;
-            color: #F0F2F6; !important;
+            background-color: #FFFFFF !important;
+            color: #DDDDDD; !important;
             border: 1px solid var(--aim-gray-medium) !important;
         }
         
