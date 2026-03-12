@@ -38,7 +38,7 @@ def main():
         },
         {
             "q": "Was passiert, wenn ich meinen Vibe-Key verliere?",
-            "a": "Dein Vibe-Key ist der einzige Schlüssel zu deinen verschlüsselten Daten. Da wir Zero-Knowledge fahren, können wir dein Profil bei Verlust nicht entsperren. Dein Passwort ist dein Schutzschild." [cite: 2026-01-18]
+            "a": "Dein Vibe-Key ist der einzige Schlüssel zu deinen verschlüsselten Daten. Da wir Zero-Knowledge fahren, können wir dein Profil bei Verlust nicht entsperren. Dein Passwort ist dein Schutzschild."
         },
         {
             "q": "Wer bekommt meine Daten?",
