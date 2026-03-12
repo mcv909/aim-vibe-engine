@@ -100,22 +100,23 @@ def render_beta_footer():
     )
 
 def render_nav():
-    """Zentrales Navigations-Element für alle Seiten."""
     if 'menu' not in st.session_state:
         st.session_state.menu = "Manifesto erstellen"
 
+    # Wir nutzen dezentere, technische Symbole
     nav_cols = st.columns([1.5, 0.8, 1.2, 1, 0.8])
-    if nav_cols[0].button("📝 Manifesto"): 
+    
+    if nav_cols[0].button("✎ Manifesto"): 
         st.session_state.menu = "Manifesto erstellen"
         st.switch_page("app.py")
-    if nav_cols[1].button("🔑 Login"): 
+    if nav_cols[1].button("⚿ Login"): 
         st.session_state.menu = "Login"
         st.switch_page("app.py")
-    if nav_cols[2].button("🎯 Resonanz"): 
+    if nav_cols[2].button("◬ Resonanz"): # Das Delta-Symbol für Veränderung/Vibe
         st.switch_page("pages/qa.py")
-    if nav_cols[3].button("ℹ️ Über AIM"): 
+    if nav_cols[3].button("ⓘ Über AIM"): 
         st.switch_page("pages/about.py")
-    if nav_cols[4].button("⚙️ Admin"): 
+    if nav_cols[4].button("⚙ Admin"): 
         st.session_state.menu = "Admin"
         st.switch_page("app.py")
 

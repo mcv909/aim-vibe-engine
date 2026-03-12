@@ -72,7 +72,19 @@ def main():
             "a": "Nutze sofort die Löschfunktion über unseren Telegram-Bot. Da Telegram dein Sicherheitsanker ist, kannst du deinen Datensatz dort jederzeit per Befehl unwiderruflich aus der Datenbank entfernen."
         }
     ]
-
+with st.expander("Wie funktioniert das Matching im 1536-D Raum?"):
+    st.write("""
+    Stell dir vor, dein Text wird in 1536 verschiedene Facetten oder 'Bedeutungs-Räume' zerlegt. 
+    Dabei hat jeder Raum eine spezifische Wertung. 
+    
+    **Die Logik dahinter:**
+    * **Präzision:** Je mehr Text du lieferst, desto feiner und schärfer werden diese Räume ausgeleuchtet [cite: 2025-12-30].
+    * **Muster:** AIM erstellt daraus eine mathematische 'Perlenkette' deines Vibes. 
+    * **Resonanz:** Wenn die Hardfacts (Alter, Ort etc.) passen, legen wir deine Kette über alle anderen. 
+    
+    Wir suchen nicht nach gleichen Wörtern, sondern berechnen die mathematische Übereinstimmung der Muster. 
+    Das ist echte Resonanz im 1536-dimensionalen Raum [cite: 2026-02-07].
+    """)
     for item in qa_data:
         st.markdown(f"**{item['q']}**")
         st.markdown(f"<p style='font-size: 0.9rem; color: #AAAAAA; margin-bottom: 25px;'>{item['a']}</p>", unsafe_allow_html=True)
