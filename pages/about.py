@@ -27,7 +27,7 @@ def render_about():
         """)
     with col2:
         # Hier triggern wir die Grafik für die Nerds
-        st.info("💡 **Nerd-Fakt:** Wir nutzen ein gte-Qwen2-1.5B Modell auf einem dedizierten MacAir M4, "
+        st.info("💡 **Nerd-Fakt:** Wir nutzen ein gte-Qwen2-1.5B Modell auf einem dedizierten Mac M4, "
                 "um lokale Vektorisierung ohne Cloud-Abhängigkeit zu garantieren.") 
 
     

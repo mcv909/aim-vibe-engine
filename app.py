@@ -208,17 +208,19 @@ def main():
 
     # --- 2. STYLES LADEN ---
     style.apply_custom_style() 
+    # In app.py UND about.py direkt nach style.apply_custom_style()
+    style.render_nav()
     
     # --- TOP-NAVIGATION (Reduziert) ---
-    nav_cols = st.columns([1.5, 0.8, 1.2, 1, 0.8])
-    if nav_cols[0].button("📝 Manifesto erstellen"): st.session_state.menu = "Manifesto erstellen"
-    if nav_cols[1].button("🔑 Login"): st.session_state.menu = "Login"
-    if nav_cols[2].button("🎯 Resonanz"): st.session_state.menu = "QA"
-    if nav_cols[3].button("ℹ️ Über AIM"): 
-        st.session_state.menu = "About"
-        # Wir springen direkt zur neuen Seite
-        st.switch_page("pages/about.py")
-    if nav_cols[4].button("⚙️ Admin"): st.session_state.menu = "Admin"
+    # nav_cols = st.columns([1.5, 0.8, 1.2, 1, 0.8])
+    # if nav_cols[0].button("📝 Manifesto erstellen"): st.session_state.menu = "Manifesto erstellen"
+    # if nav_cols[1].button("🔑 Login"): st.session_state.menu = "Login"
+    # if nav_cols[2].button("🎯 Resonanz"): st.session_state.menu = "QA"
+    # if nav_cols[3].button("ℹ️ Über AIM"): 
+    #     st.session_state.menu = "About"
+    #     # Wir springen direkt zur neuen Seite
+    #     st.switch_page("pages/about.py")
+    # if nav_cols[4].button("⚙️ Admin"): st.session_state.menu = "Admin"
 
     menu = st.session_state.menu
     style.render_header()
