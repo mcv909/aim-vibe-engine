@@ -18,12 +18,12 @@ def main():
         Dabei hat jeder Raum eine spezifische mathematische Wertung. 
         
         **Die Logik dahinter:**
-        * **Präzision:** Je mehr Text du lieferst, desto feiner und schärfer werden diese Räume ausgeleuchtet. [cite: 2025-12-30]
+        * **Präzision:** Je mehr Text du lieferst, desto feiner und schärfer werden diese Räume ausgeleuchtet. 
         * **Muster:** AIM erstellt daraus eine mathematische 'Perlenkette' deines Vibes. 
         * **Resonanz:** Wenn die Hardfacts (Alter, Ort etc.) passen, legen wir deine Kette über alle anderen. 
         
         Wir suchen nicht nach gleichen Wörtern, sondern berechnen die mathematische Übereinstimmung der Muster. 
-        Das ist echte Resonanz im 1536-dimensionalen Raum. [cite: 2026-02-07]
+        Das ist echte Resonanz im 1536-dimensionalen Raum.
         """)
 
     # 3. Bereinigte QA-Daten (Ohne Telegram) [cite: 2026-03-12]
@@ -34,7 +34,7 @@ def main():
         },
         {
             "q": "Was ist der Unterschied zu anderen Portalen?",
-            "a": "Das Herzstück ist dein Manifesto – ein freier Text, der deine 'Digitale DNA' repräsentiert. Unsere KI analysiert die Schwingung deiner Worte im 1536-D Raum." [cite: 2026-02-07]
+            "a": "Das Herzstück ist dein Manifesto – ein freier Text, der deine 'Digitale DNA' repräsentiert. Unsere KI analysiert die Schwingung deiner Worte im 1536-D Raum." 
         },
         {
             "q": "Was passiert, wenn ich meinen Vibe-Key verliere?",
@@ -42,7 +42,7 @@ def main():
         },
         {
             "q": "Wer bekommt meine Daten?",
-            "a": "Niemand außer deinem potenziellen Match. Dein Manifesto wird verschlüsselt gespeichert. Selbst wir als Admins sehen nur Vektoren (Zahlenreihen), keine Klartexte." [cite: 2026-01-18]
+            "a": "Niemand außer deinem potenziellen Match. Dein Manifesto wird verschlüsselt gespeichert. Selbst wir als Admins sehen nur Vektoren (Zahlenreihen), keine Klartexte." 
         },
         {
             "q": "Was passiert bei einem Match?",
@@ -50,8 +50,7 @@ def main():
         },
         {
             "q": "Wie kann ich meine Chance auf Matches vergrößern?",
-            "a": "Ein kurzes Manifesto führt zu einem 'verpixelten' Matching. Je mehr qualitative Anker du wirfst, desto präziser kann AIM die Resonanz berechnen." [cite: 2025-12-30]
-        }
+            "a": "Ein kurzes Manifesto führt zu einem 'verpixelten' Matching. Je mehr qualitative Anker du wirfst, desto präziser kann AIM die Resonanz berechnen."        }
     ]
 
     for item in qa_data:
