@@ -1,6 +1,9 @@
 import streamlit as st
 import style
 
+# In app.py UND about.py direkt nach style.apply_custom_style()
+style.render_nav()
+
 def render_about():
     style.apply_custom_style()
     st.markdown("<h2 style='text-align: center;'>Hinter den Kulissen von AIM</h2>", unsafe_allow_html=True)
