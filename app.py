@@ -285,29 +285,40 @@ def main():
                 st.warning("Ohne gültige E-Mail kein Vibe-Check!")
             else:
                 with st.status("Verarbeite digitale DNA...") as status:
+                    # Animation / Phasen [cite: 2026-03-12]
+                    st.write("✎ Analysiere Manifesto-Struktur...")
+                    import time
+                    time.sleep(1)
+                    
+                    st.write("◬ Webe mathematische Perlenkette (1536 Dimensionen)...")
+                    time.sleep(1.2)
+                    
                     coords = logic.geocode_city(u_location)
+                    st.write(f"📍 Verankere Standort: {u_location}...")
+                    
                     if coords:
                         user_data = {
                             'email': u_email, 'identity': 1, 'search_for': 2, 
                             'age': u_age, 'height': u_height, 'stature_id': u_stature_id,
-                            'coords': coords, 'is_ukrainian': False, # DEAKTIVIERT [cite: 2026-03-11]
+                            'coords': coords, 'is_ukrainian': False,
                             'messenger_contact': u_messenger, 'key_hash': security.hash_key(v_key),
                             'u_age_min': u_age_range[0], 'u_age_max': u_age_range[1],
                             'u_height_min': u_target_height[0], 'u_height_max': u_target_height[1],
                             'radius': u_radius
                         }
+                        
+                        st.write("🔑 Verschlüsele Datensatz mit Vibe-Key...")
                         v_token, db_status = db_handler.save_profile_atomic(user_data, manifesto, os.getenv("WORKER_PUBLIC_KEY"))
+                        
                         if db_status == "needs_verification":
-                            if mail_logic.send_activation_mail(u_email, v_token): # [cite: 2026-03-08]
-                                status.update(label="DNA gesichert!", state="complete")
+                            st.write("✉ Sende Aktivierungslink an Resonanz-Zentrale...")
+                            if mail_logic.send_activation_mail(u_email, v_token):
+                                status.update(label="DNA erfolgreich gesichert!", state="complete")
                                 st.success(f"Moin! Bitte prüfe deine Mail: {u_email}")
                                 st.balloons()
                             else:
-                                status.update(label="Mail-Fehler!", state="error")
-                                st.error("Konnte Aktivierungs-Mail nicht senden. Google-Setup prüfen.")
-                        else:
-                            status.update(label="Datenbank-Fehler!", state="error")
-                            st.error(f"Fehler beim Speichern: {db_status}")
+                                status.update(label="Mail-Zustellung fehlgeschlagen", state="error")
+                                st.error("Bitte prüfe deine SMTP-Einstellungen in der .env.")
  
     elif menu == "Login":
         st.subheader("Resonanz-Zentrale")
