@@ -108,6 +108,95 @@ def render_founding_dashboard():
 
     st.markdown(html_content, unsafe_allow_html=True)
 
+def init_db():
+    """Initialisiert die vollständige AIM-Struktur (Email-First)."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS profiles (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                email VARCHAR(255) UNIQUE NOT NULL,
+                identity INT, 
+                search_for INT, 
+                age INT,
+                height INT, 
+                stature_id INT, 
+                coords JSONB,
+                u_age_min INTEGER,
+                u_age_max INTEGER,
+                u_height_min INTEGER,
+                u_height_max INTEGER,
+                radius INTEGER DEFAULT 50,
+                is_ukrainian BOOLEAN DEFAULT FALSE,
+                is_email_verified BOOLEAN DEFAULT FALSE,
+                is_active BOOLEAN DEFAULT FALSE,
+                key_hash TEXT,
+                messenger_contact TEXT,
+                verification_token UUID DEFAULT gen_random_uuid(),
+                last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        # WICHTIG: PRIMARY KEY auf profile_id für den ON CONFLICT Support!
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS manifesto_vectors (
+                profile_id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+                manifesto_enc TEXT,
+                embedding vector(1536)
+            );
+        """)
+        conn.commit()
+    except Exception as e:
+        print(f"DB-Init Fehler: {e}"); conn.rollback()
+    finally:
+        cur.close(); conn.close()
+
+def save_profile_atomic(data, manifesto_raw, pub_key):
+    """Speichert Profil inkl. aller Filter und bereitet Vektorisierung vor."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        enc_manifesto = security.encrypt_for_worker(manifesto_raw, pub_key)
+        coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
+
+        cur.execute("""
+            INSERT INTO profiles (
+                email, identity, search_for, age, height, stature_id, 
+                coords, is_ukrainian, key_hash, messenger_contact,
+                u_age_min, u_age_max, u_height_min, u_height_max, radius
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (email) DO UPDATE SET
+                age = EXCLUDED.age, height = EXCLUDED.height, stature_id = EXCLUDED.stature_id,
+                coords = EXCLUDED.coords, messenger_contact = EXCLUDED.messenger_contact,
+                u_age_min = EXCLUDED.u_age_min, u_age_max = EXCLUDED.u_age_max,
+                u_height_min = EXCLUDED.u_height_min, u_height_max = EXCLUDED.u_height_max,
+                radius = EXCLUDED.radius, last_interaction = CURRENT_TIMESTAMP
+            RETURNING id, verification_token;
+        """, (
+            data['email'], data['identity'], data['search_for'], 
+            data['age'], data['height'], data['stature_id'], 
+            coords_json, data.get('is_ukrainian', False), data.get('key_hash'),
+            data.get('messenger_contact'), data.get('u_age_min'), data.get('u_age_max'),
+            data.get('u_height_min'), data.get('u_height_max'), data.get('radius')
+        ))
+        p_id, v_token = cur.fetchone()
+
+        cur.execute("""
+            INSERT INTO manifesto_vectors (profile_id, manifesto_enc)
+            VALUES (%s, %s)
+            ON CONFLICT (profile_id) DO UPDATE SET manifesto_enc = EXCLUDED.manifesto_enc;
+        """, (p_id, enc_manifesto))
+
+        conn.commit()
+        return v_token, "needs_verification"
+    except Exception as e:
+        conn.rollback()
+        return None, f"system_error: {str(e)}"
+    finally:
+        cur.close(); conn.close()
+
 def main():
     # --- 1. INITIALISIERUNG (Ganz wichtig!) ---
     if 'menu' not in st.session_state:
@@ -120,14 +209,13 @@ def main():
     # --- 2. STYLES LADEN ---
     style.apply_custom_style() 
     
-    # --- 3. TOP-NAVIGATION ---
-    nav_cols = st.columns([1, 1.2, 0.8, 1.2, 1, 0.8])
-    if nav_cols[0].button("🏠 Startseite"): st.session_state.menu = "Start"
-    if nav_cols[1].button("📝 Manifesto"): st.session_state.menu = "Manifesto erstellen"
-    if nav_cols[2].button("🔑 Login"): st.session_state.menu = "Login"
-    if nav_cols[3].button("🎯 Resonanz"): st.session_state.menu = "QA"
-    if nav_cols[4].button("ℹ️ Über"): st.session_state.menu = "About"
-    if nav_cols[5].button("⚙️ Admin"): st.session_state.menu = "Admin"
+    # --- TOP-NAVIGATION (Reduziert) ---
+    nav_cols = st.columns([1.5, 0.8, 1.2, 1, 0.8])
+    if nav_cols[0].button("📝 Manifesto erstellen"): st.session_state.menu = "Manifesto erstellen"
+    if nav_cols[1].button("🔑 Login"): st.session_state.menu = "Login"
+    if nav_cols[2].button("🎯 Resonanz"): st.session_state.menu = "QA"
+    if nav_cols[3].button("ℹ️ Über AIM"): st.session_state.menu = "About"
+    if nav_cols[4].button("⚙️ Admin"): st.session_state.menu = "Admin"
 
     menu = st.session_state.menu
     style.render_header()
@@ -137,15 +225,16 @@ def main():
         # --- ERKLÄRUNGS-BLOCK ---
         st.markdown("<h3 style='text-align: center;'>Was ist AIM-Vibe?</h3>", unsafe_allow_html=True)
         st.markdown("""
-        Künstliche Intelligenz ist im Grunde ein irre mächtiger Vergleichsapparat. 
-        Wir nutzen diese Kraft hier nicht für Werbung, sondern für dich: AIM vergleicht dein Manifesto 
-        mit dem anderer Menschen im 1536-dimensionalen Vektorraum. [cite: 2026-02-07]
+        **<u>A</u>IM? <u>A</u>rtificial <u>I</u>ntelligence <u>M</u>atching**, also eine künstliche Intelligenz die passende Leute findet.
+        Oah - cool, und wie genau? Künstliche Intelligenz ist im Grunde ein irre mächtiger Vergleichsapparat. 
+        AIM vergleicht dein Manifesto (lokal!), deinen Text mit dem anderer Menschen im **1536-dimensionalen Vektorraum**. [cite: 2026-02-07]
         
-        Wir suchen nicht nach Hobbys, wir suchen nach der Resonanz in deinem Vibe. 
+        Wir suchen nicht nach Hobbys, wir suchen nach der **Resonanz in deinem Vibe**. 
         Dein Manifesto ist der qualitative Anker dieser Magie. [cite: 2025-12-30]
         
-        Und: Wir suchen verschlüsselt! Selbst als Admins haben wir keinen Zugriff auf deine Daten. 
-        Umso wichtiger ist dein Passwort (Vibe Key). DU hast die Kontrolle. Punkt. [cite: 2026-01-18]
+        **Und: Wir suchen verschlüsselt!** Selbst als Admins haben wir keinen Zugriff auf deine Daten. [cite: 2026-01-18]
+        Umso wichtiger ist dein Passwort (Vibe Key). DU hast die Kontrolle. Punkt.
+        Sobald ein Match vorliegt werden die Matchpartner informiert - dann liegt es wieder bei euch, lernt euch kennen ;)
         """)
 
         # --- MANIFESTO (Zentriert & Ohne Nummer) ---
