@@ -219,6 +219,15 @@ def save_profile_atomic(data, manifesto_raw, pub_key):
         cur.close(); conn.close()
 
 def main():
+    # Mapping für die Identität (DB nutzt INT 1, 2, 3) [cite: 2026-03-15]
+    gender_map = {1: "m", 2: "w", 3: "d"}
+    db_identity = get_val('identity', 1)
+    u_gender_text = gender_map.get(db_identity, "m")
+
+    # Selectbox mit korrektem Index vorbefüllen
+    u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"], 
+                            index=["m", "w", "d"].index(u_gender_text))
+
     # 1. INITIALISIERUNG
     if 'menu' not in st.session_state: st.session_state.menu = "Manifesto erstellen"
     if 'manifesto_buffer' not in st.session_state: st.session_state.manifesto_buffer = ""

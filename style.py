@@ -4,6 +4,19 @@ def apply_custom_style():
     st.markdown(
         """
         <style>
+        /* Erzwungener Kontrast für Nav-Buttons */
+        div.stButton > button {
+        background-color: #F0F2F6 !important;
+        color: #111111 !important;
+        opacity: 1 !important; /* Kein Verblassen */
+        }
+
+        /* Inverses Highlighting für die aktive Seite [cite: 2026-03-15] */
+        .active-nav-btn button {
+            background-color: #000000 !important;
+            color: #FFFFFF !important;
+        }
+
         .stApp { background-color: #FFFFFF !important; color: #111111 !important; }
         
         /* 1. SLIDER: Rot durch GRÜN ersetzen */
