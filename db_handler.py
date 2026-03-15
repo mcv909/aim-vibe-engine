@@ -100,7 +100,7 @@ def save_profile_atomic(data, manifesto_raw, pub_key):
             INSERT INTO profiles (
                 email, identity, search_for, age, height, stature_id, 
                 coords, is_ukrainian, key_hash, messenger_contact,
-                u_age_min, u_age_max, u_height_min, u_height_max, radius,
+                u_age_min, u_age_max, u_height_min, u_height_max, radius, is_testuser,
                 last_interaction
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
             ON CONFLICT (email) DO UPDATE SET
@@ -115,7 +115,8 @@ def save_profile_atomic(data, manifesto_raw, pub_key):
             data['age'], data['height'], data['stature_id'], 
             coords_json, data.get('is_ukrainian', False), data.get('key_hash'),
             data.get('messenger_contact'), data.get('u_age_min'), data.get('u_age_max'),
-            data.get('u_height_min'), data.get('u_height_max'), data.get('radius')
+            data.get('u_height_min'), data.get('u_height_max'), data.get('radius'),
+            is_test
         ))
         p_id, v_token = cur.fetchone()
 
