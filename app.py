@@ -281,16 +281,19 @@ def main():
 
         with c2:
             st.markdown("**Identität**")
-            # Wir geben jedem Widget einen eindeutigen Key, um DuplicateElementId zu vermeiden [cite: 2026-03-15]
-            u_age = st.number_input("Dein Alter", 18, 99, value=get_val('age', 25), key="inp_age")
+            # Wir nutzen eindeutige Keys ('key=...'), um DuplicateElementId zu verhindern [cite: 2026-03-15]
+            u_age = st.number_input("Dein Alter", 18, 99, value=get_val('age', 25), key="age_input")
             
-            # Mapping für die Vorbefüllung (gender vs identity check) [cite: 2026-03-15]
+            # Mapping für Geschlecht (identity 1=m, 2=w, 3=d) [cite: 2026-03-12, 2026-03-15]
             g_list = ["m", "w", "d"]
-            g_idx = g_list.index(user.get('gender', 'm')) if user.get('gender') in g_list else 0
-            u_gender = st.selectbox("Dein Geschlecht", g_list, index=g_idx, key="sel_gender")
+            # Sicherer Index-Check [cite: 2026-03-15]
+            g_val = user.get('gender') or user.get('identity')
+            g_idx = g_list.index(g_val) if g_val in g_list else 0
             
-            u_location = st.text_input("Standort", value=get_val('location', ""), key="inp_loc") 
-            u_height = st.number_input("Größe (cm)", 140, 220, value=get_val('height', 175), key="inp_height")
+            u_gender = st.selectbox("Dein Geschlecht", g_list, index=g_idx, key="gender_main")
+            
+            u_location = st.text_input("Standort", value=get_val('location', ""), key="loc_input") 
+            u_height = st.number_input("Größe (cm)", 140, 220, value=get_val('height', 175), key="height_input")
 
         # 2. Die Slider-Logik (Sicher gegen NoneType-Fehler)
         with c3:
@@ -322,8 +325,18 @@ def main():
                 l_key = st.text_input("Vibe Key", type="password")
                 if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
                     user_res = db_handler.get_profile_by_email(l_email)
+                    # Beim Login-Check in der main() [cite: 2026-03-15]
                     if user_res and security.verify_key(l_key, user_res['key_hash']):
                         st.session_state.logged_in = True
+                        
+                        # NEU: Manifesto direkt beim Login mit dem l_key entschlüsseln! [cite: 2026-01-18]
+                        if user_res.get('manifesto_text'):
+                            try:
+                                decrypted_text = security.decrypt_manifesto(user_res['manifesto_text'], l_key)
+                                user_res['manifesto_text'] = decrypted_text
+                            except Exception:
+                                user_res['manifesto_text'] = "Fehler bei Entschlüsselung (Key falsch?)"
+                                
                         st.session_state.user_data = user_res
                         st.rerun()
 
