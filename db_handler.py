@@ -89,12 +89,11 @@ def init_db():
         cur.close(); conn.close()
 
 def save_profile_atomic(data, manifesto_raw, vibe_key):
-    """Speichert Profil und verschlüsselt das Manifesto mit dem Vibe-Key für den User."""
     conn = get_connection()
     cur = conn.cursor()
     is_test = data['email'].endswith('@iam-aim.com')
     try:
-        # Wir verschlüsseln hier symmetrisch mit dem Vibe-Key [cite: 2026-01-18]
+        # Wir verschlüsseln für den User-Login symmetrisch [cite: 2026-01-18]
         enc_manifesto = security.encrypt_data(manifesto_raw, vibe_key)
         coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
 
@@ -102,23 +101,21 @@ def save_profile_atomic(data, manifesto_raw, vibe_key):
             INSERT INTO profiles (
                 email, identity, search_for, age, height, stature_id, 
                 coords, is_ukrainian, key_hash, messenger_contact,
-                u_age_min, u_age_max, u_height_min, u_height_max, radius, is_testuser,
-                last_interaction
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                u_age_min, u_age_max, u_height_min, u_height_max, radius, is_testuser
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (email) DO UPDATE SET
-                age = EXCLUDED.age, height = EXCLUDED.height, stature_id = EXCLUDED.stature_id,
-                coords = EXCLUDED.coords, messenger_contact = EXCLUDED.messenger_contact,
+                age = EXCLUDED.age, height = EXCLUDED.height, coords = EXCLUDED.coords,
+                messenger_contact = EXCLUDED.messenger_contact, radius = EXCLUDED.radius,
                 u_age_min = EXCLUDED.u_age_min, u_age_max = EXCLUDED.u_age_max,
                 u_height_min = EXCLUDED.u_height_min, u_height_max = EXCLUDED.u_height_max,
-                radius = EXCLUDED.radius, last_interaction = CURRENT_TIMESTAMP
+                last_interaction = CURRENT_TIMESTAMP
             RETURNING id, verification_token;
         """, (
             data['email'], data['identity'], data['search_for'], 
             data['age'], data['height'], data['stature_id'], 
             coords_json, data.get('is_ukrainian', False), data.get('key_hash'),
             data.get('messenger_contact'), data.get('u_age_min'), data.get('u_age_max'),
-            data.get('u_height_min'), data.get('u_height_max'), data.get('radius'),
-            is_test
+            data.get('u_height_min'), data.get('u_height_max'), data.get('radius'), is_test
         ))
         p_id, v_token = cur.fetchone()
 

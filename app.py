@@ -219,26 +219,35 @@ def save_profile_atomic(data, manifesto_raw, pub_key):
         cur.close(); conn.close()
 
 def main():
-    # Mapping für die Identität (DB nutzt INT 1, 2, 3) [cite: 2026-03-15]
-    gender_map = {1: "m", 2: "w", 3: "d"}
-    db_identity = get_val('identity', 1)
-    u_gender_text = gender_map.get(db_identity, "m")
-
-        # 1. INITIALISIERUNG
+    # 1. INITIALISIERUNG
     if 'menu' not in st.session_state: st.session_state.menu = "Manifesto erstellen"
     if 'manifesto_buffer' not in st.session_state: st.session_state.manifesto_buffer = ""
     
     style.apply_custom_style() 
     style.render_nav()
     
+    # ... (Initialisierung wie gehabt) ...
     menu = st.session_state.menu
-    user = st.session_state.get('user_data', {})
     is_edit = st.session_state.get('logged_in', False)
+    user = st.session_state.get('user_data', {})
 
     style.render_header()
     render_founding_dashboard()
 
-    # Formular anzeigen bei 'Manifesto' ODER wenn im Login-Menü eingeloggt
+    # FALL A: Manifesto-Editor (Neu-Erstellung oder Bearbeitung)
+    if menu == "Manifesto erstellen" or (is_edit and menu == "Login"):
+        render_manifesto_editor(user, is_edit) # In eine Funktion auslagern für Sauberkeit
+
+    # FALL B: Login-Maske (Nur wenn NICHT eingeloggt)
+    elif menu == "Login" and not is_edit:
+        render_login_form()
+
+    # FALL C: Admin-Bereich
+    elif menu == "Admin":
+        st.title("⚙ Admin-Zentrale")
+
+
+    # ZENTRALE LOGIK: Formular anzeigen bei 'Manifesto' ODER wenn eingeloggt im Login-Menü
     if menu == "Manifesto erstellen" or (is_edit and menu == "Login"):
         if not is_edit:
             st.markdown("<h3 style='text-align: center;'>Was ist AIM-Vibe?</h3>", unsafe_allow_html=True)
@@ -257,86 +266,60 @@ def main():
         Sobald ein Match vorliegt werden die Matchpartner informiert - dann liegt es wieder bei euch, lernt euch kennen ;)
         """)
 
-# --- MANIFESTO (Vorbefüllt) ---
+        # --- MANIFESTO (Nur EINE Box!) ---
         st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
         st.caption("Das bin ich – meine Werte, mein Sound, meine Sicht auf die Welt.")
-        # Nutzt Daten aus der DB wenn eingeloggt [cite: 2026-03-12]
-        manifesto = st.text_area("", value=user.get('manifesto_text', st.session_state.manifesto_buffer), height=300, label_visibility="collapsed")
+        
+        # Wert kommt entweder aus der DB (user) oder dem Buffer
+        db_manifesto = user.get('manifesto_text', st.session_state.manifesto_buffer)
+        manifesto = st.text_area("", value=db_manifesto, height=300, key="main_manifesto", label_visibility="collapsed")
         st.session_state.manifesto_buffer = manifesto
 
-        st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
-        manifesto = st.text_area("", value=user.get('manifesto_text', st.session_state.manifesto_buffer), height=300, key="main_manifesto")
-        STATURE_MAP = {"Sehr schlank": 1, "Schlank / Sportlich": 2, "Normal / Durchschnitt": 3, "Kilos+": 4, "Curvy": 5}
+        st.markdown('<p class="centered-header">Deine Digitale DNA</p>', unsafe_allow_html=True)
         
         c1, c2, c3 = st.columns(3)
         with c1:
             st.markdown("**Basis**")
-            u_name = st.text_input("Name / Alias", value=user.get('name', ""))
-            u_email = st.text_input("E-Mail", value=user.get('email', ""), disabled=is_edit)
-            v_key = st.text_input("Vibe Key", type="password") if not is_edit else "********"
-            u_messenger = st.text_input("Messenger-Kontakt (optional)", value=user.get('messenger_contact', ""))
+            u_name = st.text_input("Name / Alias", value=user.get('name', ""), key="inp_name")
+            u_email = st.text_input("E-Mail", value=user.get('email', ""), disabled=is_edit, key="inp_email")
+            v_key = st.text_input("Vibe Key", type="password", key="inp_key") if not is_edit else "********"
+            u_messenger = st.text_input("Messenger-Kontakt (optional)", value=user.get('messenger_contact', ""), key="inp_mess")
 
         with c2:
             st.markdown("**Identität**")
-            # Eindeutige Keys verhindern den DuplicateID Fehler [cite: 2026-03-15]
-            u_age = st.number_input("Dein Alter", 18, 99, value=get_val('age', 25), key="age_input")
-            
+            u_age = st.number_input("Dein Alter", 18, 99, value=get_val('age', 25), key="inp_age")
+            # Mapping der identity ID auf den Index
             g_list = ["m", "w", "d"]
-            # Sicherer Mapping-Check für Geschlecht [cite: 2026-03-15]
-            db_id = user.get('identity', 1)
-            g_idx = (db_id - 1) if isinstance(db_id, int) and 1 <= db_id <= 3 else 0
-            u_gender = st.selectbox("Dein Geschlecht", g_list, index=g_idx, key="gender_input")
-            
-            u_location = st.text_input("Standort", value=get_val('location', ""), key="loc_input")
-            u_height = st.number_input("Größe (cm)", 140, 220, value=get_val('height', 175), key="height_input")
+            g_idx = (user.get('identity', 1) - 1) if isinstance(user.get('identity'), int) else 0
+            u_gender = st.selectbox("Dein Geschlecht", g_list, index=g_idx, key="inp_gender")
+            u_location = st.text_input("Standort", value=get_val('location', ""), key="inp_loc") 
+            u_height = st.number_input("Größe (cm)", 140, 220, value=get_val('height', 175), key="inp_height")
 
-        # 2. Die Slider-Logik (Sicher gegen NoneType-Fehler)
         with c3:
             st.markdown("**Suche**")
-            # Wir stellen sicher, dass u_age_min/max niemals None sind
-            u_age_min = get_val('u_age_min', 20)
-            u_age_max = get_val('u_age_max', 40)
-            u_age_range = st.slider("Wunsch-Alter", 18, 99, value=(u_age_min, u_age_max))
-            
-            u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
-            
-            u_radius = st.number_input("Suchradius (km)", 5, 1000, value=get_val('radius', 100), step=10)
-            
-            h_min = get_val('u_height_min', 160)
-            h_max = get_val('u_height_max', 190)
-            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(h_min, h_max))    
+            u_age_range = st.slider("Wunsch-Alter", 18, 99, value=(get_val('u_age_min', 20), get_val('u_age_max', 40)), key="inp_age_range")
+            u_radius = st.number_input("Suchradius (km)", 5, 1000, value=get_val('radius', 100), key="inp_rad")
+            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(get_val('u_height_min', 160), get_val('u_height_max', 190)), key="inp_h_range")
 
         btn_label = "PROFIL AKTUALISIEREN" if is_edit else "DNA SICHERN & RESONANZ STARTEN"
-        if st.button(btn_label, type="primary", key="save_btn"):
-            # Hier beim Speichern den vibe_key mitgeben! [cite: 2026-03-12]
-            v_token, db_status = db_handler.save_profile_atomic(user_data, manifesto, v_key if not is_edit else "dummy")
-            # HIER DIE SPEICHER-LOGIK (die Animation von neulich)
-            with st.status("Speichere digitale DNA...") as status:
-                # ... (Vektorisierung, DB-Save etc.) ...
-                status.update(label="DNA gesichert!", state="complete")
+        if st.button(btn_label, type="primary", key="main_save_btn"):
+            # Speicher-Logik triggern ...
+            pass
 
-    elif menu == "Login":
-            # Hier nur das leere Login-Feld zeigen, wenn noch nicht eingeloggt
-            with st.form("login_form"):
-                l_email = st.text_input("E-Mail Adresse")
-                l_key = st.text_input("Vibe Key", type="password")
-                if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
-                    user_res = db_handler.get_profile_by_email(l_email)
-                    # Beim Login-Check in der main() [cite: 2026-03-15]
-                    if user_res and security.verify_key(l_key, user_res['key_hash']):
-                        st.session_state.logged_in = True
-                        
-                        # NEU: Manifesto direkt beim Login mit dem l_key entschlüsseln! [cite: 2026-01-18]
-                        if user_res.get('manifesto_text'):
-                            try:
-                                decrypted_text = security.decrypt_manifesto(user_res['manifesto_text'], l_key)
-                                user_res['manifesto_text'] = decrypted_text
-                            except Exception:
-                                user_res['manifesto_text'] = "Fehler bei Entschlüsselung (Key falsch?)"
-                                
-                        st.session_state.user_data = user_res
-                        st.rerun()
-
+    elif menu == "Login" and not is_edit:
+        # Hier nur das leere Login-Feld zeigen [cite: 2026-03-15]
+        with st.form("login_form"):
+            l_email = st.text_input("E-Mail Adresse")
+            l_key = st.text_input("Vibe Key", type="password")
+            if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
+                user_res = db_handler.get_profile_by_email(l_email)
+                if user_res and security.verify_key(l_key, user_res['key_hash']):
+                    st.session_state.logged_in = True
+                    # Entschlüsselung mit dem Vibe-Key (AES/Symmetrisch) [cite: 2026-03-15]
+                    if user_res.get('manifesto_text'):
+                        user_res['manifesto_text'] = security.decrypt_data(user_res['manifesto_text'], l_key)
+                    st.session_state.user_data = user_res
+                    st.rerun()
     elif menu == "Login" and not is_edit:
         # Standard Login-Formular (wie in deinem File)
         if st.button("DNA SICHERN & RESONANZ STARTEN", type="primary"):
