@@ -232,13 +232,15 @@ def main():
     style.render_header()
     render_founding_dashboard()
 
-    # Wir erlauben das Formular im "Erstellen"-Modus ODER wenn man eingeloggt im Login-Menü ist
-    if menu == "Manifesto erstellen" or (is_edit and menu == "Login"):        
-        # --- ERKLÄRUNGS-BLOCK ---
-        st.markdown("<h3 style='text-align: center;'>Was ist AIM-Vibe?</h3>", unsafe_allow_html=True)
-        st.markdown("""
-        **<u>A</u>IM? <u>A</u>rtificial <u>I</u>ntelligence <u>M</u>atching**, also eine künstliche Intelligenz die passende Leute findet.
-        Oah - cool, und wie genau? Künstliche Intelligenz ist im Grunde ein irre mächtiger Vergleichsapparat. 
+    # Formular anzeigen bei 'Manifesto' ODER wenn im Login-Menü eingeloggt
+    if menu == "Manifesto erstellen" or (is_edit and menu == "Login"):
+        if not is_edit:
+            st.markdown("<h3 style='text-align: center;'>Was ist AIM-Vibe?</h3>", unsafe_allow_html=True)
+            st.markdown("""
+        AIM?
+        Atificial Intelligence Matching, also eine künstliche Intelligenz die passende Leute findet.
+        Oah - cool, und wie genau?
+        Künstliche Intelligenz ist im Grunde ein irre mächtiger Vergleichsapparat. 
         AIM vergleicht dein Manifesto (lokal!), deinen Text mit dem anderer Menschen im **1536-dimensionalen Vektorraum**. [cite: 2026-02-07]
         
         Wir suchen nicht nach Hobbys, wir suchen nach der **Resonanz in deinem Vibe**. 
@@ -249,9 +251,10 @@ def main():
         Sobald ein Match vorliegt werden die Matchpartner informiert - dann liegt es wieder bei euch, lernt euch kennen ;)
         """)
 
-        # MANIFESTO
+# --- MANIFESTO (Vorbefüllt) ---
         st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
         st.caption("Das bin ich – meine Werte, mein Sound, meine Sicht auf die Welt.")
+        # Nutzt Daten aus der DB wenn eingeloggt [cite: 2026-03-12]
         manifesto = st.text_area("", value=user.get('manifesto_text', st.session_state.manifesto_buffer), height=300, label_visibility="collapsed")
         st.session_state.manifesto_buffer = manifesto
 
@@ -263,21 +266,16 @@ def main():
             st.markdown("**Basis**")
             u_name = st.text_input("Name / Alias", value=user.get('name', ""))
             u_email = st.text_input("E-Mail", value=user.get('email', ""), disabled=is_edit)
-            v_key = st.text_input("Vibe Key", type="password", help="Dein Passwort") if not is_edit else "********"
-            if not is_edit:
-                st.warning("⚿ Dieser Key ist dein einziger Zugang. Wiederherstellung NICHT möglich.")
+            v_key = st.text_input("Vibe Key", type="password") if not is_edit else "********"
             u_messenger = st.text_input("Messenger-Kontakt (optional)", value=user.get('messenger_contact', ""))
-            if u_messenger and not is_valid_messenger(u_messenger):
-                st.error("Format: @username oder +49...")
 
         with c2:
             st.markdown("**Identität**")
             u_age = st.number_input("Dein Alter", 18, 99, value=user.get('age', 25))
             u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"], index=["m","w","d"].index(user.get('gender', 'm')))
-            # SPACER ENTFERNT [cite: 2026-03-15]
+            # SPACER ENTFERNT -> LAYOUT IST JETZT BÜNDIG [cite: 2026-03-15]
             u_location = st.text_input("Standort", value=user.get('location', "")) 
             u_height = st.number_input("Größe (cm)", 140, 220, value=user.get('height', 175))
-            # u_st_label weggelassen für Kürze, analog zu u_gender einbauen
 
         with c3:
             st.markdown("**Suche**")
@@ -292,6 +290,18 @@ def main():
             with st.status("Speichere digitale DNA...") as status:
                 # ... (Vektorisierung, DB-Save etc.) ...
                 status.update(label="DNA gesichert!", state="complete")
+
+    elif menu == "Login":
+            # Hier nur das leere Login-Feld zeigen, wenn noch nicht eingeloggt
+            with st.form("login_form"):
+                l_email = st.text_input("E-Mail Adresse")
+                l_key = st.text_input("Vibe Key", type="password")
+                if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
+                    user_res = db_handler.get_profile_by_email(l_email)
+                    if user_res and security.verify_key(l_key, user_res['key_hash']):
+                        st.session_state.logged_in = True
+                        st.session_state.user_data = user_res
+                        st.rerun()
 
     elif menu == "Login" and not is_edit:
         # Standard Login-Formular (wie in deinem File)
