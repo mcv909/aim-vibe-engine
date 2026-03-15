@@ -88,23 +88,23 @@ def init_db():
     finally:
         cur.close(); conn.close()
 
-def save_profile_atomic(data, manifesto_raw, pub_key):
-    """Speichert Profil inkl. aller Filter und bereitet Vektorisierung vor."""
+def save_profile_atomic(data, manifesto_raw, vibe_key):
+    """Speichert Profil und verschlüsselt das Manifesto mit dem Vibe-Key für den User."""
     conn = get_connection()
     cur = conn.cursor()
-    is_test = data['email'].endswith('@iam-aim.com') # Automatische Erkennung [cite: 2026-03-08]
+    is_test = data['email'].endswith('@iam-aim.com')
     try:
-        enc_manifesto = security.encrypt_for_worker(manifesto_raw, pub_key)
+        # Wir verschlüsseln hier symmetrisch mit dem Vibe-Key [cite: 2026-01-18]
+        enc_manifesto = security.encrypt_data(manifesto_raw, vibe_key)
         coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
 
-        # Jetzt mit ALLEN Spalten aus der app.py
         cur.execute("""
             INSERT INTO profiles (
                 email, identity, search_for, age, height, stature_id, 
                 coords, is_ukrainian, key_hash, messenger_contact,
                 u_age_min, u_age_max, u_height_min, u_height_max, radius, is_testuser,
                 last_interaction
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
             ON CONFLICT (email) DO UPDATE SET
                 age = EXCLUDED.age, height = EXCLUDED.height, stature_id = EXCLUDED.stature_id,
                 coords = EXCLUDED.coords, messenger_contact = EXCLUDED.messenger_contact,
@@ -132,60 +132,9 @@ def save_profile_atomic(data, manifesto_raw, pub_key):
         return v_token, "needs_verification"
     except Exception as e:
         conn.rollback()
-        print(f"Fehler in save_profile_atomic: {e}") # DAS siehst du in deiner Konsole!
         return None, f"System-Error: {str(e)}"
-
-def save_profile_atomic(data, manifesto_raw, pub_key):
-    """Speichert Profil und bereitet Vektorisierung nach Mail-Check vor."""
-    conn = get_connection()
-    cur = conn.cursor()
-    try:
-        # 1. Manifesto verschlüsseln (Nur der User/Worker kann es lesen) [cite: 2026-01-18]
-        enc_manifesto = security.encrypt_for_worker(manifesto_raw, pub_key)
-        
-        # 2. Koordinaten-Logik (Stabile JSONB Lösung)
-        coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
-
-        # 3. Profil-UPSERT
-        cur.execute("""
-            INSERT INTO profiles (
-                email, identity, search_for, age, height, stature_id, 
-                coords, is_ukrainian, key_hash, messenger_contact,
-                last_interaction
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-            ON CONFLICT (email) DO UPDATE SET
-                age = EXCLUDED.age,
-                height = EXCLUDED.height,
-                stature_id = EXCLUDED.stature_id,
-                coords = EXCLUDED.coords,
-                is_ukrainian = EXCLUDED.is_ukrainian,
-                messenger_contact = EXCLUDED.messenger_contact,
-                last_interaction = CURRENT_TIMESTAMP
-            RETURNING id, verification_token;
-        """, (
-            data['email'], data['identity'], data['search_for'], 
-            data['age'], data['height'], data['stature_id'], 
-            coords_json, data.get('is_ukrainian', False), data.get('key_hash'),
-            data.get('messenger_contact')
-        ))
-        p_id, v_token = cur.fetchone()
-
-        # 4. Manifesto verschlüsselt ablegen
-        cur.execute("""
-            INSERT INTO manifesto_vectors (profile_id, manifesto_enc)
-            VALUES (%s, %s)
-            ON CONFLICT (profile_id) DO UPDATE SET manifesto_enc = EXCLUDED.manifesto_enc;
-        """, (p_id, enc_manifesto))
-
-        conn.commit()
-        return v_token, "needs_verification"
-    except Exception as e:
-        conn.rollback()
-        print(f"Fehler: {e}")
-        return None, "system_error"
     finally:
-        cur.close()
-        conn.close()
+        cur.close(); conn.close()
 
 def add_to_embedding_queue(profile_id, encrypted_text):
     """Schiebt das RSA-verschlüsselte Manifesto in die Queue."""

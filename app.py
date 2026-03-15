@@ -264,7 +264,8 @@ def main():
         manifesto = st.text_area("", value=user.get('manifesto_text', st.session_state.manifesto_buffer), height=300, label_visibility="collapsed")
         st.session_state.manifesto_buffer = manifesto
 
-        st.markdown('<p class="centered-header">Deine Digitale DNA</p>', unsafe_allow_html=True)
+        st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
+        manifesto = st.text_area("", value=user.get('manifesto_text', st.session_state.manifesto_buffer), height=300, key="main_manifesto")
         STATURE_MAP = {"Sehr schlank": 1, "Schlank / Sportlich": 2, "Normal / Durchschnitt": 3, "Kilos+": 4, "Curvy": 5}
         
         c1, c2, c3 = st.columns(3)
@@ -277,18 +278,16 @@ def main():
 
         with c2:
             st.markdown("**Identität**")
-            # Wir nutzen eindeutige Keys ('key=...'), um DuplicateElementId zu verhindern [cite: 2026-03-15]
+            # Eindeutige Keys verhindern den DuplicateID Fehler [cite: 2026-03-15]
             u_age = st.number_input("Dein Alter", 18, 99, value=get_val('age', 25), key="age_input")
             
-            # Mapping für Geschlecht (identity 1=m, 2=w, 3=d) [cite: 2026-03-12, 2026-03-15]
             g_list = ["m", "w", "d"]
-            # Sicherer Index-Check [cite: 2026-03-15]
-            g_val = user.get('gender') or user.get('identity')
-            g_idx = g_list.index(g_val) if g_val in g_list else 0
+            # Sicherer Mapping-Check für Geschlecht [cite: 2026-03-15]
+            db_id = user.get('identity', 1)
+            g_idx = (db_id - 1) if isinstance(db_id, int) and 1 <= db_id <= 3 else 0
+            u_gender = st.selectbox("Dein Geschlecht", g_list, index=g_idx, key="gender_input")
             
-            u_gender = st.selectbox("Dein Geschlecht", g_list, index=g_idx, key="gender_main")
-            
-            u_location = st.text_input("Standort", value=get_val('location', ""), key="loc_input") 
+            u_location = st.text_input("Standort", value=get_val('location', ""), key="loc_input")
             u_height = st.number_input("Größe (cm)", 140, 220, value=get_val('height', 175), key="height_input")
 
         # 2. Die Slider-Logik (Sicher gegen NoneType-Fehler)
@@ -308,7 +307,9 @@ def main():
             u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(h_min, h_max))    
 
         btn_label = "PROFIL AKTUALISIEREN" if is_edit else "DNA SICHERN & RESONANZ STARTEN"
-        if st.button(btn_label, type="primary"):
+        if st.button(btn_label, type="primary", key="save_btn"):
+            # Hier beim Speichern den vibe_key mitgeben! [cite: 2026-03-12]
+            v_token, db_status = db_handler.save_profile_atomic(user_data, manifesto, v_key if not is_edit else "dummy")
             # HIER DIE SPEICHER-LOGIK (die Animation von neulich)
             with st.status("Speichere digitale DNA...") as status:
                 # ... (Vektorisierung, DB-Save etc.) ...

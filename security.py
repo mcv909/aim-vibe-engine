@@ -151,3 +151,7 @@ def decrypt_for_worker(encrypted_data_b64, private_key_pem):
     cipher = Cipher(algorithms.AES(aes_key), modes.CFB(iv))
     decryptor = cipher.decryptor()
     return (decryptor.update(ciphertext) + decryptor.finalize()).decode('utf-8')
+
+def decrypt_manifesto(encrypted_text, vibe_key):
+    """Alias für decrypt_data, um den Sound in der app.py zu bedienen."""
+    return decrypt_data(encrypted_text, vibe_key)
