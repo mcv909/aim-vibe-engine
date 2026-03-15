@@ -208,8 +208,8 @@ def add_to_embedding_queue(profile_id, encrypted_text):
 
 def get_profile_by_email(email):
     conn = get_connection()
-    # RealDictRow sorgt dafür, dass wir auf Spalten wie user['email'] statt user[0] zugreifen können [cite: 2026-03-15]
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictRow) 
+    # KORREKTUR: RealDictCursor statt RealDictRow [cite: 2026-03-15]
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) 
     try:
         cur.execute("""
             SELECT p.*, mv.manifesto_enc as manifesto_text 
@@ -218,9 +218,6 @@ def get_profile_by_email(email):
             WHERE p.email = %s
         """, (email,))
         return cur.fetchone()
-    except Exception as e:
-        print(f"DB-Fehler bei Login: {e}")
-        return None
     finally:
         cur.close(); conn.close()
 

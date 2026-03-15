@@ -281,11 +281,16 @@ def main():
 
         with c2:
             st.markdown("**Identität**")
-            u_age = st.number_input("Dein Alter", 18, 99, value=user.get('age', 25))
-            u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"], index=["m","w","d"].index(user.get('gender', 'm')))
-            # SPACER ENTFERNT -> LAYOUT IST JETZT BÜNDIG [cite: 2026-03-15]
-            u_location = st.text_input("Standort", value=user.get('location', "")) 
-            u_height = st.number_input("Größe (cm)", 140, 220, value=user.get('height', 175))
+            # Wir geben jedem Widget einen eindeutigen Key, um DuplicateElementId zu vermeiden [cite: 2026-03-15]
+            u_age = st.number_input("Dein Alter", 18, 99, value=get_val('age', 25), key="inp_age")
+            
+            # Mapping für die Vorbefüllung (gender vs identity check) [cite: 2026-03-15]
+            g_list = ["m", "w", "d"]
+            g_idx = g_list.index(user.get('gender', 'm')) if user.get('gender') in g_list else 0
+            u_gender = st.selectbox("Dein Geschlecht", g_list, index=g_idx, key="sel_gender")
+            
+            u_location = st.text_input("Standort", value=get_val('location', ""), key="inp_loc") 
+            u_height = st.number_input("Größe (cm)", 140, 220, value=get_val('height', 175), key="inp_height")
 
         # 2. Die Slider-Logik (Sicher gegen NoneType-Fehler)
         with c3:
