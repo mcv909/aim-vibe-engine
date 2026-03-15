@@ -2,40 +2,29 @@ import streamlit as st
 
 def apply_custom_style(): 
     st.markdown(
+        # In style.py apply_custom_style() anpassen:
         """
         <style>
-        .stApp { background-color: #FFFFFF !important; color: #111111 !important; }
-        
-        /* 1. SLIDER-FIX: Aktive Leiste & Werte in Dunkelgrün, Hintergrund hell */
-        /* Die Schiene hinter dem Regler */
-        .stSlider > div [data-baseweb="slider"] > div:first-child {
-            background-color: #F0F2F6 !important;
-        }
-        /* Die aktive Strecke (der Bereich zwischen/bis zu den Thumbs) */
+        /* 1. SLIDER: Aktive Strecke & Zahlen in Dunkelgrün */
         .stSlider > div [data-baseweb="slider"] > div:first-child > div:nth-child(2) {
-            background-color: #1E5631 !important;
+            background-color: #1E5631 !important; /* Dunkelgrün */
         }
-        /* Die Zahlen-Labels über den Reglern */
         .stSlider [data-testid="stThumbValue"] {
             color: #1E5631 !important;
             font-weight: bold;
         }
 
-        /* 2. NAVIGATION: Aktiv-State (Schwarz mit negativer Typo) */
+        /* 2. NAVIGATION: Aktive Seite Schwarz / Weiße Typo */
         .active-nav-btn button {
             background-color: #000000 !important;
             color: #FFFFFF !important;
             border: 1px solid #000000 !important;
-            font-weight: 700 !important;
         }
 
-        /* 3. INPUTS: Grau wie gewünscht */
+        /* 3. INPUTS: Hintergrund grau */
         .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
             background-color: #F0F2F6 !important;
-            border: 1px solid #CCCCCC !important;
         }
-
-        .stWidgetLabel p { color: #000000 !important; font-weight: 700 !important; }
         </style>
         """, 
         unsafe_allow_html=True

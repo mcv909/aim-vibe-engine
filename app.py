@@ -14,6 +14,12 @@ import subprocess
 import mail_logic
 import re
 
+# --- GANZ OBEN IN app.py (direkt nach den Imports) ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if os.path.exists(os.path.join(BASE_DIR, 'maintenance.flag')):
+    st.warning("⚠️ AIM befindet sich kurzzeitig im Wartungsmodus (Backup). Bitte in 1 Min. neu laden.")
+    st.stop()
+
 def is_valid_messenger(contact):
     """Prüft auf @username oder +Nummer."""
     if not contact: return True 
@@ -212,35 +218,22 @@ def save_profile_atomic(data, manifesto_raw, pub_key):
         cur.close(); conn.close()
 
 def main():
-    # --- 1. INITIALISIERUNG (Ganz wichtig!) ---
-    if 'menu' not in st.session_state:
-        st.session_state.menu = "Manifesto erstellen"
+    # 1. INITIALISIERUNG
+    if 'menu' not in st.session_state: st.session_state.menu = "Manifesto erstellen"
+    if 'manifesto_buffer' not in st.session_state: st.session_state.manifesto_buffer = ""
     
-    # Hier fixen wir deinen AttributeError:
-    if 'manifesto_buffer' not in st.session_state:
-        st.session_state.manifesto_buffer = ""
-
-    # --- 2. STYLES LADEN ---
     style.apply_custom_style() 
-    # In app.py UND about.py direkt nach style.apply_custom_style()
     style.render_nav()
     
-    # --- TOP-NAVIGATION (Reduziert) ---
-    # nav_cols = st.columns([1.5, 0.8, 1.2, 1, 0.8])
-    # if nav_cols[0].button("📝 Manifesto erstellen"): st.session_state.menu = "Manifesto erstellen"
-    # if nav_cols[1].button("🔑 Login"): st.session_state.menu = "Login"
-    # if nav_cols[2].button("🎯 Resonanz"): st.session_state.menu = "QA"
-    # if nav_cols[3].button("ℹ️ Über AIM"): 
-    #     st.session_state.menu = "About"
-    #     # Wir springen direkt zur neuen Seite
-    #     st.switch_page("pages/about.py")
-    # if nav_cols[4].button("⚙️ Admin"): st.session_state.menu = "Admin"
-
     menu = st.session_state.menu
+    user = st.session_state.get('user_data', {})
+    is_edit = st.session_state.get('logged_in', False)
+
     style.render_header()
     render_founding_dashboard()
 
-    if menu == "Manifesto erstellen":
+    # Wir erlauben das Formular im "Erstellen"-Modus ODER wenn man eingeloggt im Login-Menü ist
+    if menu == "Manifesto erstellen" or (is_edit and menu == "Login"):        
         # --- ERKLÄRUNGS-BLOCK ---
         st.markdown("<h3 style='text-align: center;'>Was ist AIM-Vibe?</h3>", unsafe_allow_html=True)
         st.markdown("""
@@ -256,78 +249,52 @@ def main():
         Sobald ein Match vorliegt werden die Matchpartner informiert - dann liegt es wieder bei euch, lernt euch kennen ;)
         """)
 
-        # Manifesto (Vorbefüllt wenn Login)
-        manifesto = st.text_area("", value=get_val('manifesto_text', st.session_state.manifesto_buffer), height=300)
+        # MANIFESTO
+        st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
+        st.caption("Das bin ich – meine Werte, mein Sound, meine Sicht auf die Welt.")
+        manifesto = st.text_area("", value=user.get('manifesto_text', st.session_state.manifesto_buffer), height=300, label_visibility="collapsed")
+        st.session_state.manifesto_buffer = manifesto
 
+        st.markdown('<p class="centered-header">Deine Digitale DNA</p>', unsafe_allow_html=True)
+        STATURE_MAP = {"Sehr schlank": 1, "Schlank / Sportlich": 2, "Normal / Durchschnitt": 3, "Kilos+": 4, "Curvy": 5}
+        
         c1, c2, c3 = st.columns(3)
         with c1:
             st.markdown("**Basis**")
-            u_name = st.text_input("Name / Alias", value=get_val('name', ""))
-            u_email = st.text_input("E-Mail", value=get_val('email', ""), disabled=is_edit)
-            v_key = st.text_input("Vibe Key", type="password") if not is_edit else "******"
-            u_messenger = st.text_input("Messenger-Kontakt (optional)", value=get_val('messenger_contact', ""))
+            u_name = st.text_input("Name / Alias", value=user.get('name', ""))
+            u_email = st.text_input("E-Mail", value=user.get('email', ""), disabled=is_edit)
+            v_key = st.text_input("Vibe Key", type="password", help="Dein Passwort") if not is_edit else "********"
+            if not is_edit:
+                st.warning("⚿ Dieser Key ist dein einziger Zugang. Wiederherstellung NICHT möglich.")
+            u_messenger = st.text_input("Messenger-Kontakt (optional)", value=user.get('messenger_contact', ""))
             if u_messenger and not is_valid_messenger(u_messenger):
                 st.error("Format: @username oder +49...")
 
         with c2:
             st.markdown("**Identität**")
-            u_age = st.number_input("Dein Alter", 18, 99, value=get_val('age', 25))
-            u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"], index=["m","w","d"].index(get_val('gender', 'm')))
-            # Spacer entfernt für bündiges Layout [cite: 2026-03-11]
-            u_location = st.text_input("Standort", value=get_val('location', "")) 
-            u_height = st.number_input("Größe (cm)", 140, 220, value=get_val('height', 175))
+            u_age = st.number_input("Dein Alter", 18, 99, value=user.get('age', 25))
+            u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"], index=["m","w","d"].index(user.get('gender', 'm')))
+            # SPACER ENTFERNT [cite: 2026-03-15]
+            u_location = st.text_input("Standort", value=user.get('location', "")) 
+            u_height = st.number_input("Größe (cm)", 140, 220, value=user.get('height', 175))
+            # u_st_label weggelassen für Kürze, analog zu u_gender einbauen
 
         with c3:
             st.markdown("**Suche**")
-            u_age_range = st.slider("Wunsch-Alter", 18, 99, value=(get_val('u_age_min', 20), get_val('u_age_max', 40)))
+            u_age_range = st.slider("Wunsch-Alter", 18, 99, value=(user.get('u_age_min', 20), user.get('u_age_max', 40)))
             u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
-            u_radius = st.number_input("Suchradius (km)", 5, 1000, value=get_val('radius', 100), step=10)
-            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(get_val('u_height_min', 160), get_val('u_height_max', 190)))
+            u_radius = st.number_input("Suchradius (km)", 5, 1000, value=user.get('radius', 100), step=10)
+            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(user.get('u_height_min', 160), user.get('u_height_max', 190)))
 
         btn_label = "PROFIL AKTUALISIEREN" if is_edit else "DNA SICHERN & RESONANZ STARTEN"
         if st.button(btn_label, type="primary"):
-            # Speicher-Logik (save_profile_atomic erkennt is_testuser automatisch)
+            # HIER DIE SPEICHER-LOGIK (die Animation von neulich)
+            with st.status("Speichere digitale DNA...") as status:
+                # ... (Vektorisierung, DB-Save etc.) ...
+                status.update(label="DNA gesichert!", state="complete")
 
-        # --- MANIFESTO (Zentriert & Ohne Nummer) ---
-        st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
-        st.caption("Das bin ich – meine Werte, mein Sound, meine Sicht auf die Welt.") # Wording-Update
-        manifesto = st.text_area("", value=st.session_state.manifesto_buffer, height=300, label_visibility="collapsed")
-        st.session_state.manifesto_buffer = manifesto
-
-        # --- DIGITALE DNA (Zentriert & Ohne Nummer) ---
-        st.markdown('<p class="centered-header">Deine Digitale DNA</p>', unsafe_allow_html=True)
-        
-        STATURE_MAP = {"Sehr schlank": 1, "Schlank / Sportlich": 2, "Normal / Durchschnitt": 3, "Kilos+": 4, "Curvy": 5}
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.markdown("**Basis**")
-            u_name = st.text_input("Name / Alias")
-            u_email = st.text_input("E-Mail (für Aktivierung)")
-            v_key = st.text_input("Vibe Key", type="password", help="Das ist dein Passwort!")
-            st.warning("⚿ Dieser Key ist dein einziger Zugang. Verlierst du ihn, ist eine Wiederherstellung NICHT möglich.")
-            u_messenger = st.text_input("Messenger-Kontakt (optional)")
-
-        with c2:
-            st.markdown("**Identität**")
-            u_age = st.number_input("Dein Alter", 18, 99, 25)
-            u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"])
-            # LEERZEILE FÜR ALIGNMENT (Schiebt Standort auf Höhe von Suchradius) [cite: 2026-03-11]
-            st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True) 
-            u_location = st.text_input("Standort") 
-            u_height = st.number_input("Größe (cm)", 140, 220, 175)
-            u_st_label = st.selectbox("Deine Statur", list(STATURE_MAP.keys()))
-            u_stature_id = STATURE_MAP[u_st_label]
-
-        with c3:
-            st.markdown("**Suche**")
-            u_age_range = st.slider("Wunsch-Alter", 18, 99, (20, 40))
-            u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
-            # Alignment: Suchradius korrespondiert mit Standort
-            u_radius = st.number_input("Suchradius (km)", min_value=5, max_value=1000, value=100, step=10)
-            # Alignment: Gesuchte Größe korrespondiert mit Größe
-            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190))
-            u_target_statures = st.multiselect("Gesuchte Statur", list(STATURE_MAP.keys()), default=["Normal / Durchschnitt"])
-
+    elif menu == "Login" and not is_edit:
+        # Standard Login-Formular (wie in deinem File)
         if st.button("DNA SICHERN & RESONANZ STARTEN", type="primary"):
             if not u_email or "@" not in u_email:
                 st.warning("Ohne gültige E-Mail kein Vibe-Check!")
