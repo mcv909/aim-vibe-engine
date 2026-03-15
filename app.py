@@ -224,11 +224,7 @@ def main():
     db_identity = get_val('identity', 1)
     u_gender_text = gender_map.get(db_identity, "m")
 
-    # Selectbox mit korrektem Index vorbefüllen
-    u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"], 
-                            index=["m", "w", "d"].index(u_gender_text))
-
-    # 1. INITIALISIERUNG
+        # 1. INITIALISIERUNG
     if 'menu' not in st.session_state: st.session_state.menu = "Manifesto erstellen"
     if 'manifesto_buffer' not in st.session_state: st.session_state.manifesto_buffer = ""
     
