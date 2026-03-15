@@ -29,9 +29,10 @@ def is_valid_messenger(contact):
 user = st.session_state.get('user_data', {})
 is_edit = st.session_state.get('logged_in', False)
 
-# Vorbelegung der Felder bei Login [cite: 2026-03-12]
+# 1. Verbesserte Hilfsfunktion für Datenbank-Werte
 def get_val(key, default):
-    return user.get(key, default)
+    val = user.get(key)
+    return val if val is not None else default
 
 # 1. URL-Parameter abgreifen
 query_params = st.query_params
@@ -277,12 +278,21 @@ def main():
             u_location = st.text_input("Standort", value=user.get('location', "")) 
             u_height = st.number_input("Größe (cm)", 140, 220, value=user.get('height', 175))
 
+        # 2. Die Slider-Logik (Sicher gegen NoneType-Fehler)
         with c3:
             st.markdown("**Suche**")
-            u_age_range = st.slider("Wunsch-Alter", 18, 99, value=(user.get('u_age_min', 20), user.get('u_age_max', 40)))
+            # Wir stellen sicher, dass u_age_min/max niemals None sind
+            u_age_min = get_val('u_age_min', 20)
+            u_age_max = get_val('u_age_max', 40)
+            u_age_range = st.slider("Wunsch-Alter", 18, 99, value=(u_age_min, u_age_max))
+            
             u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
-            u_radius = st.number_input("Suchradius (km)", 5, 1000, value=user.get('radius', 100), step=10)
-            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(user.get('u_height_min', 160), user.get('u_height_max', 190)))
+            
+            u_radius = st.number_input("Suchradius (km)", 5, 1000, value=get_val('radius', 100), step=10)
+            
+            h_min = get_val('u_height_min', 160)
+            h_max = get_val('u_height_max', 190)
+            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(h_min, h_max))    
 
         btn_label = "PROFIL AKTUALISIEREN" if is_edit else "DNA SICHERN & RESONANZ STARTEN"
         if st.button(btn_label, type="primary"):

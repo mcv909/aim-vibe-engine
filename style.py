@@ -1,49 +1,47 @@
 import streamlit as st
 
-import streamlit as st
-
 def apply_custom_style(): 
-    """Erzwingt Light-Mode, grünes Slider-Branding und Nav-Highlighting."""
     st.markdown(
         """
         <style>
-        /* 1. GLOBAL LIGHT MODE & BACKGROUND */
         .stApp { background-color: #FFFFFF !important; color: #111111 !important; }
         
-        /* 2. SLIDER: Aktive Strecke & Zahlen in Dunkelgrün (#1E5631) */
-        .stSlider > div [data-baseweb="slider"] > div:first-child > div:nth-child(2) {
+        /* 1. SLIDER: Rot durch GRÜN ersetzen */
+        /* Die aktive Leiste zwischen den Reglern */
+        div[data-baseweb="slider"] > div > div {
+            background-image: linear-gradient(to right, #1E5631 0%, #1E5631 100%) !important;
             background-color: #1E5631 !important;
         }
-        .stSlider [data-testid="stThumbValue"] {
+        /* Die Regler-Knöpfe selbst */
+        div[role="slider"] {
+            background-color: #1E5631 !important;
+            border: 2px solid #1E5631 !important;
+        }
+        /* Die Zahlenwerte über dem Slider */
+        div[data-testid="stThumbValue"] {
             color: #1E5631 !important;
-            font-weight: bold;
+            font-weight: bold !important;
         }
 
-        /* 3. NAVIGATION: Aktive Seite (Schwarz mit weißer Typo) */
+        /* 2. NAVIGATION: Standard hell, Aktiv Schwarz */
+        div.stButton > button {
+            background-color: #F0F2F6 !important; /* Hellgrau als Standard */
+            color: #333333 !important;
+            border: 1px solid #CCCCCC !important;
+        }
+        
         .active-nav-btn button {
-            background-color: #000000 !important;
+            background-color: #000000 !important; /* Schwarz nur für Aktiv */
             color: #FFFFFF !important;
             border: 1px solid #000000 !important;
             font-weight: 700 !important;
         }
 
-        /* 4. INPUTS: Hintergrund Grau (#F0F2F6) */
+        /* 3. INPUTS & TEXTAREA */
         .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"], .stTextArea textarea {
             background-color: #F0F2F6 !important;
             color: #000000 !important;
             border: 1px solid #CCCCCC !important;
-        }
-
-        /* Labels in Schwarz für Lesbarkeit */
-        .stWidgetLabel p, label p { color: #000000 !important; font-weight: 700 !important; }
-        
-        .centered-header {
-            text-align: center !important;
-            display: block;
-            margin-top: 2rem;
-            color: #000000;
-            font-weight: 800;
-            text-transform: uppercase;
         }
         </style>
         """, 
