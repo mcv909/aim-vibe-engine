@@ -429,19 +429,19 @@ def main():
                 l_email = st.text_input("E-Mail Adresse")
                 l_key = st.text_input("Vibe Key", type="password")
                 if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
-                user_res = db_handler.get_profile_by_email(l_email)
-                if user_res and security.verify_key(l_key, user_res['key_hash']):
-                    st.session_state.logged_in = True
-                    
-                    # Hol das verschlüsselte Manifesto ab
-                    enc_manifesto = db_handler.get_user_manifesto_by_id(user_res['id'])
-                    
-                    if enc_manifesto:
-                        # Entschlüsseln mit dem eingegebenen Vibe-Key (AES/Fernet) [cite: 2026-03-15]
-                        user_res['manifesto_text'] = security.decrypt_data(enc_manifesto, l_key)
-                    
-                    st.session_state.user_data = user_res
-                    st.rerun()         
+                    user_res = db_handler.get_profile_by_email(l_email)
+                    if user_res and security.verify_key(l_key, user_res['key_hash']):
+                        st.session_state.logged_in = True
+                        
+                        # Hol das verschlüsselte Manifesto ab
+                        enc_manifesto = db_handler.get_user_manifesto_by_id(user_res['id'])
+                        
+                        if enc_manifesto:
+                            # Entschlüsseln mit dem eingegebenen Vibe-Key (AES/Fernet) [cite: 2026-03-15]
+                            user_res['manifesto_text'] = security.decrypt_data(enc_manifesto, l_key)
+                        
+                        st.session_state.user_data = user_res
+                        st.rerun()         
 
     style.render_beta_footer()
 
