@@ -91,6 +91,7 @@ def save_profile_atomic(data, manifesto_raw, pub_key):
     """Speichert Profil inkl. aller Filter und bereitet Vektorisierung vor."""
     conn = get_connection()
     cur = conn.cursor()
+    is_test = data['email'].endswith('@iam-aim.com') # Automatische Erkennung [cite: 2026-03-08]
     try:
         enc_manifesto = security.encrypt_for_worker(manifesto_raw, pub_key)
         coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
