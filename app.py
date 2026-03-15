@@ -15,9 +15,17 @@ import mail_logic
 import re
 
 def is_valid_messenger(contact):
-    """Prüft auf @username (Telegram/Signal) oder +Nummer."""
-    if not contact: return True # Optionales Feld
-    return bool(re.match(r"^(@[a-zA-Z0-9_]{5,32}|\+[0-9]{7,15})$", contact))
+    """Prüft auf @username oder +Nummer."""
+    if not contact: return True 
+    return bool(re.match(r"^(@[a-zA-Z0-9_]{3,32}|\+[0-9]{7,15})$", contact))
+
+# --- Daten-Vorbereitung ---
+user = st.session_state.get('user_data', {})
+is_edit = st.session_state.get('logged_in', False)
+
+# Vorbelegung der Felder bei Login [cite: 2026-03-12]
+def get_val(key, default):
+    return user.get(key, default)
 
 # 1. URL-Parameter abgreifen
 query_params = st.query_params
@@ -248,6 +256,38 @@ def main():
         Sobald ein Match vorliegt werden die Matchpartner informiert - dann liegt es wieder bei euch, lernt euch kennen ;)
         """)
 
+        # Manifesto (Vorbefüllt wenn Login)
+        manifesto = st.text_area("", value=get_val('manifesto_text', st.session_state.manifesto_buffer), height=300)
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.markdown("**Basis**")
+            u_name = st.text_input("Name / Alias", value=get_val('name', ""))
+            u_email = st.text_input("E-Mail", value=get_val('email', ""), disabled=is_edit)
+            v_key = st.text_input("Vibe Key", type="password") if not is_edit else "******"
+            u_messenger = st.text_input("Messenger-Kontakt (optional)", value=get_val('messenger_contact', ""))
+            if u_messenger and not is_valid_messenger(u_messenger):
+                st.error("Format: @username oder +49...")
+
+        with c2:
+            st.markdown("**Identität**")
+            u_age = st.number_input("Dein Alter", 18, 99, value=get_val('age', 25))
+            u_gender = st.selectbox("Dein Geschlecht", ["m", "w", "d"], index=["m","w","d"].index(get_val('gender', 'm')))
+            # Spacer entfernt für bündiges Layout [cite: 2026-03-11]
+            u_location = st.text_input("Standort", value=get_val('location', "")) 
+            u_height = st.number_input("Größe (cm)", 140, 220, value=get_val('height', 175))
+
+        with c3:
+            st.markdown("**Suche**")
+            u_age_range = st.slider("Wunsch-Alter", 18, 99, value=(get_val('u_age_min', 20), get_val('u_age_max', 40)))
+            u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
+            u_radius = st.number_input("Suchradius (km)", 5, 1000, value=get_val('radius', 100), step=10)
+            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(get_val('u_height_min', 160), get_val('u_height_max', 190)))
+
+        btn_label = "PROFIL AKTUALISIEREN" if is_edit else "DNA SICHERN & RESONANZ STARTEN"
+        if st.button(btn_label, type="primary"):
+            # Speicher-Logik (save_profile_atomic erkennt is_testuser automatisch)
+
         # --- MANIFESTO (Zentriert & Ohne Nummer) ---
         st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
         st.caption("Das bin ich – meine Werte, mein Sound, meine Sicht auf die Welt.") # Wording-Update
@@ -353,6 +393,7 @@ def main():
                 st.rerun()           
 
     style.render_beta_footer()
+
 
 if __name__ == "__main__":
     main()

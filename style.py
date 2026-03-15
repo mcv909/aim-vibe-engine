@@ -1,91 +1,85 @@
 import streamlit as st
 
 def apply_custom_style(): 
-    """Erzwingt das helle Design, graue Inputs und dunkelgrüne Slider."""
     st.markdown(
         """
         <style>
         .stApp { background-color: #FFFFFF !important; color: #111111 !important; }
         
-        /* 1. LABELS & PLACEHOLDER */
-        .stWidgetLabel p, label p { color: #000000 !important; font-weight: 700 !important; }
-        ::placeholder { color: #555555 !important; }
-
-        /* 2. INPUTS (Grauer Hintergrund) */
-        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"], .stNumberInput input {
+        /* 1. SLIDER-FIX: Aktive Leiste & Werte in Dunkelgrün, Hintergrund hell */
+        /* Die Schiene hinter dem Regler */
+        .stSlider > div [data-baseweb="slider"] > div:first-child {
             background-color: #F0F2F6 !important;
-            color: #000000 !important;
-            border: 1px solid #CCCCCC !important;
+        }
+        /* Die aktive Strecke (der Bereich zwischen/bis zu den Thumbs) */
+        .stSlider > div [data-baseweb="slider"] > div:first-child > div:nth-child(2) {
+            background-color: #1E5631 !important;
+        }
+        /* Die Zahlen-Labels über den Reglern */
+        .stSlider [data-testid="stThumbValue"] {
+            color: #1E5631 !important;
+            font-weight: bold;
         }
 
-        /* 3. SLIDER (Dunkelgrün) */
-        .stSlider [data-baseweb="slider"] { background-color: #1E5631 !important; }
-
-        /* 4. NAVIGATION & ACTIVE STATE */
-        div.stButton > button {
-            background-color: #F0F2F6 !important;
-            color: #333333 !important;
-            border: 1px solid #CCCCCC !important;
-        }
-        /* Highlight für die aktive Seite */
+        /* 2. NAVIGATION: Aktiv-State (Schwarz mit negativer Typo) */
         .active-nav-btn button {
-            border-bottom: 3px solid #FF00FF !important;
-            background-color: #E6E9EF !important;
-            font-weight: bold !important;
+            background-color: #000000 !important;
+            color: #FFFFFF !important;
+            border: 1px solid #000000 !important;
+            font-weight: 700 !important;
         }
 
-        .centered-header {
-            text-align: center !important;
-            display: block;
-            margin-top: 2rem;
-            color: #000000;
-            font-weight: 800;
-            text-transform: uppercase;
+        /* 3. INPUTS: Grau wie gewünscht */
+        .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
+            background-color: #F0F2F6 !important;
+            border: 1px solid #CCCCCC !important;
         }
+
+        .stWidgetLabel p { color: #000000 !important; font-weight: 700 !important; }
         </style>
         """, 
         unsafe_allow_html=True
     )
 
 def render_nav():
-    # Wir bestimmen die aktuelle Seite anhand des Dateinamens
+    # Erkennung der aktiven Seite/Menü [cite: 2026-03-12]
+    current_menu = st.session_state.get('menu', "Manifesto erstellen")
     current_page = st.source_code_path.split("/")[-1] if hasattr(st, "source_code_path") else ""
-    
+
     nav_cols = st.columns([1.5, 0.8, 1.2, 1, 0.8])
     
     # Helfer für das Highlighting
-    def get_nav_class(page_name):
-        return "active-nav-btn" if current_page == page_name else ""
+    def nav_class(target_menu, target_page=None):
+        if target_page and current_page == target_page: return "active-nav-btn"
+        if current_menu == target_menu and current_page not in ["qa.py", "about.py"]: return "active-nav-btn"
+        return ""
 
     with nav_cols[0]:
-        st.markdown(f'<div class="{get_nav_class("app.py")}">', unsafe_allow_html=True)
+        st.markdown(f'<div class="{nav_class("Manifesto erstellen")}">', unsafe_allow_html=True)
         if st.button("✎ Manifesto"): 
             st.session_state.menu = "Manifesto erstellen"
             st.switch_page("app.py")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with nav_cols[1]:
-        # Login ist Teil der app.py, daher Check auf Menu-State
-        is_login = get_nav_class("app.py") if st.session_state.get('menu') == "Login" else ""
-        st.markdown(f'<div class="{is_login}">', unsafe_allow_html=True)
+        st.markdown(f'<div class="{nav_class("Login")}">', unsafe_allow_html=True)
         if st.button("⚿ Login"): 
             st.session_state.menu = "Login"
             st.switch_page("app.py")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with nav_cols[2]:
-        st.markdown(f'<div class="{get_nav_class("qa.py")}">', unsafe_allow_html=True)
+        st.markdown(f'<div class="{nav_class(None, "qa.py")}">', unsafe_allow_html=True)
         if st.button("◬ Resonanz"): st.switch_page("pages/qa.py")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with nav_cols[3]:
-        st.markdown(f'<div class="{get_nav_class("about.py")}">', unsafe_allow_html=True)
+        st.markdown(f'<div class="{nav_class(None, "about.py")}">', unsafe_allow_html=True)
         if st.button("ⓘ Über AIM"): st.switch_page("pages/about.py")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with nav_cols[4]:
-        is_admin = get_nav_class("app.py") if st.session_state.get('menu') == "Admin" else ""
-        st.markdown(f'<div class="{is_admin}">', unsafe_allow_html=True)
+        st.markdown(f'<div class="{nav_class("Admin")}">', unsafe_allow_html=True)
         if st.button("⚙ Admin"): 
             st.session_state.menu = "Admin"
             st.switch_page("app.py")
