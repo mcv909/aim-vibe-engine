@@ -276,3 +276,17 @@ def verify_email_by_token(token):
     finally:
         cur.close()
         conn.close()
+
+def get_user_manifesto_by_id(profile_id):
+    """Holt das mit dem User-Vibe-Key verschlüsselte Manifesto."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT manifesto_user FROM manifesto_vectors WHERE profile_id = %s;", (profile_id,))
+        res = cur.fetchone()
+        return res[0] if res else None
+    except Exception as e:
+        print(f"DB-Fehler beim Laden des Manifestos: {e}")
+        return None
+    finally:
+        cur.close(); conn.close()

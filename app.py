@@ -221,6 +221,60 @@ def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
     finally:
         cur.close(); conn.close()
 
+def render_manifesto_editor(user, is_edit):
+    """Zentrale Eingabemaske für das Manifesto und die DNA."""
+    if not is_edit:
+        st.markdown("<h3 style='text-align: center;'>Was ist AIM-Vibe?</h3>", unsafe_allow_html=True)
+        st.info("Dein Manifesto ist der qualitative Anker. AIM sucht nach Resonanz in deinem Vibe, nicht nach Hobbys.")
+
+    st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
+    
+    # Text-Holen: Aus der DB (falls eingeloggt) oder dem Buffer (während der Eingabe)
+    db_manifesto = user.get('manifesto_text', "")
+    display_text = db_manifesto if db_manifesto else st.session_state.manifesto_buffer
+    
+    manifesto = st.text_area(
+        "Beschreibe deinen Sound, deine Werte, deine Sicht auf die Welt.",
+        value=display_text,
+        height=300,
+        key="main_manifesto_input",
+        label_visibility="collapsed"
+    )
+    st.session_state.manifesto_buffer = manifesto
+
+    st.markdown('<p class="centered-header">Deine Digitale DNA</p>', unsafe_allow_html=True)
+    
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("**Basis**")
+        u_name = st.text_input("Name / Alias", value=user.get('name', ""), key="inp_name")
+        u_email = st.text_input("E-Mail", value=user.get('email', ""), disabled=is_edit, key="inp_email")
+        # Vibe Key nur bei Neuanlage (nicht im Edit-Modus)
+        v_key = st.text_input("Vibe Key", type="password", key="inp_key") if not is_edit else None
+        u_messenger = st.text_input("Messenger-Kontakt (optional)", value=user.get('messenger_contact', ""), key="inp_mess")
+
+    with c2:
+        st.markdown("**Identität**")
+        u_age = st.number_input("Alter", 18, 99, value=user.get('age', 25), key="inp_age")
+        g_list = ["m", "w", "d"]
+        g_idx = (user.get('identity', 1) - 1) if isinstance(user.get('identity'), int) else 0
+        u_gender = st.selectbox("Geschlecht", g_list, index=g_idx, key="inp_gender")
+        u_location = st.text_input("Standort", value=user.get('location', ""), key="inp_loc")
+
+    with c3:
+        st.markdown("**Suche**")
+        u_age_range = st.slider("Wunsch-Alter", 18, 99, value=(user.get('u_age_min', 20), user.get('u_age_max', 40)), key="inp_age_range")
+        u_radius = st.number_input("Suchradius (km)", 5, 1000, value=user.get('radius', 100), key="inp_rad")
+
+    btn_label = "PROFIL AKTUALISIEREN" if is_edit else "DNA SICHERN & RESONANZ STARTEN"
+    if st.button(btn_label, type="primary", key="save_dna_btn"):
+        # Hier triggern wir die Speicher-Logik
+        handle_save_process(u_email, v_key, manifesto, u_location, is_edit, {
+            'name': u_name, 'age': u_age, 'identity': g_list.index(u_gender)+1,
+            'u_age_min': u_age_range[0], 'u_age_max': u_age_range[1], 'radius': u_radius,
+            'messenger_contact': u_messenger
+        })
+
 def main():
     # 1. INITIALISIERUNG
     if 'menu' not in st.session_state: st.session_state.menu = "Manifesto erstellen"
@@ -306,7 +360,7 @@ def main():
             l_email = st.text_input("E-Mail Adresse")
             l_key = st.text_input("Vibe Key", type="password")
                 # Im menu == "Login" Bereich
-                if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
+            if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
                     user_res = db_handler.get_profile_by_email(l_email) # Hol dir das Profil
                     if user_res and security.verify_key(l_key, user_res['key_hash']):
                         st.session_state.logged_in = True
@@ -375,20 +429,19 @@ def main():
                 l_email = st.text_input("E-Mail Adresse")
                 l_key = st.text_input("Vibe Key", type="password")
                 if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
-                    user = db_handler.get_profile_by_email(l_email)
-                    if user and security.verify_key(l_key, user['key_hash']):
-                        st.session_state.logged_in = True
-                        st.session_state.user_data = user
-                        st.rerun() # WICHTIG: Rerun löst das UI-Update aus!
-                    else:
-                        st.error("Zugriff verweigert.")
-        else:
-            # DAS ist die Ansicht für eingeloggte User
-            st.success(f"Willkommen, {st.session_state.user_data['email']}")
-            st.info("Hier kannst du bald deine Matches einsehen und dein Manifesto verfeinern.")
-            if st.button("Logout"):
-                st.session_state.clear()
-                st.rerun()           
+                user_res = db_handler.get_profile_by_email(l_email)
+                if user_res and security.verify_key(l_key, user_res['key_hash']):
+                    st.session_state.logged_in = True
+                    
+                    # Hol das verschlüsselte Manifesto ab
+                    enc_manifesto = db_handler.get_user_manifesto_by_id(user_res['id'])
+                    
+                    if enc_manifesto:
+                        # Entschlüsseln mit dem eingegebenen Vibe-Key (AES/Fernet) [cite: 2026-03-15]
+                        user_res['manifesto_text'] = security.decrypt_data(enc_manifesto, l_key)
+                    
+                    st.session_state.user_data = user_res
+                    st.rerun()         
 
     style.render_beta_footer()
 
