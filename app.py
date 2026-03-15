@@ -12,6 +12,12 @@ import logic
 import style
 import subprocess
 import mail_logic
+import re
+
+def is_valid_messenger(contact):
+    """Prüft auf @username (Telegram/Signal) oder +Nummer."""
+    if not contact: return True # Optionales Feld
+    return bool(re.match(r"^(@[a-zA-Z0-9_]{5,32}|\+[0-9]{7,15})$", contact))
 
 # 1. URL-Parameter abgreifen
 query_params = st.query_params
@@ -244,6 +250,7 @@ def main():
 
         # --- MANIFESTO (Zentriert & Ohne Nummer) ---
         st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
+        st.caption("Das bin ich – meine Werte, mein Sound, meine Sicht auf die Welt.") # Wording-Update
         manifesto = st.text_area("", value=st.session_state.manifesto_buffer, height=300, label_visibility="collapsed")
         st.session_state.manifesto_buffer = manifesto
 
@@ -256,7 +263,8 @@ def main():
             st.markdown("**Basis**")
             u_name = st.text_input("Name / Alias")
             u_email = st.text_input("E-Mail (für Aktivierung)")
-            v_key = st.text_input("Vibe Key", type="password")
+            v_key = st.text_input("Vibe Key", type="password", help="Das ist dein Passwort!")
+            st.warning("⚿ Dieser Key ist dein einziger Zugang. Verlierst du ihn, ist eine Wiederherstellung NICHT möglich.")
             u_messenger = st.text_input("Messenger-Kontakt (optional)")
 
         with c2:
@@ -275,7 +283,7 @@ def main():
             u_age_range = st.slider("Wunsch-Alter", 18, 99, (20, 40))
             u_looking_for = st.selectbox("Suche nach", ["m", "w", "d", "egal"], index=3)
             # Alignment: Suchradius korrespondiert mit Standort
-            u_radius = st.slider("Suchradius (km)", 5, 500, 50)
+            u_radius = st.number_input("Suchradius (km)", min_value=5, max_value=1000, value=100, step=10)
             # Alignment: Gesuchte Größe korrespondiert mit Größe
             u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, (160, 190))
             u_target_statures = st.multiselect("Gesuchte Statur", list(STATURE_MAP.keys()), default=["Normal / Durchschnitt"])
@@ -320,32 +328,29 @@ def main():
                                 status.update(label="Mail-Zustellung fehlgeschlagen", state="error")
                                 st.error("Bitte prüfe deine SMTP-Einstellungen in der .env.")
  
+
+
     elif menu == "Login":
-        st.subheader("Resonanz-Zentrale")
+        st.markdown("<h2 style='text-align: center;'>Resonanz-Zentrale</h2>", unsafe_allow_html=True)
         if not st.session_state.get('logged_in'):
             with st.form("login_form"):
-                l_email = st.text_input("E-Mail Adresse") # Pivot auf Email [cite: 2026-03-08]
+                l_email = st.text_input("E-Mail Adresse")
                 l_key = st.text_input("Vibe Key", type="password")
-                
                 if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
-                    # Wir holen das Profil über die neue E-Mail-Funktion [cite: 2026-03-08]
                     user = db_handler.get_profile_by_email(l_email)
-                    
-                    if user and security.verify_key(l_key, user['key_hash']): # [cite: 2026-01-18]
+                    if user and security.verify_key(l_key, user['key_hash']):
                         st.session_state.logged_in = True
                         st.session_state.user_data = user
-                        st.session_state.v_key = l_key
-                        st.success("Login erfolgreich!")
-                        st.rerun()
+                        st.rerun() # WICHTIG: Rerun löst das UI-Update aus!
                     else:
-                        st.error("Zugriff verweigert. E-Mail oder Key nicht korrekt.")
-
-        if st.session_state.get('logged_in'):
-            # Hier käme der Edit-Modus (analog zu Manifesto erstellen, nur mit UPDATE)
-            st.write(f"Willkommen zurück. Dein Profil ist sicher.")
+                        st.error("Zugriff verweigert.")
+        else:
+            # DAS ist die Ansicht für eingeloggte User
+            st.success(f"Willkommen, {st.session_state.user_data['email']}")
+            st.info("Hier kannst du bald deine Matches einsehen und dein Manifesto verfeinern.")
             if st.button("Logout"):
                 st.session_state.clear()
-                st.rerun()
+                st.rerun()           
 
     style.render_beta_footer()
 

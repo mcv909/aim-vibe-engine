@@ -1,78 +1,95 @@
 import streamlit as st
 
-import streamlit as st
-
 def apply_custom_style(): 
-    """Erzwingt das helle Design und optimiert die Lesbarkeit massiv."""
+    """Erzwingt das helle Design, graue Inputs und dunkelgrüne Slider."""
     st.markdown(
         """
         <style>
-        /* 1. GLOBALER LOOK */
-        .stApp {
-            background-color: #FFFFFF !important;
-            color: #111111 !important;
-        }
-
-        /* 2. LABELS (Die Texte ÜBER den Eingabefeldern) */
-        /* Wir zielen direkt auf die Streamlit-Markdown-Absätze in Labels ab */
-        .stWidgetLabel p, label p {
-            color: #000000 !important; /* Tiefschwarz */
-            font-weight: 700 !important; /* Fett für bessere Sichtbarkeit */
-            font-size: 1.05rem !important;
-            opacity: 1 !important;
-        }
-
-        /* 3. PLACEHOLDER (Die Beispieltexte INNERHALB der Felder) */
-        /* Diese müssen dunkler sein als der Standard, aber heller als die Labels */
-        ::placeholder {
-            color: #555555 !important; /* Deutliches Dunkelgrau */
-            opacity: 1 !important;
-        }
-        input::placeholder, textarea::placeholder {
-            color: #555555 !important;
-            opacity: 1 !important;
-        }
-
-        /* 4. NAVIGATION BUTTONS OBEN (Grau & Lesbar) */
-        div.stButton > button {
-            background-color: #F0F2F6 !important; /* Helles Grau */
-            color: #333333 !important; /* Dunkle Schrift */
-            border: 1px solid #CCCCCC !important;
-            font-weight: 500 !important;
-            transition: all 0.2s ease-in-out;
-        }
-        div.stButton > button:hover {
-            border-color: #FF00FF !important; /* AIM-Pink beim Hover */
-            color: #FF00FF !important;
-        }
-
-        /* 5. INPUT FELDER (Inhalt schwarz auf weiß) */
-        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
-            background-color: #FFFFFF !important;
-            color: #000000 !important;
-            border: 1px solid #BBBBBB !important;
-        }
+        .stApp { background-color: #FFFFFF !important; color: #111111 !important; }
         
-        /* Dropdown-Listen Fix (Inhalt schwarz) */
-        div[data-baseweb="popover"], div[data-baseweb="menu"] {
+        /* 1. LABELS & PLACEHOLDER */
+        .stWidgetLabel p, label p { color: #000000 !important; font-weight: 700 !important; }
+        ::placeholder { color: #555555 !important; }
+
+        /* 2. INPUTS (Grauer Hintergrund) */
+        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"], .stNumberInput input {
+            background-color: #F0F2F6 !important;
             color: #000000 !important;
+            border: 1px solid #CCCCCC !important;
         }
 
-        /* 6. ZENTRIERTE HEADER */
+        /* 3. SLIDER (Dunkelgrün) */
+        .stSlider [data-baseweb="slider"] { background-color: #1E5631 !important; }
+
+        /* 4. NAVIGATION & ACTIVE STATE */
+        div.stButton > button {
+            background-color: #F0F2F6 !important;
+            color: #333333 !important;
+            border: 1px solid #CCCCCC !important;
+        }
+        /* Highlight für die aktive Seite */
+        .active-nav-btn button {
+            border-bottom: 3px solid #FF00FF !important;
+            background-color: #E6E9EF !important;
+            font-weight: bold !important;
+        }
+
         .centered-header {
             text-align: center !important;
             display: block;
             margin-top: 2rem;
-            margin-bottom: 1rem;
             color: #000000;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 2px;
         }
         </style>
         """, 
         unsafe_allow_html=True
     )
+
+def render_nav():
+    # Wir bestimmen die aktuelle Seite anhand des Dateinamens
+    current_page = st.source_code_path.split("/")[-1] if hasattr(st, "source_code_path") else ""
+    
+    nav_cols = st.columns([1.5, 0.8, 1.2, 1, 0.8])
+    
+    # Helfer für das Highlighting
+    def get_nav_class(page_name):
+        return "active-nav-btn" if current_page == page_name else ""
+
+    with nav_cols[0]:
+        st.markdown(f'<div class="{get_nav_class("app.py")}">', unsafe_allow_html=True)
+        if st.button("✎ Manifesto"): 
+            st.session_state.menu = "Manifesto erstellen"
+            st.switch_page("app.py")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with nav_cols[1]:
+        # Login ist Teil der app.py, daher Check auf Menu-State
+        is_login = get_nav_class("app.py") if st.session_state.get('menu') == "Login" else ""
+        st.markdown(f'<div class="{is_login}">', unsafe_allow_html=True)
+        if st.button("⚿ Login"): 
+            st.session_state.menu = "Login"
+            st.switch_page("app.py")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with nav_cols[2]:
+        st.markdown(f'<div class="{get_nav_class("qa.py")}">', unsafe_allow_html=True)
+        if st.button("◬ Resonanz"): st.switch_page("pages/qa.py")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with nav_cols[3]:
+        st.markdown(f'<div class="{get_nav_class("about.py")}">', unsafe_allow_html=True)
+        if st.button("ⓘ Über AIM"): st.switch_page("pages/about.py")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with nav_cols[4]:
+        is_admin = get_nav_class("app.py") if st.session_state.get('menu') == "Admin" else ""
+        st.markdown(f'<div class="{is_admin}">', unsafe_allow_html=True)
+        if st.button("⚙ Admin"): 
+            st.session_state.menu = "Admin"
+            st.switch_page("app.py")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def render_header():
     """Minimalistischer Header mit Logo-Vibe."""
