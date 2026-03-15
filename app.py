@@ -174,47 +174,50 @@ def init_db():
     finally:
         cur.close(); conn.close()
 
-def save_profile_atomic(data, manifesto_raw, pub_key):
-    """Speichert Profil inkl. aller Filter und bereitet Vektorisierung vor."""
-    conn = get_connection()
+def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
+    """Speichert Profil und Manifesto (Source of Truth: User-Encrypted)."""
+    conn = db_handler.get_connection()
     cur = conn.cursor()
     try:
-        enc_manifesto = security.encrypt_for_worker(manifesto_raw, pub_key)
+        # 1. Permanent: Verschlüsselung für DICH (Vibe Key / AES) [cite: 2026-01-18]
+        user_enc = security.encrypt_data(manifesto_raw, v_key)
+        
+        # 2. Temporär: Verschlüsselung für den WORKER (RSA Hybrid) [cite: 2026-03-04]
+        worker_enc = security.encrypt_for_worker(manifesto_raw, pub_key)
+        
         coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
 
+        # Profil speichern/updaten
         cur.execute("""
             INSERT INTO profiles (
-                email, identity, search_for, age, height, stature_id, 
-                coords, is_ukrainian, key_hash, messenger_contact,
-                u_age_min, u_age_max, u_height_min, u_height_max, radius
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                email, age, height, coords, key_hash, messenger_contact,
+                u_age_min, u_age_max, radius
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (email) DO UPDATE SET
-                age = EXCLUDED.age, height = EXCLUDED.height, stature_id = EXCLUDED.stature_id,
-                coords = EXCLUDED.coords, messenger_contact = EXCLUDED.messenger_contact,
-                u_age_min = EXCLUDED.u_age_min, u_age_max = EXCLUDED.u_age_max,
-                u_height_min = EXCLUDED.u_height_min, u_height_max = EXCLUDED.u_height_max,
-                radius = EXCLUDED.radius, last_interaction = CURRENT_TIMESTAMP
+                age = EXCLUDED.age, height = EXCLUDED.height, 
+                coords = EXCLUDED.coords, last_interaction = CURRENT_TIMESTAMP
             RETURNING id, verification_token;
         """, (
-            data['email'], data['identity'], data['search_for'], 
-            data['age'], data['height'], data['stature_id'], 
-            coords_json, data.get('is_ukrainian', False), data.get('key_hash'),
-            data.get('messenger_contact'), data.get('u_age_min'), data.get('u_age_max'),
-            data.get('u_height_min'), data.get('u_height_max'), data.get('radius')
+            data['email'], data['age'], data['height'], coords_json, 
+            data.get('key_hash'), data.get('messenger_contact'),
+            data.get('u_age_min'), data.get('u_age_max'), data.get('radius')
         ))
         p_id, v_token = cur.fetchone()
 
+        # Manifesto speichern: manifesto_user ist DEIN Key, manifesto_enc ist für den WORKER
         cur.execute("""
-            INSERT INTO manifesto_vectors (profile_id, manifesto_enc)
-            VALUES (%s, %s)
-            ON CONFLICT (profile_id) DO UPDATE SET manifesto_enc = EXCLUDED.manifesto_enc;
-        """, (p_id, enc_manifesto))
+            INSERT INTO manifesto_vectors (profile_id, manifesto_user, manifesto_enc)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (profile_id) DO UPDATE SET 
+                manifesto_user = EXCLUDED.manifesto_user,
+                manifesto_enc = EXCLUDED.manifesto_enc;
+        """, (p_id, user_enc, worker_enc))
 
         conn.commit()
         return v_token, "needs_verification"
     except Exception as e:
         conn.rollback()
-        return None, f"system_error: {str(e)}"
+        return None, f"System-Error: {str(e)}"
     finally:
         cur.close(); conn.close()
 
@@ -302,15 +305,25 @@ def main():
         with st.form("login_form"):
             l_email = st.text_input("E-Mail Adresse")
             l_key = st.text_input("Vibe Key", type="password")
-            if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
-                user_res = db_handler.get_profile_by_email(l_email)
-                if user_res and security.verify_key(l_key, user_res['key_hash']):
-                    st.session_state.logged_in = True
-                    # Entschlüsselung mit dem Vibe-Key (AES/Symmetrisch) [cite: 2026-03-15]
-                    if user_res.get('manifesto_text'):
-                        user_res['manifesto_text'] = security.decrypt_data(user_res['manifesto_text'], l_key)
-                    st.session_state.user_data = user_res
-                    st.rerun()
+                # Im menu == "Login" Bereich
+                if st.form_submit_button("IN DIE MATRIX EINLOGGEN"):
+                    user_res = db_handler.get_profile_by_email(l_email) # Hol dir das Profil
+                    if user_res and security.verify_key(l_key, user_res['key_hash']):
+                        st.session_state.logged_in = True
+                        
+                        # JETZT: Das verschlüsselte Manifesto aus der DB holen
+                        # (Du brauchst eine Hilfsfunktion in db_handler, die 'manifesto_user' zurückgibt)
+                        enc_text = db_handler.get_user_manifesto_by_id(user_res['id'])
+                        
+                        if enc_text:
+                            # Entschlüsseln mit dem frisch eingegebenen Key [cite: 2026-01-18]
+                            user_res['manifesto_text'] = security.decrypt_data(enc_text, l_key)
+                        
+                        st.session_state.user_data = user_res
+                        st.rerun()
+                    else:
+                        st.error("Zugriff verweigert. Falscher Key?")
+
     elif menu == "Login" and not is_edit:
         # Standard Login-Formular (wie in deinem File)
         if st.button("DNA SICHERN & RESONANZ STARTEN", type="primary"):
