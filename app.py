@@ -247,63 +247,54 @@ def main():
         st.title("⚙ Admin-Zentrale")
 
 
-    # ZENTRALE LOGIK: Formular anzeigen bei 'Manifesto' ODER wenn eingeloggt im Login-Menü
+    # ZENTRALE LOGIK: Manifesto-Editor
     if menu == "Manifesto erstellen" or (is_edit and menu == "Login"):
         if not is_edit:
             st.markdown("<h3 style='text-align: center;'>Was ist AIM-Vibe?</h3>", unsafe_allow_html=True)
-            st.markdown("""
-        AIM?
-        Atificial Intelligence Matching, also eine künstliche Intelligenz die passende Leute findet.
-        Oah - cool, und wie genau?
-        Künstliche Intelligenz ist im Grunde ein irre mächtiger Vergleichsapparat. 
-        AIM vergleicht dein Manifesto (lokal!), deinen Text mit dem anderer Menschen im **1536-dimensionalen Vektorraum**. [cite: 2026-02-07]
-        
-        Wir suchen nicht nach Hobbys, wir suchen nach der **Resonanz in deinem Vibe**. 
-        Dein Manifesto ist der qualitative Anker dieser Magie. [cite: 2025-12-30]
-        
-        **Und: Wir suchen verschlüsselt!** Selbst als Admins haben wir keinen Zugriff auf deine Daten. [cite: 2026-01-18]
-        Umso wichtiger ist dein Passwort (Vibe Key). DU hast die Kontrolle. Punkt.
-        Sobald ein Match vorliegt werden die Matchpartner informiert - dann liegt es wieder bei euch, lernt euch kennen ;)
-        """)
+            st.info("Dein Manifesto wird im 1536-dimensionalen Raum verortet. Wir suchen nach Resonanz, nicht nach Hobbys.")
 
-        # --- MANIFESTO (Nur EINE Box!) ---
         st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
-        st.caption("Das bin ich – meine Werte, mein Sound, meine Sicht auf die Welt.")
         
-        # Wert kommt entweder aus der DB (user) oder dem Buffer
-        db_manifesto = user.get('manifesto_text', st.session_state.manifesto_buffer)
-        manifesto = st.text_area("", value=db_manifesto, height=300, key="main_manifesto", label_visibility="collapsed")
+        # Wert-Holen: Falls eingeloggt aus Session, sonst aus dem Buffer
+        current_text = user.get('manifesto_text', st.session_state.manifesto_buffer)
+        
+        manifesto = st.text_area(
+            "Beschreibe deinen Sound, deine Werte, deine Sicht auf die Welt.",
+            value=current_text,
+            height=300,
+            key="main_manifesto_input",
+            help="Dieses Feld ist dein qualitativer Anker."
+        )
         st.session_state.manifesto_buffer = manifesto
 
         st.markdown('<p class="centered-header">Deine Digitale DNA</p>', unsafe_allow_html=True)
         
+        # Spalten für die DNA-Inputs
         c1, c2, c3 = st.columns(3)
         with c1:
             st.markdown("**Basis**")
             u_name = st.text_input("Name / Alias", value=user.get('name', ""), key="inp_name")
             u_email = st.text_input("E-Mail", value=user.get('email', ""), disabled=is_edit, key="inp_email")
-            v_key = st.text_input("Vibe Key", type="password", key="inp_key") if not is_edit else "********"
-            u_messenger = st.text_input("Messenger-Kontakt (optional)", value=user.get('messenger_contact', ""), key="inp_mess")
+            # Vibe Key nur bei Neuanlage zeigen
+            v_key = st.text_input("Vibe Key", type="password", key="inp_key") if not is_edit else None
+            u_messenger = st.text_input("Messenger-Kontakt", value=user.get('messenger_contact', ""), key="inp_mess")
 
         with c2:
             st.markdown("**Identität**")
-            u_age = st.number_input("Dein Alter", 18, 99, value=get_val('age', 25), key="inp_age")
-            # Mapping der identity ID auf den Index
+            u_age = st.number_input("Alter", 18, 99, value=get_val('age', 25))
             g_list = ["m", "w", "d"]
             g_idx = (user.get('identity', 1) - 1) if isinstance(user.get('identity'), int) else 0
-            u_gender = st.selectbox("Dein Geschlecht", g_list, index=g_idx, key="inp_gender")
-            u_location = st.text_input("Standort", value=get_val('location', ""), key="inp_loc") 
-            u_height = st.number_input("Größe (cm)", 140, 220, value=get_val('height', 175), key="inp_height")
+            u_gender = st.selectbox("Geschlecht", g_list, index=g_idx)
+            u_location = st.text_input("Standort", value=get_val('location', ""))
 
         with c3:
             st.markdown("**Suche**")
-            u_age_range = st.slider("Wunsch-Alter", 18, 99, value=(get_val('u_age_min', 20), get_val('u_age_max', 40)), key="inp_age_range")
-            u_radius = st.number_input("Suchradius (km)", 5, 1000, value=get_val('radius', 100), key="inp_rad")
-            u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(get_val('u_height_min', 160), get_val('u_height_max', 190)), key="inp_h_range")
+            u_age_range = st.slider("Wunsch-Alter", 18, 99, value=(get_val('u_age_min', 20), get_val('u_age_max', 40)))
+            u_radius = st.number_input("Suchradius (km)", 5, 1000, value=get_val('radius', 100))
 
         btn_label = "PROFIL AKTUALISIEREN" if is_edit else "DNA SICHERN & RESONANZ STARTEN"
-        if st.button(btn_label, type="primary", key="main_save_btn"):
-            # Speicher-Logik triggern ...
+        if st.button(btn_label, type="primary"):
+            # Hier folgt die neue Speicher-Logik (Schritt 2)
             pass
 
     elif menu == "Login" and not is_edit:

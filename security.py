@@ -73,14 +73,15 @@ def derive_encryption_key(vibe_key):
     return base64.urlsafe_b64encode(digest)
 
 def encrypt_data(text, vibe_key):
-    """Verschlüsselt Daten mit dem User-abgeleiteten Schlüssel."""
+    """Verschlüsselt das Manifesto für den User (Source of Truth)."""
     if not text or not vibe_key: return ""
+    # Wir nutzen Fernet für die dauerhafte Speicherung
     cipher = Fernet(derive_encryption_key(vibe_key))
     return cipher.encrypt(text.encode()).decode()
 
 def decrypt_data(token, vibe_key):
-    """Entschlüsselt Daten. Falls Key falsch: 'Weg ist weg' [cite: 2026-01-18]."""
-    if not token or not vibe_key: return ""
+    """Entschlüsselt das Manifesto beim Login."""
+    if not token or not vibe_key: return "[Fehler]"
     try:
         cipher = Fernet(derive_encryption_key(vibe_key))
         return cipher.decrypt(token.encode()).decode()
