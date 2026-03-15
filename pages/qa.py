@@ -18,8 +18,8 @@ def main():
             "a": "AIM ist eine Resonanz-Engine. Wir nutzen hochdimensionale Vektoren, um Menschen auf Basis ihrer inneren Werte und Lebenseinstellungen zusammenzubringen, statt nur oberflächliche Checklisten abzuarbeiten."
         },
         {
-            "q": "Wie funktioniert das Matching im 1536-D Raum?"
-            "a": "Stell dir vor, dein Text wird in 1536 verschiedene Facetten oder 'Bedeutungs-Räume' zerlegt. Dabei hat jeder Raum eine spezifische mathematische Wertung. **Die Logik dahinter:** * **Präzision:** Je mehr Text du lieferst, desto feiner und schärfer werden diese Räume ausgeleuchtet. * **Muster:** AIM erstellt daraus eine mathematische 'Perlenkette' deines Vibes. * **Resonanz:** Wenn die Hardfacts (Alter, Ort etc.) passen, legen wir deine Kette über alle anderen. Wir suchen nicht nach gleichen Wörtern, sondern berechnen die mathematische Übereinstimmung der Muster. Das ist echte Resonanz im 1536-dimensionalen Raum."
+            "q": "Wie funktioniert das Matching im 1536-D Raum?",
+            "a": "Stell dir vor, dein Text wird in 1536 verschiedene Facetten oder 'Bedeutungs-Räume' zerlegt. Dabei hat jeder Raum eine spezifische mathematische Wertung. Die Logik dahinter: Präzision: Je mehr Text du lieferst, desto feiner und schärfer werden diese Räume ausgeleuchtet. Muster: AIM erstellt daraus eine mathematische 'Perlenkette' deines Vibes. Resonanz: Wenn die Hardfacts (Alter, Ort etc.) passen, legen wir deine Kette über alle anderen. Wir suchen nicht nach gleichen Wörtern, sondern berechnen die mathematische Übereinstimmung der Muster. Das ist echte Resonanz im 1536-dimensionalen Raum."
         },
         {
             "q": "Was ist der Unterschied zu anderen Portalen?",
