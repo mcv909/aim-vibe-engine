@@ -1,4 +1,5 @@
 import psycopg2
+import psycopg2.extras
 from psycopg2.extras import RealDictCursor
 from psycopg2 import errors
 import os
@@ -207,9 +208,9 @@ def add_to_embedding_queue(profile_id, encrypted_text):
 
 def get_profile_by_email(email):
     conn = get_connection()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictRow) # Wichtig für Dictionary-Keys!
+    # RealDictRow sorgt dafür, dass wir auf Spalten wie user['email'] statt user[0] zugreifen können [cite: 2026-03-15]
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictRow) 
     try:
-        # Wir holen Daten aus beiden Tabellen
         cur.execute("""
             SELECT p.*, mv.manifesto_enc as manifesto_text 
             FROM profiles p 
@@ -217,6 +218,9 @@ def get_profile_by_email(email):
             WHERE p.email = %s
         """, (email,))
         return cur.fetchone()
+    except Exception as e:
+        print(f"DB-Fehler bei Login: {e}")
+        return None
     finally:
         cur.close(); conn.close()
 
