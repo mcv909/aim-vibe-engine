@@ -206,15 +206,19 @@ def add_to_embedding_queue(profile_id, encrypted_text):
         conn.close()
 
 def get_profile_by_email(email):
-    """Lädt ein Profil für den Login oder Abgleich via Email.""" # [cite: 2026-03-08]
     conn = get_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictRow) # Wichtig für Dictionary-Keys!
     try:
-        cur.execute("SELECT * FROM profiles WHERE email = %s", (email,))
+        # Wir holen Daten aus beiden Tabellen
+        cur.execute("""
+            SELECT p.*, mv.manifesto_enc as manifesto_text 
+            FROM profiles p 
+            LEFT JOIN manifesto_vectors mv ON p.id = mv.profile_id 
+            WHERE p.email = %s
+        """, (email,))
         return cur.fetchone()
     finally:
-        cur.close()
-        conn.close()
+        cur.close(); conn.close()
 
 def get_match_count():
     """Gibt die Gesamtanzahl der gefundenen Resonanzen zurück."""
