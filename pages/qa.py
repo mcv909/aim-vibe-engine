@@ -39,7 +39,8 @@ def main():
         },
         {
             "q": "Wie kann ich meine Chance auf Matches vergrößern?",
-            "a": "Ein kurzes Manifesto führt zu einem 'verpixelten' Matching. Je mehr qualitative Anker du wirfst, desto präziser kann AIM die Resonanz berechnen."        }
+            "a": "Ein kurzes Manifesto führt zu einem 'verpixelten' Matching. Je mehr qualitative Anker du wirfst, desto präziser kann AIM die Resonanz berechnen."        
+        }
     ]
 
     for item in qa_data:
