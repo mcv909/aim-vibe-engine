@@ -28,10 +28,10 @@ def send_activation_mail(receiver_email, token):
     
     {activation_link}
     
-    Sobald du verifiziert bist, verortet AIM deinen Vibe im 1536-D Raum. [cite: 2026-02-07]
+    Sobald du verifiziert bist, verortet AIM deinen Vibe im 1536-D Raum.
     
     Viel Erfolg!
-    Dein AIM (Authentic Intelligence Mate)
+    Dein AIM (AI matching)
     """
     
     msg.attach(MIMEText(body, 'plain'))

@@ -4,77 +4,74 @@ def apply_custom_style():
     st.markdown(
         """
         <style>
-        /* 1. HEADER-FIX: Den schwarzen Balken oben eliminieren */
-        header { visibility: hidden !important; }
+        /* 1. HEADER & OVERLAY FIX: Entfernt den schwarzen Balken oben */
+        header { visibility: hidden !important; height: 0px !important; }
         .stAppHeader { display: none !important; }
-        #root > div:nth-child(1) > div > div > div > div > section > div { padding-top: 0rem !important; }
-
-        /* 2. GLOBALE FARBPALETTE (CD) */
+        
+        /* 2. GLOBALE FARBPALETTE */
         .stApp { background-color: #FFFFFF !important; color: #111111 !important; }
         
-        /* Überschriften/Labels: Schwarz und knackig */
+        /* Überschriften: Schwarz und kräftig */
         .stMarkdown p, label, .stWidgetLabel p {
             color: #111111 !important;
             font-weight: 700 !important;
-            font-size: 1rem !important;
         }
 
-        /* 3. INPUTS: Weißer Hintergrund, schwarze Typo (wie gewünscht) */
+        /* 3. INPUTS & DROPDOWNS: Weißer Hintergrund, schwarze Typo */
         .stTextInput input, .stTextArea textarea, .stNumberInput input, div[data-baseweb="select"] > div {
             background-color: #FFFFFF !important;
             color: #111111 !important;
             border: 1px solid #CCCCCC !important;
-            border-radius: 4px !important;
         }
 
-        /* 4. NAVIGATION: Groß, horizontal, gleichmäßig */
+        /* 4. BUTTONS: Einheitliches Design für Nav und Primary */
         div.stButton > button {
             width: 100% !important;
             background-color: #F8F9FB !important;
             color: #111111 !important;
             border: 1px solid #DDDDDD !important;
+            padding: 10px !important;
             font-weight: 600 !important;
-            padding: 12px !important;
         }
         
-        .active-nav-btn button {
+        /* Fix für den Login-Button (Primary/Submit) */
+        button[kind="primaryFormSubmit"], button[kind="primary"] {
             background-color: #000000 !important;
             color: #FFFFFF !important;
             border: 1px solid #000000 !important;
         }
 
-        /* 5. SLIDER: Hintergrund Weiß, Linie Schwarz, Aktiver Teil NEONGRÜN */
-        /* Die Grundlinie */
-        div[data-baseweb="slider"] > div {
-            background-color: #FFFFFF !important;
-        }
-        /* Die Linie selbst (Schienen) */
-        div[data-baseweb="slider"] > div > div:first-child {
+        .active-nav-btn button {
             background-color: #000000 !important;
+            color: #FFFFFF !important;
         }
-        /* Der aktive Range (Neon-Grün) */
+
+        /* 5. SLIDER: Weißer Hintergrund, schwarze Schiene, neongrüner Fortschritt */
+        div[data-baseweb="slider"] > div { background-color: #FFFFFF !important; }
+        /* Schiene */
+        div[data-baseweb="slider"] > div > div:first-child { background-color: #000000 !important; }
+        /* Aktiver Bereich (Neon-Grün) */
         div[data-baseweb="slider"] > div > div > div {
-            background-color: #39FF14 !important; /* Neon-Grün */
+            background-color: #39FF14 !important;
             background-image: none !important;
         }
-        /* Die Griffe (Knöpfe) */
+        /* Knöpfe */
         div[role="slider"] {
             background-color: #000000 !important;
             border: 2px solid #39FF14 !important;
         }
 
-        /* 6. RIBBON (Störer) Fix */
+        /* 6. RIBBON / STÖRER */
         .aim-ribbon {
             position: fixed;
-            top: 25px;
+            top: 40px;
             right: -40px;
             background-color: #ff4b4b;
             color: white;
             padding: 5px 45px;
             transform: rotate(45deg);
-            z-index: 9999;
+            z-index: 10000;
             font-weight: bold;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
         </style>
         """, 
@@ -114,8 +111,8 @@ def render_beta_footer():
     st.markdown("""
         <div style="background-color: #F8F9FB; padding: 40px; border-radius: 8px; margin-top: 60px; border: 1px solid #EEEEEE;">
             <p style="font-size: 0.9rem; color: #666; text-align: center;">
-                <b>Beta-Status & Transparenz:</b> AIM ist ein Experiment in Resonanz. <br>
-                Dein Vibe Key ist dein einziger Zugang. [cite: 2026-01-18]
+                <b>Beta-Status & Transparenz:</b> AIM ist die erste "Dating"/"Freunde suche" Seite in Resonanz. <br>
+                Dein Vibe Key ist dein einziger Zugang.
             </p>
         </div>
     """, unsafe_allow_html=True)

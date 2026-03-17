@@ -1,6 +1,8 @@
 import streamlit as st
 import style
 
+# aka Resonanz
+
 def main():
     # 1. Page Config & Styles
     st.set_page_config(page_title="Q&A | [i am] | AIM", layout="wide")

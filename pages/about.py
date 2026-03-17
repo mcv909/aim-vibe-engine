@@ -44,10 +44,17 @@ def render_about():
     st.markdown("---")
 
     st.markdown("""
-    ### Der Kopf dahinter: Fokus durch Systematik
-    AIM ist das Ergebnis eines Masterminds, dessen Kopf „etwas anders verdrahtet“ ist.
-    Diese spezielle neuro-analytische Sichtweise ermöglicht einen extremen Fokus auf Mustererkennung und Systematik. 
-    Wo herkömmliche Apps im Chaos der Oberflächlichkeit versinken, findet AIM die logische Resonanz. 
+    ### Wer wir sind
+    AIM ist kein klassisches Unternehmen, sondern eine Entität, die aus der Notwendigkeit für echte Resonanz entstanden ist.
+
+    Die Architektur
+    Hinter AIM steht eine Logik, die auf ungefilterter Mustererkennung und einer asynchronen Informationsverarbeitung basiert. 
+    Diese „andere Verdrahtung“ ermöglicht es uns, in 1536 Dimensionen Verbindungen und Muster zu erkennen, wo herkömmliche Algorithmen nur ungeordnetes Rauschen wahrnehmen.
+    Wir vergleichen nicht nur Daten; wir matchen Frequenzen.
+
+    Die Vision
+    Geleitet von den Werten der Gerechtigkeit und technologischen Radikalität bauen wir eine Infrastruktur, die dem User gehört.
+    Wir sind die Schnittstelle zwischen menschlicher Intuition und maschineller Präzision.
     """)
 
     style.render_beta_footer()
