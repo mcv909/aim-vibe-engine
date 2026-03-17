@@ -175,41 +175,44 @@ def init_db():
         cur.close(); conn.close()
 
 def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
-    """Speichert Profil und Manifesto (Source of Truth: User-Encrypted)."""
+    """Speichert alle 14 Datenpunkte inklusive der Suchfilter."""
     conn = db_handler.get_connection()
     cur = conn.cursor()
     try:
-        # 1. Permanent: Verschlüsselung für DICH (Vibe Key / AES) [cite: 2026-01-18]
-        user_enc = security.encrypt_data(manifesto_raw, v_key)
-        
-        # 2. Temporär: Verschlüsselung für den WORKER (RSA Hybrid) [cite: 2026-03-04]
+        # Verschlüsselung
+        user_enc = security.encrypt_data(manifesto_raw, v_key) if v_key else None
         worker_enc = security.encrypt_for_worker(manifesto_raw, pub_key)
-        
         coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
 
-        # Profil speichern/updaten
         cur.execute("""
             INSERT INTO profiles (
-                email, age, height, coords, key_hash, messenger_contact,
-                u_age_min, u_age_max, radius
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                email, identity, search_for, age, height, coords, 
+                is_ukrainian, key_hash, messenger_contact,
+                u_age_min, u_age_max, u_height_min, u_height_max, radius
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (email) DO UPDATE SET
-                age = EXCLUDED.age, height = EXCLUDED.height, 
-                coords = EXCLUDED.coords, last_interaction = CURRENT_TIMESTAMP
+                age = EXCLUDED.age, height = EXCLUDED.height, coords = EXCLUDED.coords,
+                identity = EXCLUDED.identity, search_for = EXCLUDED.search_for,
+                is_ukrainian = EXCLUDED.is_ukrainian,
+                u_age_min = EXCLUDED.u_age_min, u_age_max = EXCLUDED.u_age_max,
+                u_height_min = EXCLUDED.u_height_min, u_height_max = EXCLUDED.u_height_max,
+                radius = EXCLUDED.radius, last_interaction = CURRENT_TIMESTAMP
             RETURNING id, verification_token;
         """, (
-            data['email'], data['age'], data['height'], coords_json, 
+            data['email'], data['identity'], data['search_for'], 
+            data['age'], data['height'], coords_json, data['is_ukrainian'],
             data.get('key_hash'), data.get('messenger_contact'),
-            data.get('u_age_min'), data.get('u_age_max'), data.get('radius')
+            data['u_age_min'], data['u_age_max'], 
+            data['u_height_min'], data['u_height_max'], data['radius']
         ))
         p_id, v_token = cur.fetchone()
 
-        # Manifesto speichern: manifesto_user ist DEIN Key, manifesto_enc ist für den WORKER
+        # Manifesto-Update
         cur.execute("""
             INSERT INTO manifesto_vectors (profile_id, manifesto_user, manifesto_enc)
             VALUES (%s, %s, %s)
             ON CONFLICT (profile_id) DO UPDATE SET 
-                manifesto_user = EXCLUDED.manifesto_user,
+                manifesto_user = COALESCE(EXCLUDED.manifesto_user, manifesto_vectors.manifesto_user),
                 manifesto_enc = EXCLUDED.manifesto_enc;
         """, (p_id, user_enc, worker_enc))
 
@@ -217,27 +220,23 @@ def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
         return v_token, "needs_verification"
     except Exception as e:
         conn.rollback()
-        return None, f"System-Error: {str(e)}"
+        return None, str(e)
     finally:
         cur.close(); conn.close()
 
 def render_manifesto_editor(user, is_edit):
-    """Zentrale Eingabemaske für das Manifesto und die DNA."""
-    if not is_edit:
-        st.markdown("<h3 style='text-align: center;'>Was ist AIM-Vibe?</h3>", unsafe_allow_html=True)
-        st.info("Dein Manifesto ist der qualitative Anker. AIM sucht nach Resonanz in deinem Vibe, nicht nach Hobbys.")
-
+    """Stellt die vollständige DNA-Maske mit allen ursprünglichen Feldern wieder her."""
     st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
     
-    # Text-Holen: Aus der DB (falls eingeloggt) oder dem Buffer (während der Eingabe)
-    db_manifesto = user.get('manifesto_text', "")
-    display_text = db_manifesto if db_manifesto else st.session_state.manifesto_buffer
+    # Manifesto-Text Handlingf
+    db_text = user.get('manifesto_text', "")
+    display_text = db_text if db_text else st.session_state.manifesto_buffer
     
     manifesto = st.text_area(
-        "Beschreibe deinen Sound, deine Werte, deine Sicht auf die Welt.",
-        value=display_text,
-        height=300,
-        key="main_manifesto_input",
+        "Beschreibe deinen Sound...", 
+        value=display_text, 
+        height=300, 
+        key="main_manifesto_input", 
         label_visibility="collapsed"
     )
     st.session_state.manifesto_buffer = manifesto
@@ -249,31 +248,40 @@ def render_manifesto_editor(user, is_edit):
         st.markdown("**Basis**")
         u_name = st.text_input("Name / Alias", value=user.get('name', ""), key="inp_name")
         u_email = st.text_input("E-Mail", value=user.get('email', ""), disabled=is_edit, key="inp_email")
-        # Vibe Key nur bei Neuanlage (nicht im Edit-Modus)
         v_key = st.text_input("Vibe Key", type="password", key="inp_key") if not is_edit else None
-        u_messenger = st.text_input("Messenger-Kontakt (optional)", value=user.get('messenger_contact', ""), key="inp_mess")
+        u_messenger = st.text_input("Messenger-Kontakt", value=user.get('messenger_contact', ""), key="inp_mess")
+        u_ukraine = st.checkbox("Ukraine Support / Herkunft", value=user.get('is_ukrainian', False), key="inp_ukr")
 
     with c2:
         st.markdown("**Identität**")
-        u_age = st.number_input("Alter", 18, 99, value=user.get('age', 25), key="inp_age")
+        u_age = st.number_input("Dein Alter", 18, 99, value=user.get('age', 25), key="inp_age")
         g_list = ["m", "w", "d"]
         g_idx = (user.get('identity', 1) - 1) if isinstance(user.get('identity'), int) else 0
-        u_gender = st.selectbox("Geschlecht", g_list, index=g_idx, key="inp_gender")
-        u_location = st.text_input("Standort", value=user.get('location', ""), key="inp_loc")
+        u_gender = st.selectbox("Dein Geschlecht", g_list, index=g_idx, key="inp_gender")
+        u_location = st.text_input("Standort", value=user.get('location', ""), key="inp_loc") 
+        u_height = st.number_input("Größe (cm)", 140, 220, value=user.get('height', 175), key="inp_height")
 
     with c3:
         st.markdown("**Suche**")
+        s_idx = (user.get('search_for', 2) - 1) if isinstance(user.get('search_for'), int) else 1
+        u_search_gender = st.selectbox("Ich suche", g_list, index=s_idx, key="inp_search_gender")
         u_age_range = st.slider("Wunsch-Alter", 18, 99, value=(user.get('u_age_min', 20), user.get('u_age_max', 40)), key="inp_age_range")
         u_radius = st.number_input("Suchradius (km)", 5, 1000, value=user.get('radius', 100), key="inp_rad")
+        u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(user.get('u_height_min', 160), user.get('u_height_max', 190)), key="inp_h_range")
 
     btn_label = "PROFIL AKTUALISIEREN" if is_edit else "DNA SICHERN & RESONANZ STARTEN"
     if st.button(btn_label, type="primary", key="save_dna_btn"):
-        # Hier triggern wir die Speicher-Logik
-        handle_save_process(u_email, v_key, manifesto, u_location, is_edit, {
-            'name': u_name, 'age': u_age, 'identity': g_list.index(u_gender)+1,
-            'u_age_min': u_age_range[0], 'u_age_max': u_age_range[1], 'radius': u_radius,
-            'messenger_contact': u_messenger
-        })
+        # Datenpaket für die atomare Speicherung
+        extra_data = {
+            'name': u_name, 'age': u_age, 
+            'identity': g_list.index(u_gender) + 1,
+            'search_for': g_list.index(u_search_gender) + 1,
+            'height': u_height, 'is_ukrainian': u_ukraine,
+            'u_age_min': u_age_range[0], 'u_age_max': u_age_range[1],
+            'u_height_min': u_target_height[0], 'u_height_max': u_target_height[1],
+            'radius': u_radius, 'messenger_contact': u_messenger
+        }
+        handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_data)
 
 def render_login_form():
     """Rendert das Login-Formular und kümmert sich um die Entschlüsselung."""
