@@ -9,7 +9,7 @@ from openai import OpenAI
 import security
 import db_handler
 import logic
-import style
+import ALT_1style
 import subprocess
 import mail_logic
 import re
@@ -72,7 +72,7 @@ STATUS_PATH = os.path.join(BASE_DIR, 'status.json')
 st.set_page_config(page_title="aim-vibe-test", layout="wide")
 
 # 2. Styles laden (WICHTIG: Prüfe, ob in style.py die Klasse .aim-ribbon definiert ist!)
-st.markdown(style.CSS_STÖRER, unsafe_allow_html=True)
+st.markdown(ALT_1style.CSS_STÖRER, unsafe_allow_html=True)
 
 # 3. Der Ribbon-Check (Die einzig wahre Version)
 def render_ribbon():
@@ -341,33 +341,31 @@ def handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_da
 def main():
     # 1. INITIALISIERUNG
     if 'menu' not in st.session_state: st.session_state.menu = "Manifesto erstellen"
-    if 'manifesto_buffer' not in st.session_state: st.session_state.manifesto_buffer = ""
     
     style.apply_custom_style() 
     style.render_nav()
     
+    # Block-Abstand 1: Navi zu Logo
+    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+    
+    style.render_header()
+    render_founding_dashboard() # Die schwarze Founder-Box
+
+    # Block-Abstand 2: Founderbox zu Manifesto (identisch zu Block 1)
+    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+
     menu = st.session_state.menu
-    user = st.session_state.get('user_data', {})
     is_edit = st.session_state.get('logged_in', False)
 
-    style.render_header()
-    render_founding_dashboard()
-
     # ZENTRALE ROUTING-LOGIK
-    # Falls wir im Editor-Modus sind (entweder neu oder eingeloggt)
     if menu == "Manifesto erstellen" or (is_edit and menu == "Login"):
-        render_manifesto_editor(user, is_edit)
-        
-    # Falls wir nicht eingeloggt sind und den Login sehen wollen
+        render_manifesto_editor(st.session_state.get('user_data', {}), is_edit)
     elif menu == "Login" and not is_edit:
         render_login_form()
-        
-    # Logout-Option für eingeloggte User in der Login-Ansicht
     elif menu == "Login" and is_edit:
-        st.success(f"Eingeloggt als: {user.get('email')}")
-        if st.button("AUS DER MATRIX AUFTAUCHEN (Logout)"):
-            st.session_state.clear()
-            st.rerun()
+        st.success(f"Eingeloggt als: {st.session_state.user_data.get('email')}")
+        if st.button("AUS DER MATRIX AUFTAUCHEN"):
+            st.session_state.clear(); st.rerun()
 
     style.render_beta_footer()
 
