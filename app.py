@@ -9,7 +9,7 @@ from openai import OpenAI
 import security
 import db_handler
 import logic
-import ALT_1style
+import style
 import subprocess
 import mail_logic
 import re
@@ -72,7 +72,7 @@ STATUS_PATH = os.path.join(BASE_DIR, 'status.json')
 st.set_page_config(page_title="aim-vibe-test", layout="wide")
 
 # 2. Styles laden (WICHTIG: Prüfe, ob in style.py die Klasse .aim-ribbon definiert ist!)
-st.markdown(ALT_1style.CSS_STÖRER, unsafe_allow_html=True)
+st.markdown(style.CSS_STÖRER, unsafe_allow_html=True)
 
 # 3. Der Ribbon-Check (Die einzig wahre Version)
 def render_ribbon():
