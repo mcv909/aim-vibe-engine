@@ -4,112 +4,96 @@ def apply_custom_style():
     st.markdown(
         """
         <style>
-        /* Erzwungener Kontrast für Nav-Buttons */
-        div.stButton > button {
-        background-color: #F0F2F6 !important;
-        color: #111111 !important;
-        opacity: 1 !important; /* Kein Verblassen */
+        /* 1. GLOBALE TYPO & FARBEN */
+        .stApp { background-color: #FFFFFF !important; color: #111111 !important; }
+        
+        /* Überschriften über den Eingabefeldern abdunkeln */
+        .stMarkdown p, label, .stWidgetLabel p {
+            color: #111111 !important;
+            font-weight: 600 !important;
+            opacity: 1 !important;
         }
 
-        /* Inverses Highlighting für die aktive Seite [cite: 2026-03-15] */
+        /* 2. NAVIGATION: Horizontal ausgerichtet & Gleiche Abstände */
+        div.stButton > button {
+            width: 100% !important;
+            background-color: #F0F2F6 !important;
+            color: #333333 !important;
+            border: 1px solid #CCCCCC !important;
+            border-radius: 4px !important;
+            padding: 10px 0 !important;
+        }
+        
         .active-nav-btn button {
             background-color: #000000 !important;
             color: #FFFFFF !important;
-        }
-
-        .stApp { background-color: #FFFFFF !important; color: #111111 !important; }
-        
-        /* 1. SLIDER: Rot durch GRÜN ersetzen */
-        /* Die aktive Leiste zwischen den Reglern */
-        div[data-baseweb="slider"] > div > div {
-            background-image: linear-gradient(to right, #1E5631 0%, #1E5631 100%) !important;
-            background-color: #1E5631 !important;
-        }
-        /* Die Regler-Knöpfe selbst */
-        div[role="slider"] {
-            background-color: #1E5631 !important;
-            border: 2px solid #1E5631 !important;
-        }
-        /* Die Zahlenwerte über dem Slider */
-        div[data-testid="stThumbValue"] {
-            color: #1E5631 !important;
-            font-weight: bold !important;
-        }
-
-        /* 2. NAVIGATION: Standard hell, Aktiv Schwarz */
-        div.stButton > button {
-            background-color: #F0F2F6 !important; /* Hellgrau als Standard */
-            color: #333333 !important;
-            border: 1px solid #CCCCCC !important;
-        }
-        
-        .active-nav-btn button {
-            background-color: #000000 !important; /* Schwarz nur für Aktiv */
-            color: #FFFFFF !important;
             border: 1px solid #000000 !important;
-            font-weight: 700 !important;
         }
 
-        /* 3. INPUTS & TEXTAREA */
-        .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"], .stTextArea textarea {
-            background-color: #F0F2F6 !important;
-            color: #000000 !important;
-            border: 1px solid #CCCCCC !important;
+        /* 3. DROPDOWNS: Dunkelgrau statt Schwarz */
+        div[data-baseweb="select"] > div {
+            background-color: #333333 !important;
+            color: #FFFFFF !important;
         }
+        div[data-baseweb="popover"] ul {
+            background-color: #333333 !important;
+        }
+
+        /* 4. SLIDER: Schwarze Linie, Grüner Bereich */
+        /* Die Grundlinie */
+        div[data-baseweb="slider"] > div {
+            background-color: #000000 !important;
+        }
+        /* Der aktive Range-Bereich */
+        div[data-baseweb="slider"] > div > div {
+            background-color: #00FF00 !important; /* Resonanz-Grün */
+            background-image: none !important;
+        }
+        /* Die Knöpfe */
+        div[role="slider"] {
+            background-color: #000000 !important;
+            border: 2px solid #00FF00 !important;
+        }
+
+        /* 5. ABSTÄNDE */
+        .main-unit { margin-bottom: 40px; }
         </style>
         """, 
         unsafe_allow_html=True
     )
 
 def render_nav():
-    """Zentrale Navigation mit aktivem Status-Highlighting."""
+    """Navigations-Buttons mit exakt gleichem horizontalem Abstand."""
     current_menu = st.session_state.get('menu', "Manifesto erstellen")
-    # Erkennung der Seite für das Highlighting [cite: 2026-03-12]
-    current_page = st.source_code_path.split("/")[-1] if hasattr(st, "source_code_path") else "app.py"
-
-    nav_cols = st.columns([1.5, 0.8, 1.2, 1, 0.8])
+    # 5 Spalten mit exakt gleicher Breite (1:1:1:1:1)
+    cols = st.columns([1, 1, 1, 1, 1])
     
-    def nav_class(target_menu, target_page=None):
-        if target_page and current_page == target_page: return "active-nav-btn"
-        if current_menu == target_menu and current_page == "app.py": return "active-nav-btn"
-        return ""
+    menus = [
+        ("✎ Manifesto", "Manifesto erstellen"),
+        ("⚿ Login", "Login"),
+        ("◬ Resonanz", "qa.py"),
+        ("ⓘ Über AIM", "about.py"),
+        ("⚙ Admin", "Admin")
+    ]
 
-    with nav_cols[0]:
-        st.markdown(f'<div class="{nav_class("Manifesto erstellen")}">', unsafe_allow_html=True)
-        if st.button("✎ Manifesto"): 
-            st.session_state.menu = "Manifesto erstellen"
-            st.switch_page("app.py")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with nav_cols[1]:
-        st.markdown(f'<div class="{nav_class("Login")}">', unsafe_allow_html=True)
-        if st.button("⚿ Login"): 
-            st.session_state.menu = "Login"
-            st.switch_page("app.py")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with nav_cols[2]:
-        st.markdown(f'<div class="{nav_class(None, "qa.py")}">', unsafe_allow_html=True)
-        if st.button("◬ Resonanz"): st.switch_page("pages/qa.py")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with nav_cols[3]:
-        st.markdown(f'<div class="{nav_class(None, "about.py")}">', unsafe_allow_html=True)
-        if st.button("ⓘ Über AIM"): st.switch_page("pages/about.py")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with nav_cols[4]:
-        st.markdown(f'<div class="{nav_class("Admin")}">', unsafe_allow_html=True)
-        if st.button("⚙ Admin"): 
-            st.session_state.menu = "Admin"
-            st.switch_page("app.py")
-        st.markdown('</div>', unsafe_allow_html=True)
+    for i, (label, target) in enumerate(menus):
+        with cols[i]:
+            is_active = (current_menu == target)
+            st.markdown(f'<div class="{"active-nav-btn" if is_active else ""}">', unsafe_allow_html=True)
+            if st.button(label, key=f"nav_{i}"):
+                st.session_state.menu = target
+                if ".py" in target: st.switch_page(f"pages/{target}")
+                else: st.switch_page("app.py")
+            st.markdown('</div>', unsafe_allow_html=True)
 
 def render_header():
-    st.markdown('<div style="text-align: center; margin-top: 20px;"><h1 style="letter-spacing: 5px; font-size: 3rem; margin-bottom: 0;">[ I  A  M ]  |  A I M</h1><p style="opacity: 0.6; font-size: 1.1rem;">Authentic Intelligence Mate</p></div>', unsafe_allow_html=True)
-
-def render_beta_footer():
-    st.markdown('<div style="background-color: #F0F2F6; padding: 25px; border-radius: 5px; margin-top: 50px;"><h3 style="text-align: left; font-size: 1.2rem;">Beta-Status & Transparenz</h3><p>AIM ist ein Experiment in Resonanz. Dein Vibe Key ist dein einziger Zugang.</p></div>', unsafe_allow_html=True)
+    # Logo + Subline als Einheit mit definiertem Bottom-Margin
+    st.markdown("""
+        <div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
+            <h1 style="letter-spacing: 5px; font-size: 3rem; margin-bottom: 0;">[ I  A  M ]  |  A I M</h1>
+            <p style="opacity: 0.6; font-size: 1.1rem;">Authentic Intelligence Mate</p>
+        </div>
+    """, unsafe_allow_html=True)
 
 CSS_STÖRER = """
 <style>

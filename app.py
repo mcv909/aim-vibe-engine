@@ -250,7 +250,7 @@ def render_manifesto_editor(user, is_edit):
         u_email = st.text_input("E-Mail", value=user.get('email', ""), disabled=is_edit, key="inp_email")
         v_key = st.text_input("Vibe Key", type="password", key="inp_key") if not is_edit else None
         u_messenger = st.text_input("Messenger-Kontakt", value=user.get('messenger_contact', ""), key="inp_mess")
-        u_ukraine = st.checkbox("Ukraine Support / Herkunft", value=user.get('is_ukrainian', False), key="inp_ukr")
+        # u_ukraine = st.checkbox("Ukraine Support / Herkunft", value=user.get('is_ukrainian', False), key="inp_ukr")
 
     with c2:
         st.markdown("**Identität**")
