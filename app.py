@@ -226,7 +226,8 @@ def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
 
 def render_manifesto_editor(user, is_edit):
     """Stellt die vollständige DNA-Maske mit allen ursprünglichen Feldern wieder her."""
-    st.markdown('<p class="centered-header">Dein Manifesto</p>', unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
+    st.markdown('<p class="centered-header" style="font-size: 1.8rem; margin-bottom: 20px;">Dein Manifesto</p>', unsafe_allow_html=True)
     
     # Manifesto-Text Handlingf
     db_text = user.get('manifesto_text', "")
@@ -241,7 +242,7 @@ def render_manifesto_editor(user, is_edit):
     )
     st.session_state.manifesto_buffer = manifesto
 
-    st.markdown('<p class="centered-header">Deine Digitale DNA</p>', unsafe_allow_html=True)
+    st.markdown('<p class="centered-header" style="font-size: 1.8rem; margin-top: 40px; margin-bottom: 20px;">Deine Digitale DNA</p>', unsafe_allow_html=True)
     
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -276,7 +277,7 @@ def render_manifesto_editor(user, is_edit):
             'name': u_name, 'age': u_age, 
             'identity': g_list.index(u_gender) + 1,
             'search_for': g_list.index(u_search_gender) + 1,
-            'height': u_height, 'is_ukrainian': u_ukraine,
+            'height': u_height, 'is_ukrainian': False,
             'u_age_min': u_age_range[0], 'u_age_max': u_age_range[1],
             'u_height_min': u_target_height[0], 'u_height_max': u_target_height[1],
             'radius': u_radius, 'messenger_contact': u_messenger
