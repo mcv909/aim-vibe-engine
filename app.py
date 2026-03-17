@@ -25,6 +25,16 @@ def is_valid_messenger(contact):
     if not contact: return True 
     return bool(re.match(r"^(@[a-zA-Z0-9_]{3,32}|\+[0-9]{7,15})$", contact))
 
+# --- GLOBALE INITIALISIERUNG (Gegen AttributeError) ---
+if 'menu' not in st.session_state: 
+    st.session_state.menu = "Manifesto erstellen"
+if 'manifesto_buffer' not in st.session_state: 
+    st.session_state.manifesto_buffer = ""
+if 'logged_in' not in st.session_state: 
+    st.session_state.logged_in = False
+if 'user_data' not in st.session_state: 
+    st.session_state.user_data = {}
+
 # --- Daten-Vorbereitung ---
 user = st.session_state.get('user_data', {})
 is_edit = st.session_state.get('logged_in', False)

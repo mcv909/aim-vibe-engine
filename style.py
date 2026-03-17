@@ -98,9 +98,12 @@ def apply_custom_style():
     )
 
 def render_nav():
-    init_global_state() # Sicherheit zuerst!
-    current_page = st.source_code_path.split("/")[-1] if hasattr(st, "source_code_path") else "app.py"
-    
+    # Aktuellen Dateinamen ermitteln
+    try:
+        current_page = st.source_code_path.split("/")[-1]
+    except:
+        current_page = "app.py"
+        
     cols = st.columns(5)
     menus = [
         ("✎ Manifesto", "Manifesto erstellen", "app.py"),
@@ -112,12 +115,22 @@ def render_nav():
     
     for i, (label, menu_val, target_file) in enumerate(menus):
         with cols[i]:
-            # Aktive Seite erkennen
-            is_active = (st.session_state.menu == menu_val)
+            # Aktiven Status erkennen (entweder über die Datei oder den Menu-Status)
+            is_active = (st.session_state.menu == menu_val and current_page == "app.py") or \
+                        (current_page == target_file and target_file != "app.py")
+            
             st.markdown(f'<div class="{"active-nav-btn" if is_active else ""}">', unsafe_allow_html=True)
             if st.button(label, key=f"nav_{i}"):
-                st.session_state.menu = menu_val # Setzt den Modus für app.py
-                st.switch_page(target_file if target_file == "app.py" else f"pages/{target_file}")
+                st.session_state.menu = menu_val # Modus setzen
+                
+                # Navigation entscheiden
+                if target_file == "app.py":
+                    if current_page == "app.py":
+                        st.rerun() # Auf der Hauptseite nur neu laden
+                    else:
+                        st.switch_page("app.py") # Von Unterseite zurück zur Hauptseite
+                else:
+                    st.switch_page(f"pages/{target_file}")
             st.markdown('</div>', unsafe_allow_html=True)
 
 def render_header():
