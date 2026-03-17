@@ -23,6 +23,17 @@ CSS_STÖRER = """
 </style>
 """
 
+def init_global_state():
+    """Stellt sicher, dass alle Variablen in der Matrix existieren, egal auf welcher Seite man startet."""
+    if 'menu' not in st.session_state: 
+        st.session_state.menu = "Manifesto erstellen"
+    if 'manifesto_buffer' not in st.session_state: 
+        st.session_state.manifesto_buffer = ""
+    if 'logged_in' not in st.session_state: 
+        st.session_state.logged_in = False
+    if 'user_data' not in st.session_state: 
+        st.session_state.user_data = {}
+
 def apply_custom_style(): 
     st.markdown(
         f"""
@@ -87,26 +98,26 @@ def apply_custom_style():
     )
 
 def render_nav():
+    init_global_state() # Sicherheit zuerst!
     current_page = st.source_code_path.split("/")[-1] if hasattr(st, "source_code_path") else "app.py"
+    
     cols = st.columns(5)
     menus = [
-        ("✎ Manifesto", "app.py"),
-        ("⚿ Login", "login"), # Spezial-Trigger für app.py
-        ("◬ Resonanz", "qa.py"),
-        ("ⓘ Über AIM", "about.py"),
-        ("⚙ Admin", "admin.py")
+        ("✎ Manifesto", "Manifesto erstellen", "app.py"),
+        ("⚿ Login", "Login", "app.py"),
+        ("◬ Resonanz", "Resonanz", "qa.py"),
+        ("ⓘ Über AIM", "Über AIM", "about.py"),
+        ("⚙ Admin", "Admin", "admin.py")
     ]
-    for i, (label, target) in enumerate(menus):
+    
+    for i, (label, menu_val, target_file) in enumerate(menus):
         with cols[i]:
-            # Aktive Seite markieren
-            is_active = (current_page == target) or (target == "login" and st.session_state.get('menu') == "Login")
+            # Aktive Seite erkennen
+            is_active = (st.session_state.menu == menu_val)
             st.markdown(f'<div class="{"active-nav-btn" if is_active else ""}">', unsafe_allow_html=True)
             if st.button(label, key=f"nav_{i}"):
-                if target == "login":
-                    st.session_state.menu = "Login"
-                    st.switch_page("app.py")
-                else:
-                    st.switch_page(f"pages/{target}" if target != "app.py" else target)
+                st.session_state.menu = menu_val # Setzt den Modus für app.py
+                st.switch_page(target_file if target_file == "app.py" else f"pages/{target_file}")
             st.markdown('</div>', unsafe_allow_html=True)
 
 def render_header():

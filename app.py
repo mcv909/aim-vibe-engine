@@ -339,34 +339,27 @@ def handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_da
                     st.error("Mail-Zustellung fehlgeschlagen. Prüfe SMTP.")
 
 def main():
-    # 1. INITIALISIERUNG
-    if 'menu' not in st.session_state: st.session_state.menu = "Manifesto erstellen"
-    
+    style.init_global_state() # Globaler Check
     style.apply_custom_style() 
     style.render_nav()
     
-    # Block-Abstand 1: Navi zu Logo
+    # Block-Abstand 1: Navi -> Logo (30px)
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
     
     style.render_header()
-    render_founding_dashboard() # Die schwarze Founder-Box
+    render_founding_dashboard() # Gehört zur Logo-Einheit
 
-    # Block-Abstand 2: Founderbox zu Manifesto (identisch zu Block 1)
+    # Block-Abstand 2: Logo-Einheit -> Content (30px - Symmetrisch!)
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
 
     menu = st.session_state.menu
     is_edit = st.session_state.get('logged_in', False)
 
-    # ZENTRALE ROUTING-LOGIK
     if menu == "Manifesto erstellen" or (is_edit and menu == "Login"):
         render_manifesto_editor(st.session_state.get('user_data', {}), is_edit)
     elif menu == "Login" and not is_edit:
-        render_login_form()
-    elif menu == "Login" and is_edit:
-        st.success(f"Eingeloggt als: {st.session_state.user_data.get('email')}")
-        if st.button("AUS DER MATRIX AUFTAUCHEN"):
-            st.session_state.clear(); st.rerun()
-
+        render_login_form() # Hier ist der Button-Fix im CSS von style.py aktiv!
+    
     style.render_beta_footer()
 
 if __name__ == "__main__":
