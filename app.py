@@ -369,6 +369,5 @@ def main():
 
     style.render_beta_footer()
 
-
 if __name__ == "__main__":
     main()
