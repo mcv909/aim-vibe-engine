@@ -71,7 +71,6 @@ def render_nav():
         ("⚿ Login", "Login", "app.py"),
         ("◬ Resonanz", "Resonanz", "qa.py"),
         ("ⓘ Über AIM", "Über AIM", "about.py"),
-        ("⚙ Admin", "Admin", "admin.py")
     ]
     
     for i, (label, menu_val, target_file) in enumerate(menus):
