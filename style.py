@@ -64,7 +64,7 @@ def apply_custom_style():
 
 def render_nav():
     init_global_state()
-    cols = st.columns(5)
+    cols = st.columns(4)
     # Mapping von Label zu (Menü-Status, Dateiname)
     menus = [
         ("✎ Manifesto", "Manifesto erstellen", "app.py"),
@@ -91,14 +91,15 @@ def render_nav():
 def render_header():
     st.markdown("""
         <div style="text-align: center; margin-top: 10px; margin-bottom: 30px;">
-            <h1 style="letter-spacing: 5px; font-size: 3.5rem; margin-bottom: 0;">[ i  a  m ]  |  A I M</h1>
-            <p style="opacity: 0.6; font-size: 1.2rem;">Authentic Intelligence Mate</p>
+            <h1 style="letter-spacing: 5px; font-size: 3.5rem; margin-bottom: 0;">[ i  am ]  |  A I M</h1>
+            <p style="opacity: 0.6; font-size: 1.2rem;">Artificial Intelligenz matching</p>
         </div>
     """, unsafe_allow_html=True)
 
 def render_beta_footer():
     st.markdown("""
         <div style="background-color: #F8F9FB; padding: 30px; border-radius: 8px; margin-top: 50px; text-align: center; border: 1px solid #EEEEEE;">
-            <p style="font-size: 0.9rem; color: #666;"><b>Beta-Status:</b> AIM ist ein Experiment in Resonanz. Dein Vibe Key ist dein einziger Zugang. [cite: 2026-01-18]</p>
+            <p style="font-size: 0.9rem; color: #666;"><b>Beta-Status:</b> Transparenz: AIM ist eine Dating bzw. Freundesuch-Website in Resonanz.
+                Dein Vibe Key ist dein einziger Zugang.</p>
         </div>
     """, unsafe_allow_html=True)
