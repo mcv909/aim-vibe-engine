@@ -25,7 +25,7 @@ def main():
         },
         {
             "q": "Was ist der Unterschied zu anderen Portalen?",
-            "a": "Das Herzstück ist dein Manifesto – ein freier Text, der deine 'Digitale DNA' repräsentiert. Unsere KI analysiert die Schwingung deiner Worte im 1536-D Raum." 
+            "a": "1. Das Herzstück ist dein Manifesto – ein freier Text, der deine 'Digitale DNA' repräsentiert. Unsere lokale KI analysiert die Schwingung deiner Worte im 1536-D Raum. 2. Datenschutz ist Kern! Keiner kann deine Daten sehen - auch wir nicht. Es können Bspw. keine Profile verkauft werden ;) 3. Wir sind, aktuell, noch Kostenfrei! Sobald wir mehr Technik benötigen können wir das nicht aufrechterhalten ABER es wird nur eine einmalige Gebühr geben - kein monatliches Schröpfen ;)"
         },
         {
             "q": "Was passiert, wenn ich meinen Vibe-Key verliere?",
@@ -33,11 +33,11 @@ def main():
         },
         {
             "q": "Wer bekommt meine Daten?",
-            "a": "Niemand außer deinem potenziellen Match. Dein Manifesto wird verschlüsselt gespeichert. Selbst wir als Admins sehen nur Vektoren (Zahlenreihen), keine Klartexte." 
+            "a": "Niemand! Selbst dein potenzielles potenzielles Match bekommt nur die Kontaktdaten. Dein Manifesto wird verschlüsselt gespeichert. Selbst wir als Admins sehen nur Vektoren (Zahlenreihen), keine Klartexte." 
         },
         {
             "q": "Was passiert bei einem Match?",
-            "a": "Bei hoher Resonanz (Similarity-Score) wird euch das Profil des anderen angezeigt. Ihr erhaltet dann den gewählten Kontaktweg, um euch in der realen Welt kennenzulernen."
+            "a": "Bei hoher Resonanz (Similarity-Score) werden euch die Kontaktdaten des Anderen angezeigt. Ihr erhaltet dann den gewählten Kontaktweg, um euch in der realen Welt kennenzulernen."
         },
         {
             "q": "Wie kann ich meine Chance auf Matches vergrößern?",
