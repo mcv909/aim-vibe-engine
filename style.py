@@ -101,8 +101,9 @@ def apply_custom_style():
 # --- 3. NAVIGATION ---
 def render_nav():
     """Zentrale Steuerung für alle Seiten."""
-    init_global_state() # Sicherheit zuerst!
+    init_global_state() 
     
+    # Key-Präfix basierend auf der aktuellen Seite erstellen [cite: 2026-03-12]
     try:
         current_page = st.source_code_path.split("/")[-1]
     except:
@@ -124,46 +125,14 @@ def render_nav():
                         (current_page == target_file and target_file != "app.py")
             
             st.markdown(f'<div class="{"active-nav-btn" if is_active else ""}">', unsafe_allow_html=True)
-            if st.button(label, key=f"nav_{i}"):
+            # DYNAMISCHER KEY: Verhindert den DuplicateElementKey Fehler [cite: 2026-03-12]
+            if st.button(label, key=f"{current_page}_nav_{i}"):
                 st.session_state.menu = menu_val 
                 if target_file == "app.py":
                     st.switch_page("app.py") if current_page != "app.py" else st.rerun()
                 else:
                     st.switch_page(f"pages/{target_file}")
             st.markdown('</div>', unsafe_allow_html=True)
-
-def main():
-    style.apply_custom_style() 
-    style.render_nav()
-    
-    # Block-Abstände symmetrisch (30px)
-    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
-    style.render_header()
-    render_founding_dashboard()
-    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
-
-    menu = st.session_state.menu
-    is_edit = st.session_state.get('logged_in', False)
-    u_data = st.session_state.get('user_data', {})
-
-    # ZENTRALE ROUTING-LOGIK (Nur noch Manifesto & Login)
-    if menu == "Manifesto erstellen":
-        render_manifesto_editor(u_data, is_edit)
-    elif menu == "Login":
-        if not is_edit:
-            render_login_form()
-        else:
-            # Falls eingeloggt, zeigen wir den Editor im Login-Tab zum Bearbeiten
-            render_manifesto_editor(u_data, True)
-            st.markdown("---")
-            if st.button("AUS DER MATRIX AUFTAUCHEN (Logout)"):
-                st.session_state.clear()
-                st.rerun()
-    
-    # WICHTIG: Falls menu == "Admin" ist, macht app.py hier einfach NICHTS mehr,
-    # da die Navigation dich bereits auf pages/admin.py geschickt hat.
-
-    style.render_beta_footer()
 
 def render_header():
     st.markdown(f"""
