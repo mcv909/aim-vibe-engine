@@ -2,6 +2,11 @@ import streamlit as st
 import style
 import db_handler
 
+# WICHTIG: Erst initialisieren, dann rendern!
+style.init_global_state() 
+style.apply_custom_style()
+style.render_nav() # Jetzt findet er das Attribut garantiert!
+
 st.set_page_config(page_title="Admin | [i am] | AIM", layout="wide")
 style.apply_custom_style()
 style.render_nav()

@@ -23,8 +23,9 @@ CSS_STÖRER = """
 </style>
 """
 
+# --- 1. INITIALISIERUNG ---
 def init_global_state():
-    """Stellt sicher, dass alle Variablen in der Matrix existieren, egal auf welcher Seite man startet."""
+    """Stellt sicher, dass alle Variablen existieren, bevor sie aufgerufen werden."""
     if 'menu' not in st.session_state: 
         st.session_state.menu = "Manifesto erstellen"
     if 'manifesto_buffer' not in st.session_state: 
@@ -97,6 +98,40 @@ def apply_custom_style():
         unsafe_allow_html=True
     )
 
+# --- 3. NAVIGATION ---
+def render_nav():
+    """Zentrale Steuerung für alle Seiten."""
+    init_global_state() # Sicherheit zuerst!
+    
+    try:
+        current_page = st.source_code_path.split("/")[-1]
+    except:
+        current_page = "app.py"
+        
+    cols = st.columns(5)
+    menus = [
+        ("✎ Manifesto", "Manifesto erstellen", "app.py"),
+        ("⚿ Login", "Login", "app.py"),
+        ("◬ Resonanz", "Resonanz", "qa.py"),
+        ("ⓘ Über AIM", "Über AIM", "about.py"),
+        ("⚙ Admin", "Admin", "admin.py")
+    ]
+    
+    for i, (label, menu_val, target_file) in enumerate(menus):
+        with cols[i]:
+            # Aktiven Status erkennen
+            is_active = (st.session_state.menu == menu_val and current_page == "app.py") or \
+                        (current_page == target_file and target_file != "app.py")
+            
+            st.markdown(f'<div class="{"active-nav-btn" if is_active else ""}">', unsafe_allow_html=True)
+            if st.button(label, key=f"nav_{i}"):
+                st.session_state.menu = menu_val 
+                if target_file == "app.py":
+                    st.switch_page("app.py") if current_page != "app.py" else st.rerun()
+                else:
+                    st.switch_page(f"pages/{target_file}")
+            st.markdown('</div>', unsafe_allow_html=True)
+
 def main():
     style.apply_custom_style() 
     style.render_nav()
@@ -133,7 +168,7 @@ def main():
 def render_header():
     st.markdown(f"""
         <div style="text-align: center; margin-top: 10px; margin-bottom: 30px;">
-            <h1 style="letter-spacing: 5px; font-size: 3.5rem; margin-bottom: 0;">[ I  A  M ]  |  A I M</h1>
+            <h1 style="letter-spacing: 5px; font-size: 3.5rem; margin-bottom: 0;">[ i  a  m ]  |  A I M</h1>
             <p style="opacity: 0.6; font-size: 1.2rem;">Authentic Intelligence Mate</p>
         </div>
     """, unsafe_allow_html=True)
