@@ -14,6 +14,15 @@ import subprocess
 import mail_logic
 import re
 
+# --- GLOBALE INITIALISIERUNG (Gegen AttributeError) ---
+if 'menu' not in st.session_state: 
+    st.session_state.menu = "Manifesto erstellen"
+if 'manifesto_buffer' not in st.session_state: 
+    st.session_state.manifesto_buffer = ""
+if 'logged_in' not in st.session_state: 
+    st.session_state.logged_in = False
+if 'user_data' not in st.session_state: 
+    st.session_state.user_data = {}
 # --- GANZ OBEN IN app.py (direkt nach den Imports) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if os.path.exists(os.path.join(BASE_DIR, 'maintenance.flag')):
@@ -24,16 +33,6 @@ def is_valid_messenger(contact):
     """Prüft auf @username oder +Nummer."""
     if not contact: return True 
     return bool(re.match(r"^(@[a-zA-Z0-9_]{3,32}|\+[0-9]{7,15})$", contact))
-
-# --- GLOBALE INITIALISIERUNG (Gegen AttributeError) ---
-if 'menu' not in st.session_state: 
-    st.session_state.menu = "Manifesto erstellen"
-if 'manifesto_buffer' not in st.session_state: 
-    st.session_state.manifesto_buffer = ""
-if 'logged_in' not in st.session_state: 
-    st.session_state.logged_in = False
-if 'user_data' not in st.session_state: 
-    st.session_state.user_data = {}
 
 # --- Daten-Vorbereitung ---
 user = st.session_state.get('user_data', {})
@@ -349,27 +348,36 @@ def handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_da
                     st.error("Mail-Zustellung fehlgeschlagen. Prüfe SMTP.")
 
 def main():
-    style.init_global_state() # Globaler Check
     style.apply_custom_style() 
     style.render_nav()
     
-    # Block-Abstand 1: Navi -> Logo (30px)
+    # Block-Abstände symmetrisch (30px)
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
-    
     style.render_header()
-    render_founding_dashboard() # Gehört zur Logo-Einheit
-
-    # Block-Abstand 2: Logo-Einheit -> Content (30px - Symmetrisch!)
+    render_founding_dashboard()
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
 
     menu = st.session_state.menu
     is_edit = st.session_state.get('logged_in', False)
+    u_data = st.session_state.get('user_data', {})
 
-    if menu == "Manifesto erstellen" or (is_edit and menu == "Login"):
-        render_manifesto_editor(st.session_state.get('user_data', {}), is_edit)
-    elif menu == "Login" and not is_edit:
-        render_login_form() # Hier ist der Button-Fix im CSS von style.py aktiv!
+    # ZENTRALE ROUTING-LOGIK (Nur noch Manifesto & Login)
+    if menu == "Manifesto erstellen":
+        render_manifesto_editor(u_data, is_edit)
+    elif menu == "Login":
+        if not is_edit:
+            render_login_form()
+        else:
+            # Falls eingeloggt, zeigen wir den Editor im Login-Tab zum Bearbeiten
+            render_manifesto_editor(u_data, True)
+            st.markdown("---")
+            if st.button("AUS DER MATRIX AUFTAUCHEN (Logout)"):
+                st.session_state.clear()
+                st.rerun()
     
+    # WICHTIG: Falls menu == "Admin" ist, macht app.py hier einfach NICHTS mehr,
+    # da die Navigation dich bereits auf pages/admin.py geschickt hat.
+
     style.render_beta_footer()
 
 if __name__ == "__main__":

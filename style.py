@@ -97,41 +97,38 @@ def apply_custom_style():
         unsafe_allow_html=True
     )
 
-def render_nav():
-    # Aktuellen Dateinamen ermitteln
-    try:
-        current_page = st.source_code_path.split("/")[-1]
-    except:
-        current_page = "app.py"
-        
-    cols = st.columns(5)
-    menus = [
-        ("✎ Manifesto", "Manifesto erstellen", "app.py"),
-        ("⚿ Login", "Login", "app.py"),
-        ("◬ Resonanz", "Resonanz", "qa.py"),
-        ("ⓘ Über AIM", "Über AIM", "about.py"),
-        ("⚙ Admin", "Admin", "admin.py")
-    ]
+def main():
+    style.apply_custom_style() 
+    style.render_nav()
     
-    for i, (label, menu_val, target_file) in enumerate(menus):
-        with cols[i]:
-            # Aktiven Status erkennen (entweder über die Datei oder den Menu-Status)
-            is_active = (st.session_state.menu == menu_val and current_page == "app.py") or \
-                        (current_page == target_file and target_file != "app.py")
-            
-            st.markdown(f'<div class="{"active-nav-btn" if is_active else ""}">', unsafe_allow_html=True)
-            if st.button(label, key=f"nav_{i}"):
-                st.session_state.menu = menu_val # Modus setzen
-                
-                # Navigation entscheiden
-                if target_file == "app.py":
-                    if current_page == "app.py":
-                        st.rerun() # Auf der Hauptseite nur neu laden
-                    else:
-                        st.switch_page("app.py") # Von Unterseite zurück zur Hauptseite
-                else:
-                    st.switch_page(f"pages/{target_file}")
-            st.markdown('</div>', unsafe_allow_html=True)
+    # Block-Abstände symmetrisch (30px)
+    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+    style.render_header()
+    render_founding_dashboard()
+    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+
+    menu = st.session_state.menu
+    is_edit = st.session_state.get('logged_in', False)
+    u_data = st.session_state.get('user_data', {})
+
+    # ZENTRALE ROUTING-LOGIK (Nur noch Manifesto & Login)
+    if menu == "Manifesto erstellen":
+        render_manifesto_editor(u_data, is_edit)
+    elif menu == "Login":
+        if not is_edit:
+            render_login_form()
+        else:
+            # Falls eingeloggt, zeigen wir den Editor im Login-Tab zum Bearbeiten
+            render_manifesto_editor(u_data, True)
+            st.markdown("---")
+            if st.button("AUS DER MATRIX AUFTAUCHEN (Logout)"):
+                st.session_state.clear()
+                st.rerun()
+    
+    # WICHTIG: Falls menu == "Admin" ist, macht app.py hier einfach NICHTS mehr,
+    # da die Navigation dich bereits auf pages/admin.py geschickt hat.
+
+    style.render_beta_footer()
 
 def render_header():
     st.markdown(f"""
