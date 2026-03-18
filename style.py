@@ -4,7 +4,7 @@ import streamlit as st
 CD_WEISS = "#FFFFFF"
 CD_SCHWARZ = "#111111"
 CD_GRAU_HELL = "#F8F9FB"
-CD_NEON_GRUEN = "#39FF14" # Die Farbe der Resonanz
+CD_NEON_GRUEN = "#39FF14"
 
 CSS_STÖRER = """
 <style>
@@ -23,9 +23,7 @@ CSS_STÖRER = """
 </style>
 """
 
-# --- 1. INITIALISIERUNG ---
 def init_global_state():
-    """Stellt sicher, dass alle Variablen existieren, bevor sie aufgerufen werden."""
     if 'menu' not in st.session_state: 
         st.session_state.menu = "Manifesto erstellen"
     if 'manifesto_buffer' not in st.session_state: 
@@ -39,77 +37,35 @@ def apply_custom_style():
     st.markdown(
         f"""
         <style>
-        /* 1. STREAMLIT UI OVERRIDE */
         header {{ visibility: hidden !important; height: 0px !important; }}
         .stAppHeader {{ display: none !important; }}
         [data-testid="stSidebarNav"] {{ display: none !important; }}
-
-        /* 2. GLOBALE FARBEN */
         .stApp {{ background-color: {CD_WEISS} !important; color: {CD_SCHWARZ} !important; }}
-        
-        /* Überschriften knackig schwarz */
-        .stMarkdown p, label, .stWidgetLabel p {{
-            color: {CD_SCHWARZ} !important;
-            font-weight: 700 !important;
-        }}
-
-        /* 3. INPUTS: Weißer Hintergrund, schwarze Typo */
+        .stMarkdown p, label, .stWidgetLabel p {{ color: {CD_SCHWARZ} !important; font-weight: 700 !important; }}
         .stTextInput input, .stTextArea textarea, .stNumberInput input, div[data-baseweb="select"] > div {{
-            background-color: {CD_WEISS} !important;
-            color: {CD_SCHWARZ} !important;
-            border: 1px solid #CCCCCC !important;
+            background-color: {CD_WEISS} !important; color: {CD_SCHWARZ} !important; border: 1px solid #CCCCCC !important;
         }}
-
-        /* 4. BUTTONS: Navigation & Primary */
         div.stButton > button {{
-            width: 100% !important;
-            background-color: {CD_GRAU_HELL} !important;
-            color: {CD_SCHWARZ} !important;
-            border: 1px solid #DDDDDD !important;
-            padding: 12px !important;
-            font-weight: 600 !important;
+            width: 100% !important; background-color: {CD_GRAU_HELL} !important; color: {CD_SCHWARZ} !important;
+            border: 1px solid #DDDDDD !important; padding: 12px !important; font-weight: 600 !important;
         }}
-        
-        /* Primäre Buttons (Login/Sichern): Weiß auf Schwarz */
         button[kind="primary"], button[kind="primaryFormSubmit"] {{
-            background-color: {CD_SCHWARZ} !important;
-            color: {CD_WEISS} !important;
-            border: 1px solid {CD_SCHWARZ} !important;
+            background-color: {CD_SCHWARZ} !important; color: {CD_WEISS} !important; border: 1px solid {CD_SCHWARZ} !important;
         }}
-
-        .active-nav-btn button {{
-            background-color: {CD_SCHWARZ} !important;
-            color: {CD_WEISS} !important;
-        }}
-
-        /* 5. SLIDER: Weißer Hintergrund, schwarze Schiene, NEONGRÜN aktiv */
+        .active-nav-btn button {{ background-color: {CD_SCHWARZ} !important; color: {CD_WEISS} !important; }}
         div[data-baseweb="slider"] > div {{ background-color: {CD_WEISS} !important; }}
         div[data-baseweb="slider"] > div > div:first-child {{ background-color: {CD_SCHWARZ} !important; }}
-        div[data-baseweb="slider"] > div > div > div {{
-            background-color: {CD_NEON_GRUEN} !important;
-            background-image: none !important;
-        }}
-        div[role="slider"] {{
-            background-color: {CD_SCHWARZ} !important;
-            border: 2px solid {CD_NEON_GRUEN} !important;
-        }}
+        div[data-baseweb="slider"] > div > div > div {{ background-color: {CD_NEON_GRUEN} !important; background-image: none !important; }}
+        div[role="slider"] {{ background-color: {CD_SCHWARZ} !important; border: 2px solid {CD_NEON_GRUEN} !important; }}
         </style>
         """, 
         unsafe_allow_html=True
     )
 
-# --- 3. NAVIGATION ---
 def render_nav():
-    """Zentrale Steuerung für alle Seiten."""
-    init_global_state() 
-    
-    # Key-Präfix basierend auf der aktuellen Seite erstellen [cite: 2026-03-12]
-    try:
-        current_page = st.source_code_path.split("/")[-1]
-    except:
-        current_page = "app.py"
-        
+    init_global_state()
     cols = st.columns(5)
+    # Mapping von Label zu (Menü-Status, Dateiname)
     menus = [
         ("✎ Manifesto", "Manifesto erstellen", "app.py"),
         ("⚿ Login", "Login", "app.py"),
@@ -120,22 +76,21 @@ def render_nav():
     
     for i, (label, menu_val, target_file) in enumerate(menus):
         with cols[i]:
-            # Aktiven Status erkennen
-            is_active = (st.session_state.menu == menu_val and current_page == "app.py") or \
-                        (current_page == target_file and target_file != "app.py")
-            
+            # Aktiven Status nur über den Menü-Wert prüfen, das ist am stabilsten
+            is_active = (st.session_state.menu == menu_val)
             st.markdown(f'<div class="{"active-nav-btn" if is_active else ""}">', unsafe_allow_html=True)
-            # DYNAMISCHER KEY: Verhindert den DuplicateElementKey Fehler [cite: 2026-03-12]
-            if st.button(label, key=f"{current_page}_nav_{i}"):
+            
+            # UNIQUE KEY FIX: Wir nutzen den Menü-Wert im Key [cite: 2026-03-12]
+            if st.button(label, key=f"btn_nav_{menu_val.replace(' ', '_')}"):
                 st.session_state.menu = menu_val 
                 if target_file == "app.py":
-                    st.switch_page("app.py") if current_page != "app.py" else st.rerun()
+                    st.switch_page("app.py")
                 else:
                     st.switch_page(f"pages/{target_file}")
             st.markdown('</div>', unsafe_allow_html=True)
 
 def render_header():
-    st.markdown(f"""
+    st.markdown("""
         <div style="text-align: center; margin-top: 10px; margin-bottom: 30px;">
             <h1 style="letter-spacing: 5px; font-size: 3.5rem; margin-bottom: 0;">[ i  a  m ]  |  A I M</h1>
             <p style="opacity: 0.6; font-size: 1.2rem;">Authentic Intelligence Mate</p>
@@ -143,8 +98,8 @@ def render_header():
     """, unsafe_allow_html=True)
 
 def render_beta_footer():
-    st.markdown(f"""
-        <div style="background-color: {CD_GRAU_HELL}; padding: 30px; border-radius: 8px; margin-top: 50px; text-align: center; border: 1px solid #EEEEEE;">
+    st.markdown("""
+        <div style="background-color: #F8F9FB; padding: 30px; border-radius: 8px; margin-top: 50px; text-align: center; border: 1px solid #EEEEEE;">
             <p style="font-size: 0.9rem; color: #666;"><b>Beta-Status:</b> AIM ist ein Experiment in Resonanz. Dein Vibe Key ist dein einziger Zugang. [cite: 2026-01-18]</p>
         </div>
     """, unsafe_allow_html=True)

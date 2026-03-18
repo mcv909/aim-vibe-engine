@@ -351,7 +351,6 @@ def main():
     style.apply_custom_style() 
     style.render_nav()
     
-    # Block-Abstände symmetrisch (30px)
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
     style.render_header()
     render_founding_dashboard()
@@ -361,22 +360,23 @@ def main():
     is_edit = st.session_state.get('logged_in', False)
     u_data = st.session_state.get('user_data', {})
 
-    # ZENTRALE ROUTING-LOGIK (Nur noch Manifesto & Login)
+    # ROUTER FIX: Falls wir auf app.py sind, aber das Menü auf einer Unterseite steht,
+    # setzen wir es zurück auf den Standard-Editor [cite: 2026-03-12]
+    if menu not in ["Manifesto erstellen", "Login"]:
+        st.session_state.menu = "Manifesto erstellen"
+        st.rerun()
+
     if menu == "Manifesto erstellen":
         render_manifesto_editor(u_data, is_edit)
     elif menu == "Login":
         if not is_edit:
             render_login_form()
         else:
-            # Falls eingeloggt, zeigen wir den Editor im Login-Tab zum Bearbeiten
             render_manifesto_editor(u_data, True)
             st.markdown("---")
-            if st.button("AUS DER MATRIX AUFTAUCHEN (Logout)"):
+            if st.button("AUS DER MATRIX AUFTAUCHEN (Logout)", key="logout_btn_main"):
                 st.session_state.clear()
                 st.rerun()
-    
-    # WICHTIG: Falls menu == "Admin" ist, macht app.py hier einfach NICHTS mehr,
-    # da die Navigation dich bereits auf pages/admin.py geschickt hat.
 
     style.render_beta_footer()
 
