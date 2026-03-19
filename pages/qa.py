@@ -30,7 +30,9 @@ def main():
         },
         {
             "q": "Was ist der Unterschied zu anderen Portalen?",
-            "a": "1. Das Herzstück ist dein Manifesto – ein freier Text, der deine 'Digitale DNA' repräsentiert. Unsere lokale KI analysiert die Schwingung deiner Worte im 1536-D Raum. 2. Datenschutz ist Kern! Keiner kann deine Daten sehen - auch wir nicht. Es können Bspw. keine Profile verkauft werden ;) 3. Wir sind, aktuell, noch Kostenfrei! Sobald wir mehr Technik benötigen können wir das nicht aufrechterhalten ABER es wird nur eine einmalige Gebühr geben - kein monatliches Schröpfen ;)"
+            "a": "1. Das Herzstück ist dein Manifesto – ein freier Text, der deine 'Digitale DNA' repräsentiert. Unsere lokale KI analysiert die Schwingung deiner Worte im 1536-D Raum.<br>"
+            "2. Datenschutz ist Kern! Keiner kann deine Daten sehen - auch wir nicht. Es können Bspw. keine Profile verkauft werden ;)<br>"
+            "3. Wir sind, aktuell, noch Kostenfrei! Sobald wir mehr Technik benötigen können wir das nicht aufrechterhalten ABER es wird nur eine einmalige Gebühr geben - kein monatliches Schröpfen ;)"
         },
         {
             "q": "Was passiert, wenn ich meinen Vibe-Key verliere?",
