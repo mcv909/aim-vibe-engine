@@ -353,13 +353,14 @@ def handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_da
                     st.error("Mail-Zustellung fehlgeschlagen. Prüfe SMTP.")
 
 def main():
-    style.apply_custom_style() 
     style.render_nav()
-    
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+    
     style.render_header()
     render_founding_dashboard()
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+
+    # ... (Rest der Routing-Logik für Manifesto & Login) ...
 
     menu = st.session_state.menu
     is_edit = st.session_state.get('logged_in', False)
