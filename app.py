@@ -14,6 +14,11 @@ import subprocess
 import mail_logic
 import re
 
+# --- AIM MATRIX EINSTIEG ---
+style.init_global_state() 
+style.apply_custom_style()
+# Wir rufen render_nav() erst in main() auf, um das Layout zu kontrollieren.
+
 # --- GLOBALE INITIALISIERUNG (Gegen AttributeError) ---
 if 'menu' not in st.session_state: 
     st.session_state.menu = "Manifesto erstellen"

@@ -90,29 +90,28 @@ def render_nav():
             st.markdown('</div>', unsafe_allow_html=True)
 
 def render_header():
-    """Zeigt das finalisierte 'i am | [AiM]' Logo-Bild zentriert an."""
+    """Zeigt das 'i am | [AiM]' Logo an (jetzt als .jpg)."""
+    import os
+    logo_path = "logo.jpg" # Deine neue Endung
+    
     try:
-        # Wir laden das Logo als base64, um es sicher in HTML einzubetten [cite: 2026-02-03]
-        with open("logo.jpg", "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode()
-        
-        # HTML/CSS-Konstrukt für die Logo-Einheit [cite: 2026-01-17]
-        st.markdown(f"""
-            <div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
-                <img src="data:image/png;base64,{encoded_string}" style="max-width: 250px; margin-bottom: 10px;"/>
-                <p style="opacity: 0.6; font-size: 1.1rem; font-weight: 300; margin-top: 0;">Authentic Intelligence Mate</p>
-            </div>
-        """, unsafe_allow_html=True)
-    except FileNotFoundError:
-        # Fallback-Lösung, falls die logo.png mal fehlt (Sicherheit geht vor) [cite: 2026-02-03]
-        st.markdown("""
-            <div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
-                <h1 style="letter-spacing: 2px; font-size: 3rem; margin-bottom: 0;">i am | [AiM]</h1>
-                <p style="opacity: 0.6; font-size: 1.1rem; font-weight: 300;">Authentic Intelligence Mate</p>
-            </div>
-        """, unsafe_allow_html=True)
-
-# ... (render_beta_footer wie gehabt) ...
+        if os.path.exists(logo_path):
+            with open(logo_path, "rb") as f:
+                encoded = base64.b64encode(f.read()).decode()
+            
+            st.markdown(f"""
+                <div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
+                    <img src="data:image/jpeg;base64,{encoded}" style="max-width: 250px;"/>
+                    <p style="opacity: 0.6; font-size: 1.1rem; font-weight: 300;">Authentic Intelligence Mate</p>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            # Fallback falls Datei fehlt
+            st.markdown("<h1 style='text-align:center;'>i am | [AiM]</h1>", unsafe_allow_html=True)
+    except Exception as e:
+        # Wenn der 2MB-String knallt, zeigen wir wenigstens Text
+        st.error(f"Logo-Vibe gestört: {e}")
+        st.markdown("<h1 style='text-align:center;'>i am | [AiM]</h1>", unsafe_allow_html=True)
 
 def render_beta_footer():
     st.markdown("""
