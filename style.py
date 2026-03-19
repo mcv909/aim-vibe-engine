@@ -93,7 +93,7 @@ def render_header():
     """Zeigt das finalisierte 'i am | [AiM]' Logo-Bild zentriert an."""
     try:
         # Wir laden das Logo als base64, um es sicher in HTML einzubetten [cite: 2026-02-03]
-        with open("logo.png", "rb") as image_file:
+        with open("logo.jpg", "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read()).decode()
         
         # HTML/CSS-Konstrukt für die Logo-Einheit [cite: 2026-01-17]
