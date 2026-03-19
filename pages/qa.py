@@ -5,7 +5,7 @@ import db_handler
 # WICHTIG: Erst initialisieren, dann rendern!
 style.init_global_state() 
 style.apply_custom_style()
-# style.render_nav() # Jetzt findet er das Attribut garantiert!
+style.render_nav() # Jetzt findet er das Attribut garantiert!
 
 # aka Resonanz
 
@@ -32,7 +32,7 @@ def main():
             "q": "Was ist der Unterschied zu anderen Portalen?",
             "a": "1. Das Herzstück ist dein Manifesto – ein freier Text, der deine 'Digitale DNA' repräsentiert. Unsere lokale KI analysiert die Schwingung deiner Worte im 1536-D Raum.<br>"
             "2. Datenschutz ist Kern! Keiner kann deine Daten sehen - auch wir nicht. Es können Bspw. keine Profile verkauft werden ;)<br>"
-            "3. Wir sind, aktuell, noch Kostenfrei! Sobald wir mehr Technik benötigen können wir das nicht aufrechterhalten ABER es wird nur eine einmalige Gebühr geben - kein monatliches Schröpfen ;)"
+            "3. Wir sind, aktuell, noch Kostenfrei! Sobald wir mehr Technik benötigen können wir das nicht aufrechterhalten ABER es wird nur einen einmaligen Beitrag sein - kein monatliches Schröpfen ;)"
         },
         {
             "q": "Was passiert, wenn ich meinen Vibe-Key verliere?",
