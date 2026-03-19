@@ -14,10 +14,9 @@ import subprocess
 import mail_logic
 import re
 
-# --- AIM MATRIX EINSTIEG ---
-style.init_global_state() 
-style.apply_custom_style()
-# Wir rufen render_nav() erst in main() auf, um das Layout zu kontrollieren.
+# --- 1. ABSOLUTER EINSTIEG (Gegen Pulsieren & AttributeError) ---
+# Das muss VOR jedem anderen UI-Element stehen [cite: 2026-03-12]
+style.init_global_state()
 
 # --- GLOBALE INITIALISIERUNG (Gegen AttributeError) ---
 if 'menu' not in st.session_state: 
@@ -353,14 +352,17 @@ def handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_da
                     st.error("Mail-Zustellung fehlgeschlagen. Prüfe SMTP.")
 
 def main():
+    style.apply_custom_style() 
+    style.render_nav()
+    
+    # Abstände & Header
+    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+    style.render_header()
+
     style.render_nav()
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
     
-    style.render_header()
-    render_founding_dashboard()
-    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
-
-    # ... (Rest der Routing-Logik für Manifesto & Login) ...
+        # ... (Rest der Routing-Logik für Manifesto & Login) ...
 
     menu = st.session_state.menu
     is_edit = st.session_state.get('logged_in', False)
