@@ -409,7 +409,7 @@ def main():
     if menu == "Manifesto erstellen":
         # WICHTIG: Korrekter Variablenname manifesto_buffer! [cite: 2026-03-12]
         render_quality_magic(st.session_state.manifesto_buffer) 
-        render_manifesto_editor(u_data, is_edit)
+        render_manifesto_editor(st.session_state.get('user_data', {}), st.session_state.get('logged_in', False))
     elif menu == "Login":
         # ... (Login Logic) ...
         if not is_edit:
