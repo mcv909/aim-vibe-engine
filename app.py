@@ -352,55 +352,63 @@ def handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_da
                     st.error("Mail-Zustellung fehlgeschlagen. Prüfe SMTP.")
 
 def render_explanation_box():
-    """Der wiederkehrende Erklärungskasten für den Vibe-Check."""
+    """Rahmenlose Erklärung der Vision [cite: 2026-02-03]."""
     st.markdown("""
-        <div style="padding: 10px 0; margin-bottom: 40px; line-height: 1.6; color: #333; font-size: 1.05rem;">
-            <h4 style="margin-top: 0;">Was ist AIM-Vibe?</h4>
-            <p style="font-size: 0.95rem; color: #444; line-height: 1.6;">
-                AIM verbindet dich nicht über oberflächliche Profile, sondern über deinen individuellen Sound und deine Werte.
-                Beschreibe im Manifesto einfach frei heraus, wer du bist – unsere KI übersetzt deine Worte in 1536 Dimensionen,
-                um mathematisch präzise Resonanz zu anderen Seelen zu finden.
-                Das Einzigartige: Dank radikaler Verschlüsselung gehört deine DNA nur dir – selbst wir können deine Texte niemals lesen.
-                Sichere dein Manifesto mit deinem Vibe Key und finde Menschen, die wirklich auf deiner Frequenz schwingen."
-            </p>
+        <div style="padding: 10px 0; margin-bottom: 40px; line-height: 1.6; color: #333; font-size: 1.1rem; text-align: center;">
+            AIM verbindet dich nicht über oberflächliche Profile, sondern über deinen individuellen Sound und deine Werte. 
+            Beschreibe im Manifesto einfach frei heraus, wer du bist – unsere KI übersetzt deine Worte in 1536 Dimensionen, 
+            um mathematisch präzise Resonanz zu anderen Seelen zu finden. 
+            Das Einzigartige: Dank radikaler Verschlüsselung gehört deine DNA nur dir – selbst wir können deine Texte niemals lesen. 
+            Sichere dein Manifesto mit deinem Vibe Key und finde Menschen, die wirklich auf deiner Frequenz schwingen.
         </div>
     """, unsafe_allow_html=True)
 
 def render_quality_magic(text):
-    """Visualisiert den Übergang von 'pixelig' zu 'HD' [cite: 2025-12-30]."""
+    """Visualisiert die Auflösung der Digitalen DNA [cite: 2025-12-30]."""
     length = len(text)
-    # Schwellenwerte für die Qualität
+    # Fortschrittsberechnung (Ziel: 500 Zeichen für HD)
+    progress = min(length / 500, 1.0)
+    
+    # Custom Neon-Bar via HTML/CSS
+    st.markdown(f"""
+        <div style="width: 100%; background-color: #f0f0f0; border-radius: 5px; margin-bottom: 10px;">
+            <div style="width: {progress*100}%; background-color: #39FF14; height: 10px; border-radius: 5px; box-shadow: 0 0 10px #39FF14;"></div>
+        </div>
+    """, unsafe_allow_html=True)
+    
     if length < 100:
-        st.warning("⚠️ Dein Vibe ist noch sehr pixelig. Schreib mehr für echte Resonanz.")
+        st.write("⚠️ **Vibe-Status:** Pixelig (Bitte mehr Details für Resonanz)")
     elif length < 500:
-        st.info("🛰️ Die Auflösung steigt... dein mathematisches Muster wird erkennbar.")
+        st.write("🛰️ **Vibe-Status:** Muster erkennbar...")
     else:
-        st.success("✨ HD-Resonanz erreicht! Dein 1536-D Muster ist nun hochpräzise.")
+        st.write("✨ **Vibe-Status:** HD-Resonanz erreicht!")
 
 def main():
-    # 1. Styles & Header (LOGO GANZ OBEN) [cite: 2026-01-17]
     style.apply_custom_style() 
+    
+    # 1. NAVIGATION (JETZT GANZ OBEN) [cite: 2026-03-12]
+    style.render_nav()
+    st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+    
+    # 2. LOGO UNTER DER NAVI [cite: 2026-01-17]
     style.render_header()
     
-    # 2. NAVIGATION UNTER DEM LOGO [cite: 2026-03-12]
-    style.render_nav() 
-    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
-    
-    # 3. PIONIER-KASTEN [cite: 2026-02-03]
+    # 3. DASHBOARD [cite: 2026-02-03]
     render_founding_dashboard()
     
-    # 4. ERKLÄRUNGSKASTEN [cite: 2026-02-03]
+    # 4. ERKLÄRUNG (RAHMENLOS)
     render_explanation_box()
 
-    # 5. ROUTING (MANIFESTO / DNA)
     menu = st.session_state.get('menu', "Manifesto erstellen")
     is_edit = st.session_state.get('logged_in', False)
     u_data = st.session_state.get('user_data', {})
 
     if menu == "Manifesto erstellen":
+        # WICHTIG: Korrekter Variablenname manifesto_buffer! [cite: 2026-03-12]
+        render_quality_magic(st.session_state.manifesto_buffer) 
         render_manifesto_editor(u_data, is_edit)
-        render_quality_magic(st.session_state.manifest_buffer)
     elif menu == "Login":
+        # ... (Login Logic) ...
         if not is_edit:
             render_login_form()
         else:

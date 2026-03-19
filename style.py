@@ -90,25 +90,25 @@ def render_nav():
             st.markdown('</div>', unsafe_allow_html=True)
 
 def render_header():
-    """Rendert das große, transparente 'i am | [AiM]' Logo."""
+    """Rendert das große, transparente 'i am | [AiM]' Logo ohne Doppelungen."""
     import os
-    # Wir nutzen jetzt die transparente Variante
+    # Pfad zur neuen Datei
     logo_path = "log_transparent.png" 
     
     if os.path.exists(logo_path):
         with open(logo_path, "rb") as f:
             encoded = base64.b64encode(f.read()).decode()
         st.markdown(f"""
-            <div style="text-align: center; margin-top: 10px; margin-bottom: 30px;">
-                <img src="data:image/png;base64,{encoded}" style="width: 400px; max-width: 90% !important;"/>
+            <div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
+                <img src="data:image/png;base64,{encoded}" style="width: 500px; max-width: 95% !important;"/>
                 <p style="opacity: 0.6; font-size: 1.2rem; font-weight: 300; letter-spacing: 1px;">Authentic Intelligence Mate</p>
             </div>
         """, unsafe_allow_html=True)
     else:
+        # Fallback NUR wenn Datei fehlt
         st.markdown("<h1 style='text-align:center;'>i am | [AiM]</h1>", unsafe_allow_html=True)
-            
-    # Fallback Text-Logo [cite: 2026-01-17]
-    st.markdown("<h1 style='text-align:center;'>i am | [AiM]</h1>", unsafe_allow_html=True)
+    
+    # Der zusätzliche st.markdown Aufruf am Ende wurde entfernt! [cite: 2026-02-03]
 
 def render_beta_footer():
     st.markdown("""
