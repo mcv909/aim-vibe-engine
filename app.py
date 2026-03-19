@@ -238,22 +238,26 @@ def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
         cur.close(); conn.close()
 
 def render_manifesto_editor(user, is_edit):
-    """Stellt die vollständige DNA-Maske mit allen ursprünglichen Feldern wieder her."""
-    st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
-    st.markdown('<p class="centered-header" style="font-size: 1.8rem; margin-bottom: 20px;">Dein Manifesto</p>', unsafe_allow_html=True)
-    
-    # Manifesto-Text Handlingf
-    db_text = user.get('manifesto_text', "")
-    display_text = db_text if db_text else st.session_state.manifesto_buffer
-    
+    # Initialisierung sicherstellen [cite: 2026-03-12]
+    if 'manifesto_buffer' not in st.session_state:
+        st.session_state.manifesto_buffer = user.get('manifesto_text', "")
+
+    # Magie-Anzeige ZUERST, damit sie über dem Feld leuchtet [cite: 2025-12-30]
+    render_quality_magic(st.session_state.manifesto_buffer)
+
     manifesto = st.text_area(
         "Beschreibe deinen Sound...", 
-        value=display_text, 
+        value=st.session_state.manifesto_buffer, 
         height=300, 
-        key="main_manifesto_input", 
+        key="main_manifesto_input",
+        help="Tipp: Ein längerer Text erhöht deine Resonanz-Präzision.",
         label_visibility="collapsed"
     )
-    st.session_state.manifesto_buffer = manifesto
+    
+    # Update Buffer
+    if manifesto != st.session_state.manifesto_buffer:
+        st.session_state.manifesto_buffer = manifesto
+        st.rerun() # Erzwingt das sofortige Update der Magie-Bar
 
     st.markdown('<p class="centered-header" style="font-size: 1.8rem; margin-top: 40px; margin-bottom: 20px;">Deine Digitale DNA</p>', unsafe_allow_html=True)
     

@@ -113,7 +113,9 @@ def render_header():
 def render_beta_footer():
     st.markdown("""
         <div style="background-color: #F8F9FB; padding: 30px; border-radius: 8px; margin-top: 50px; text-align: center; border: 1px solid #EEEEEE;">
-            <p style="font-size: 0.9rem; color: #666;"><b>Beta-Status:</b> Transparenz: AIM ist eine Dating bzw. Freundesuch-Website in Resonanz.
-                Dein Vibe Key ist dein einziger Zugang.</p>
+            <p style="font-size: 0.9rem; color: #666; line-height: 1.5;">
+                <b>Beta-Status:</b> AiM ist ein Resonanzraum für echte menschliche Verbindung.<br>
+                Deine Privatsphäre ist systemimmanent: Dein <b>Vibe Key</b> ist der einzige Anker deiner digitalen DNA. [cite: 2026-01-18]
+            </p>
         </div>
     """, unsafe_allow_html=True)

@@ -38,7 +38,12 @@ def main():
         },
         {
             "q": "Wer bekommt meine Daten?",
-            "a": "Niemand! Selbst dein potenzielles potenzielles Match bekommt nur die Kontaktdaten. Dein Manifesto wird verschlüsselt gespeichert. Selbst wir als Admins sehen nur Vektoren (Zahlenreihen), keine Klartexte." 
+            "a": """Niemand!<br><br>
+            Dein Manifesto wird verschlüsselt verarbeitet und dient rein der mathematischen Suche. 
+            Selbst bei einer hohen Resonanz bekommt dein Match <b>nur deine Kontaktdaten</b> (Messenger/E-Mail), 
+            aber niemals deinen Text.<br><br>
+            Wir finden die Ähnlichkeit in 1536 Dimensionen – aber ihr dürft sie im echten Gespräch gemeinsam 
+            herausfinden. Das ist der Kern von AIM: Wir liefern das Fundament, ihr die Story."""
         },
         {
             "q": "Was passiert bei einem Match?",
