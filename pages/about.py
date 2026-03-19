@@ -5,7 +5,7 @@ import db_handler
 # WICHTIG: Erst initialisieren, dann rendern!
 style.init_global_state() 
 style.apply_custom_style()
-style.render_nav() # Jetzt findet er das Attribut garantiert!
+# style.render_nav() # Jetzt findet er das Attribut garantiert!
 
 def render_about():
     style.apply_custom_style()
