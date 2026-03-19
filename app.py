@@ -14,23 +14,12 @@ import subprocess
 import mail_logic
 import re
 
-# --- 1. ABSOLUTER EINSTIEG (Gegen Pulsieren & AttributeError) ---
-# Das muss VOR jedem anderen UI-Element stehen [cite: 2026-03-12]
-style.init_global_state()
+# --- 1. ABSOLUTER EINSTIEG & INITIALISIERUNG ---
+style.init_global_state() # Das reicht völlig aus! [cite: 2026-03-12]
 
-# --- GLOBALE INITIALISIERUNG (Gegen AttributeError) ---
-if 'menu' not in st.session_state: 
-    st.session_state.menu = "Manifesto erstellen"
-if 'manifesto_buffer' not in st.session_state: 
-    st.session_state.manifesto_buffer = ""
-if 'logged_in' not in st.session_state: 
-    st.session_state.logged_in = False
-if 'user_data' not in st.session_state: 
-    st.session_state.user_data = {}
-# --- GANZ OBEN IN app.py (direkt nach den Imports) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if os.path.exists(os.path.join(BASE_DIR, 'maintenance.flag')):
-    st.warning("⚠️ AIM befindet sich kurzzeitig im Wartungsmodus (Backup). Bitte in 1 Min. neu laden.")
+    st.warning("⚠️ AIM im Wartungsmodus. Bitte in 1 Min. neu laden.")
     st.stop()
 
 def is_valid_messenger(contact):
@@ -238,25 +227,24 @@ def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
         cur.close(); conn.close()
 
 def render_manifesto_editor(user, is_edit):
-    # Initialisierung sicherstellen [cite: 2026-03-12]
-    if 'manifesto_buffer' not in st.session_state:
-        st.session_state.manifesto_buffer = user.get('manifesto_text', "")
+    # Buffer-Check ohne st.rerun [cite: 2026-03-12]
+    current_val = st.session_state.get('manifesto_buffer', user.get('manifesto_text', ""))
 
-    # Magie-Anzeige ZUERST, damit sie über dem Feld leuchtet [cite: 2025-12-30]
-    render_quality_magic(st.session_state.manifesto_buffer)
+    # Magie-Anzeige NUR HIER (nicht in main)
+    render_quality_magic(current_val)
 
     manifesto = st.text_area(
         "Beschreibe deinen Sound...", 
-        value=st.session_state.manifesto_buffer, 
+        value=current_val, 
         height=300, 
         key="main_manifesto_input",
-        help="Tipp: Ein längerer Text erhöht deine Resonanz-Präzision.",
+        help="Ein längerer Text erhöht deine Resonanz-Präzision.",
         label_visibility="collapsed"
     )
     
-    # Update Buffer
+    # Buffer aktualisieren, wenn sich der Wert ändert (passiert beim Verlassen des Feldes)
     if manifesto != st.session_state.manifesto_buffer:
-        st.rerun() # Erzwingt das sofortige Update der Magie-Bar
+        st.session_state.manifesto_buffer = manifesto
 
     st.markdown('<p class="centered-header" style="font-size: 1.8rem; margin-top: 40px; margin-bottom: 20px;">Deine Digitale DNA</p>', unsafe_allow_html=True)
     
@@ -389,17 +377,15 @@ def render_quality_magic(text):
 def main():
     style.apply_custom_style() 
     
-    # 1. NAVIGATION (JETZT GANZ OBEN) [cite: 2026-03-12]
+    # 1. NAVIGATION
     style.render_nav()
     st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
     
-    # 2. LOGO UNTER DER NAVI [cite: 2026-01-17]
+    # 2. LOGO
     style.render_header()
     
-    # 3. DASHBOARD [cite: 2026-02-03]
+    # 3. DASHBOARD & ERKLÄRUNG [cite: 2026-02-03]
     render_founding_dashboard()
-    
-    # 4. ERKLÄRUNG (RAHMENLOS)
     render_explanation_box()
 
     menu = st.session_state.get('menu', "Manifesto erstellen")
@@ -407,11 +393,9 @@ def main():
     u_data = st.session_state.get('user_data', {})
 
     if menu == "Manifesto erstellen":
-        # WICHTIG: Korrekter Variablenname manifesto_buffer! [cite: 2026-03-12]
-        render_quality_magic(st.session_state.manifesto_buffer) 
-        render_manifesto_editor(st.session_state.get('user_data', {}), st.session_state.get('logged_in', False))
+        # Hier NUR den Editor aufrufen (render_quality_magic ist darin enthalten)
+        render_manifesto_editor(u_data, is_edit)
     elif menu == "Login":
-        # ... (Login Logic) ...
         if not is_edit:
             render_login_form()
         else:
