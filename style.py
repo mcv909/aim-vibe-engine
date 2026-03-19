@@ -115,7 +115,7 @@ def render_beta_footer():
         <div style="background-color: #F8F9FB; padding: 30px; border-radius: 8px; margin-top: 50px; text-align: center; border: 1px solid #EEEEEE;">
             <p style="font-size: 0.9rem; color: #666; line-height: 1.5;">
                 <b>Beta-Status:</b> AiM ist ein Resonanzraum für echte menschliche Verbindung.<br>
-                Deine Privatsphäre ist systemimmanent: Dein <b>Vibe Key</b> ist der einzige Anker deiner digitalen DNA. [cite: 2026-01-18]
+                Deine Privatsphäre ist systemimmanent: Dein <b>Vibe Key</b> ist der einzige Anker deiner digitalen DNA.
             </p>
         </div>
     """, unsafe_allow_html=True)

@@ -256,7 +256,6 @@ def render_manifesto_editor(user, is_edit):
     
     # Update Buffer
     if manifesto != st.session_state.manifesto_buffer:
-        st.session_state.manifesto_buffer = manifesto
         st.rerun() # Erzwingt das sofortige Update der Magie-Bar
 
     st.markdown('<p class="centered-header" style="font-size: 1.8rem; margin-top: 40px; margin-bottom: 20px;">Deine Digitale DNA</p>', unsafe_allow_html=True)
