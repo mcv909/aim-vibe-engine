@@ -90,28 +90,30 @@ def render_nav():
             st.markdown('</div>', unsafe_allow_html=True)
 
 def render_header():
-    """Zeigt das 'i am | [AiM]' Logo an (jetzt als .jpg)."""
+    """Zeigt das Logo an. Nutzt ein Fallback, falls die Datei zu schwer ist."""
     import os
-    logo_path = "logo.png" # Deine neue Endung
+    logo_path = "logo.png" 
     
-    try:
-        if os.path.exists(logo_path):
+    if os.path.exists(logo_path):
+        # Wir prüfen die Größe: Wenn > 500KB, warnen wir (AIM Veto)
+        if os.path.getsize(logo_path) > 500 * 1024:
+            st.warning("Logo-Datei ist zu groß (>500KB). Das verursacht das Pulsieren!")
+        
+        try:
             with open(logo_path, "rb") as f:
                 encoded = base64.b64encode(f.read()).decode()
-            
             st.markdown(f"""
                 <div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
-                    <img src="data:image/jpeg;base64,{encoded}" style="max-width: 250px;"/>
+                    <img src="data:image/png;base64,{encoded}" style="max-width: 250px;"/>
                     <p style="opacity: 0.6; font-size: 1.1rem; font-weight: 300;">Authentic Intelligence Mate</p>
                 </div>
             """, unsafe_allow_html=True)
-        else:
-            # Fallback falls Datei fehlt
-            st.markdown("<h1 style='text-align:center;'>i am | [AiM]</h1>", unsafe_allow_html=True)
-    except Exception as e:
-        # Wenn der 2MB-String knallt, zeigen wir wenigstens Text
-        st.error(f"Logo-Vibe gestört: {e}")
-        st.markdown("<h1 style='text-align:center;'>i am | [AiM]</h1>", unsafe_allow_html=True)
+            return # Erfolg
+        except Exception:
+            pass
+            
+    # Fallback Text-Logo [cite: 2026-01-17]
+    st.markdown("<h1 style='text-align:center;'>i am | [AiM]</h1>", unsafe_allow_html=True)
 
 def render_beta_footer():
     st.markdown("""

@@ -352,28 +352,22 @@ def handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_da
                     st.error("Mail-Zustellung fehlgeschlagen. Prüfe SMTP.")
 
 def main():
+    # 1. Styles & Nav (Nur EINMAL!) [cite: 2026-03-12]
     style.apply_custom_style() 
     style.render_nav()
     
-    # Abstände & Header
+    # 2. Abstände & Header
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
     style.render_header()
-
-    style.render_nav()
+    render_founding_dashboard()
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
-    
-        # ... (Rest der Routing-Logik für Manifesto & Login) ...
 
-    menu = st.session_state.menu
+    # 3. State abrufen
+    menu = st.session_state.get('menu', "Manifesto erstellen")
     is_edit = st.session_state.get('logged_in', False)
     u_data = st.session_state.get('user_data', {})
 
-    # ROUTER FIX: Falls wir auf app.py sind, aber das Menü auf einer Unterseite steht,
-    # setzen wir es zurück auf den Standard-Editor [cite: 2026-03-12]
-    if menu not in ["Manifesto erstellen", "Login"]:
-        st.session_state.menu = "Manifesto erstellen"
-        st.rerun()
-
+    # 4. Routing Logik (Ohne automatischen Rerun-Loop!)
     if menu == "Manifesto erstellen":
         render_manifesto_editor(u_data, is_edit)
     elif menu == "Login":
@@ -382,9 +376,16 @@ def main():
         else:
             render_manifesto_editor(u_data, True)
             st.markdown("---")
-            if st.button("AUS DER MATRIX AUFTAUCHEN (Logout)", key="logout_btn_main"):
+            if st.button("AUS DER MATRIX AUFTAUCHEN", key="logout_btn_main"):
                 st.session_state.clear()
                 st.rerun()
+    else:
+        # Falls wir auf app.py sind, aber ein anderes Menü aktiv ist (z.B. Resonanz)
+        # zeigen wir einen Hinweis oder einen Button zum Zurückkehren, statt blind zu rerunning.
+        st.info("Du befindest dich im Hauptknoten. Nutze die Navigation oben.")
+        if st.button("Zurück zum Manifesto"):
+            st.session_state.menu = "Manifesto erstellen"
+            st.rerun()
 
     style.render_beta_footer()
 
