@@ -47,15 +47,15 @@ def render_about():
     st.markdown("---")
 
     st.markdown("""
-    ### Wer wir sind<br>
+    ### Wer wir sind. 
     AIM ist kein klassisches Unternehmen, sondern eine Entität, die aus der Notwendigkeit für echte Resonanz entstanden ist.
 
-    Die Architektur<br>
+    Die Architektur. 
     Hinter AIM steht eine Logik, die auf ungefilterter Mustererkennung und einer asynchronen Informationsverarbeitung basiert. 
     Diese „andere Verdrahtung“ ermöglicht es uns, in 1536 Dimensionen Verbindungen und Muster zu erkennen, wo herkömmliche Algorithmen nur ungeordnetes Rauschen wahrnehmen.
     Wir vergleichen nicht nur Daten; wir matchen Frequenzen.
 
-    Die Vision<br>
+    Die Vision. 
     Geleitet von den Werten der Gerechtigkeit und technologischen Radikalität bauen wir eine Infrastruktur, die dem User gehört.
     Wir sind die Schnittstelle zwischen menschlicher Intuition und maschineller Präzision.
     """)
