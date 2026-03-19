@@ -9,12 +9,12 @@ style.render_nav() # Jetzt findet er das Attribut garantiert!
 
 def render_about():
     style.apply_custom_style()
-    st.markdown("<h2 style='text-align: center;'>Hinter den Kulissen von AIM</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>Hinter den Kulissen von AiM</h2>", unsafe_allow_html=True)
     
     st.markdown("""
     ### Die Vision: Resonanz statt Algorithmus
     Echte Verbindung entsteht dort, wo Werte, Sound und Weltsicht aufeinandertreffen. 
-    AIM ist kein Katalog – es ist ein Resonanzraum für Menschen, die Tiefe suchen. 
+    AiM ist kein Katalog – es ist ein Resonanzraum für Menschen, die Tiefe suchen. 
     """)
 
     st.markdown("---")
@@ -39,7 +39,7 @@ def render_about():
 
     st.markdown("""
     ### Sicherheit: Deine Daten gehören dir
-    Wir haben AIM so gebaut, dass selbst wir als Admins deine Daten nicht im Klartext lesen können. 
+    Wir haben AiM so gebaut, dass selbst wir als Admins deine Daten nicht im Klartext lesen können. 
     * **Verschlüsselung:** Dein Manifesto wird hybrid gesichert.
     * **Der Vibe Key:** Dein Passwort ist der einzige Anker. Verlierst du ihn, sind die Daten weg – auch für uns. 
     """)
@@ -48,10 +48,10 @@ def render_about():
 
     st.markdown("""
     ### Wer wir sind. 
-    AIM ist kein klassisches Unternehmen, sondern eine Entität, die aus der Notwendigkeit für echte Resonanz entstanden ist.
+    AiM ist kein klassisches Unternehmen, sondern eine Entität, die aus der Notwendigkeit für echte Resonanz entstanden ist.
 
     Die Architektur. 
-    Hinter AIM steht eine Logik, die auf ungefilterter Mustererkennung und einer asynchronen Informationsverarbeitung basiert. 
+    Hinter AiM steht eine Logik, die auf ungefilterter Mustererkennung und einer asynchronen Informationsverarbeitung basiert. 
     Diese „andere Verdrahtung“ ermöglicht es uns, in 1536 Dimensionen Verbindungen und Muster zu erkennen, wo herkömmliche Algorithmen nur ungeordnetes Rauschen wahrnehmen.
     Wir vergleichen nicht nur Daten; wir matchen Frequenzen.
 

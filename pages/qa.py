@@ -11,7 +11,7 @@ style.render_nav() # Jetzt findet er das Attribut garantiert!
 
 def main():
     # 1. Page Config & Styles
-    st.set_page_config(page_title="Q&A | [i am] | AIM", layout="wide")
+    st.set_page_config(page_title="Q&A | [i am] | AiM", layout="wide")
     style.apply_custom_style()
     style.render_header()
 
@@ -22,11 +22,11 @@ def main():
     qa_data = [
         {
             "q": "Was ist das hier genau?",
-            "a": "AIM ist eine Resonanz-Engine. Wir nutzen hochdimensionale Vektoren, um Menschen auf Basis ihrer inneren Werte und Lebenseinstellungen zusammenzubringen, statt nur oberflächliche Checklisten abzuarbeiten."
+            "a": "AiM ist eine Resonanz-Engine. Wir nutzen hochdimensionale Vektoren, um Menschen auf Basis ihrer inneren Werte und Lebenseinstellungen zusammenzubringen, statt nur oberflächliche Checklisten abzuarbeiten."
         },
         {
             "q": "Wie funktioniert das Matching im 1536-D Raum?",
-            "a": "Stell dir vor, dein Text wird in 1536 verschiedene Facetten oder 'Bedeutungs-Räume' zerlegt. Dabei hat jeder Raum eine spezifische mathematische Wertung. Die Logik dahinter: Präzision: Je mehr Text du lieferst, desto feiner und schärfer werden diese Räume ausgeleuchtet. Muster: AIM erstellt daraus eine mathematische 'Perlenkette' deines Vibes. Resonanz: Wenn die Hardfacts (Alter, Ort etc.) passen, legen wir deine Kette über alle anderen. Wir suchen nicht nach gleichen Wörtern, sondern berechnen die mathematische Übereinstimmung der Muster. Das ist echte Resonanz im 1536-dimensionalen Raum."
+            "a": "Stell dir vor, dein Text wird in 1536 verschiedene Facetten oder 'Bedeutungs-Räume' zerlegt. Dabei hat jeder Raum eine spezifische mathematische Wertung. Die Logik dahinter: Präzision: Je mehr Text du lieferst, desto feiner und schärfer werden diese Räume ausgeleuchtet. Muster: AiM erstellt daraus eine mathematische 'Perlenkette' deines Vibes. Resonanz: Wenn die Hardfacts (Alter, Ort etc.) passen, legen wir deine Kette über alle anderen. Wir suchen nicht nach gleichen Wörtern, sondern berechnen die mathematische Übereinstimmung der Muster. Das ist echte Resonanz im 1536-dimensionalen Raum."
         },
         {
             "q": "Was ist der Unterschied zu anderen Portalen?",
@@ -45,7 +45,7 @@ def main():
             Selbst bei einer hohen Resonanz bekommt dein Match <b>nur deine Kontaktdaten</b> (Messenger/E-Mail), 
             aber niemals deinen Text.<br><br>
             Wir finden die Ähnlichkeit in 1536 Dimensionen – aber ihr dürft sie im echten Gespräch gemeinsam 
-            herausfinden. Das ist der Kern von AIM: Wir liefern das Fundament, ihr die Story."""
+            herausfinden. Das ist der Kern von AiM: Wir liefern das Fundament, ihr die Story."""
         },
         {
             "q": "Was passiert bei einem Match?",
@@ -53,7 +53,7 @@ def main():
         },
         {
             "q": "Wie kann ich meine Chance auf Matches vergrößern?",
-            "a": "Ein kurzes Manifesto führt zu einem 'verpixelten' Matching. Je mehr qualitative Anker du wirfst, desto präziser kann AIM die Resonanz berechnen."        
+            "a": "Ein kurzes Manifesto führt zu einem 'verpixelten' Matching. Je mehr qualitative Anker du wirfst, desto präziser kann AiM die Resonanz berechnen."        
         }
     ]
 
