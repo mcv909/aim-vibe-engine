@@ -92,7 +92,7 @@ def render_nav():
 def render_header():
     """Zeigt das 'i am | [AiM]' Logo an (jetzt als .jpg)."""
     import os
-    logo_path = "logo.jpg" # Deine neue Endung
+    logo_path = "logo.png" # Deine neue Endung
     
     try:
         if os.path.exists(logo_path):
