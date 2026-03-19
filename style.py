@@ -92,7 +92,7 @@ def render_nav():
 def render_header():
     """Zeigt das Logo an. Nutzt ein Fallback, falls die Datei zu schwer ist."""
     import os
-    logo_path = "logo.png" 
+    logo_path = "log_transparent.png" 
     
     if os.path.exists(logo_path):
         # Wir prüfen die Größe: Wenn > 500KB, warnen wir (AIM Veto)

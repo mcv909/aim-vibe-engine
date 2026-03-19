@@ -2,8 +2,8 @@ from PIL import Image
 import os
 
 def optimize():
-    input_path = "logo.jpg"
-    output_path = "logo.png"
+    input_path = "log_transparent.png"
+    output_path = "log_transparent.png"
     
     if os.path.exists(input_path):
         img = Image.open(input_path)
