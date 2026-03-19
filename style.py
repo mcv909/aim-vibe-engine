@@ -1,4 +1,5 @@
 import streamlit as st
+import base64 # NEU: Wichtig für die Bild-Konvertierung
 
 # Zentrales CD (Corporate Design) [cite: 2026-01-17]
 CD_WEISS = "#FFFFFF"
@@ -89,12 +90,29 @@ def render_nav():
             st.markdown('</div>', unsafe_allow_html=True)
 
 def render_header():
-    st.markdown("""
-        <div style="text-align: center; margin-top: 10px; margin-bottom: 30px;">
-            <h1 style="letter-spacing: 5px; font-size: 3.5rem; margin-bottom: 0;">[ i  am ]  |  A I M</h1>
-            <p style="opacity: 0.6; font-size: 1.2rem;">Artificial Intelligenz matching</p>
-        </div>
-    """, unsafe_allow_html=True)
+    """Zeigt das finalisierte 'i am | [AiM]' Logo-Bild zentriert an."""
+    try:
+        # Wir laden das Logo als base64, um es sicher in HTML einzubetten [cite: 2026-02-03]
+        with open("logo.png", "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        
+        # HTML/CSS-Konstrukt für die Logo-Einheit [cite: 2026-01-17]
+        st.markdown(f"""
+            <div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
+                <img src="data:image/png;base64,{encoded_string}" style="max-width: 250px; margin-bottom: 10px;"/>
+                <p style="opacity: 0.6; font-size: 1.1rem; font-weight: 300; margin-top: 0;">Authentic Intelligence Mate</p>
+            </div>
+        """, unsafe_allow_html=True)
+    except FileNotFoundError:
+        # Fallback-Lösung, falls die logo.png mal fehlt (Sicherheit geht vor) [cite: 2026-02-03]
+        st.markdown("""
+            <div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
+                <h1 style="letter-spacing: 2px; font-size: 3rem; margin-bottom: 0;">i am | [AiM]</h1>
+                <p style="opacity: 0.6; font-size: 1.1rem; font-weight: 300;">Authentic Intelligence Mate</p>
+            </div>
+        """, unsafe_allow_html=True)
+
+# ... (render_beta_footer wie gehabt) ...
 
 def render_beta_footer():
     st.markdown("""

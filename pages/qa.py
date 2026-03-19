@@ -1,5 +1,11 @@
 import streamlit as st
-import style
+import style # Greift auf style.py im Hauptverzeichnis zu
+import db_handler
+
+# WICHTIG: Erst initialisieren, dann rendern!
+style.init_global_state() 
+style.apply_custom_style()
+style.render_nav() # Jetzt findet er das Attribut garantiert!
 
 # aka Resonanz
 
