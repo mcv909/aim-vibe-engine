@@ -351,23 +351,40 @@ def handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_da
                 else:
                     st.error("Mail-Zustellung fehlgeschlagen. Prüfe SMTP.")
 
-def main():
-    # 1. Styles & Nav (Nur EINMAL!) [cite: 2026-03-12]
-    style.apply_custom_style() 
-    style.render_nav()
-    
-    # 2. Abstände & Header
-    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
-    style.render_header()
-    render_founding_dashboard()
-    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+def render_explanation_box():
+    """Der wiederkehrende Erklärungskasten für den Vibe-Check."""
+    st.markdown("""
+        <div style="background-color: #F8F9FB; padding: 25px; border-radius: 12px; border: 1px solid #EEEEEE; margin-bottom: 30px;">
+            <h4 style="margin-top: 0;">Was ist AIM-Vibe?</h4>
+            <p style="font-size: 0.95rem; color: #444; line-height: 1.6;">
+                Dein Manifesto ist der <b>qualitative Anker</b> deiner digitalen DNA. 
+                Während herkömmliche Algorithmen nur oberflächliche Daten abgleichen, verorten wir deinen 
+                persönlichen Sound im 1536-dimensionalen Raum. 
+                Wir suchen nicht nach Hobbys, wir suchen nach Resonanz.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
 
-    # 3. State abrufen
+def main():
+    # 1. Styles & Header (LOGO GANZ OBEN) [cite: 2026-01-17]
+    style.apply_custom_style() 
+    style.render_header()
+    
+    # 2. NAVIGATION UNTER DEM LOGO [cite: 2026-03-12]
+    style.render_nav() 
+    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+    
+    # 3. PIONIER-KASTEN [cite: 2026-02-03]
+    render_founding_dashboard()
+    
+    # 4. ERKLÄRUNGSKASTEN [cite: 2026-02-03]
+    render_explanation_box()
+
+    # 5. ROUTING (MANIFESTO / DNA)
     menu = st.session_state.get('menu', "Manifesto erstellen")
     is_edit = st.session_state.get('logged_in', False)
     u_data = st.session_state.get('user_data', {})
 
-    # 4. Routing Logik (Ohne automatischen Rerun-Loop!)
     if menu == "Manifesto erstellen":
         render_manifesto_editor(u_data, is_edit)
     elif menu == "Login":
@@ -376,18 +393,49 @@ def main():
         else:
             render_manifesto_editor(u_data, True)
             st.markdown("---")
-            if st.button("AUS DER MATRIX AUFTAUCHEN", key="logout_btn_main"):
+            if st.button("AUS DER MATRIX AUFTAUCHEN (Logout)", key="logout_btn_main"):
                 st.session_state.clear()
                 st.rerun()
-    else:
-        # Falls wir auf app.py sind, aber ein anderes Menü aktiv ist (z.B. Resonanz)
-        # zeigen wir einen Hinweis oder einen Button zum Zurückkehren, statt blind zu rerunning.
-        st.info("Du befindest dich im Hauptknoten. Nutze die Navigation oben.")
-        if st.button("Zurück zum Manifesto"):
-            st.session_state.menu = "Manifesto erstellen"
-            st.rerun()
 
     style.render_beta_footer()
+
+# def main():
+#    # 1. Styles & Nav (Nur EINMAL!) [cite: 2026-03-12]
+#    style.apply_custom_style() 
+#    style.render_nav()
+#    
+#    # 2. Abstände & Header
+#    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+#    style.render_header()
+#    render_founding_dashboard()
+#    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+#
+    # 3. State abrufen
+#    menu = st.session_state.get('menu', "Manifesto erstellen")
+#    is_edit = st.session_state.get('logged_in', False)
+#    u_data = st.session_state.get('user_data', {})
+
+    # 4. Routing Logik (Ohne automatischen Rerun-Loop!)
+#    if menu == "Manifesto erstellen":
+#        render_manifesto_editor(u_data, is_edit)
+#    elif menu == "Login":
+#        if not is_edit:
+#            render_login_form()
+#        else:
+#            render_manifesto_editor(u_data, True)
+#            st.markdown("---")
+#            if st.button("AUS DER MATRIX AUFTAUCHEN", key="logout_btn_main"):
+#                st.session_state.clear()
+#                st.rerun()
+#    else:
+#        # Falls wir auf app.py sind, aber ein anderes Menü aktiv ist (z.B. Resonanz)
+#        # zeigen wir einen Hinweis oder einen Button zum Zurückkehren, statt blind zu rerunning.
+#        st.info("Du befindest dich im Hauptknoten. Nutze die Navigation oben.")
+#        if st.button("Zurück zum Manifesto"):
+#            st.session_state.menu = "Manifesto erstellen"
+#            st.rerun()
+#
+#    style.render_beta_footer()
 
 if __name__ == "__main__":
     main()

@@ -13,7 +13,6 @@ def main():
     # 1. Page Config & Styles
     st.set_page_config(page_title="Q&A | [i am] | AIM", layout="wide")
     style.apply_custom_style()
-    style.render_nav() # WICHTIG: Die zentrale Navigation [cite: 2026-03-12]
     style.render_header()
 
     st.markdown("<h2 style='text-align: center;'>◬ Fragen & Resonanzen</h2>", unsafe_allow_html=True)
