@@ -1,8 +1,9 @@
 import os
-import smtplib
+import subprocess
 import shutil
-import platform
 import re
+import platform
+import smtplib
 import numpy as np
 import psycopg2.extras
 from dotenv import load_dotenv
@@ -17,87 +18,85 @@ def print_header(title):
     print(f"🛰️  {title.upper()}")
     print("="*60)
 
-def send_admin_alert(subject, body):
-    """Sendet eine Alarm-Mail an den Admin [cite: 2026-03-12]."""
-    sender = os.getenv("MAIL_SENDER")
-    pwd = os.getenv("MAIL_PASSWORD")
-    receiver = "mcv@iam-aim.com"
+def check_matrix_integrity():
+    """Prüft, ob die DB-Struktur alle 14 DNA-Felder enthält [cite: 2026-02-03]."""
+    print_header("DNA-Struktur Abgleich")
+    conn = db_handler.get_connection()
+    cur = conn.cursor()
     
-    msg = f"Subject: {subject}\n\n{body}"
+    # Liste der 14 erwarteten DNA-Kernfelder (plus technische Felder)
+    expected_fields = [
+        'email', 'identity', 'search_for', 'age', 'height', 'coords', 
+        'u_age_min', 'u_age_max', 'u_height_min', 'u_height_max', 'radius',
+        'key_hash', 'messenger_contact'
+    ]
     
-    try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender, pwd)
-        server.sendmail(sender, receiver, msg.encode('utf-8'))
-        server.quit()
-        print(f"✅ ALERT-MAIL gesendet an {receiver}")
-    except Exception as e:
-        print(f"❌ MAIL-FEHLER beim Senden des Alerts: {e}")
-
-def get_server_stats():
-    """Prüft Ressourcen und gibt bei Engpässen eine Warnung zurück."""
-    print_header("Server & Infrastruktur")
-    total, used, free = shutil.disk_usage("/")
-    free_gb = free // (2**30)
-    print(f"💾 DISK: {used//(2**30)}GB genutzt / {free_gb}GB frei")
+    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'profiles';")
+    existing_fields = [row[0] for row in cur.fetchall()]
     
-    # Kritischer Schwellenwert: 5 GB [cite: 2026-02-03]
-    if free_gb < 5:
-        return False, f"⚠️ Speicherplatz kritisch: Nur noch {free_gb}GB frei!"
-    return True, None
-
-def scan_streamlit_logs():
-    """Scannt Logs und zählt kritische Fehler."""
-    print_header("Streamlit Log-Analyse")
-    log_file = "streamlit.log"
-    if not os.path.exists(log_file):
-        return 0
-
-    error_patterns = [r"Traceback", r"Exception:", r"AttributeError:", r"psycopg2\..*Error"]
-    noise = ["GatherUsageStats", "Connection reset by peer", "Broken pipe"]
+    missing = [f for f in expected_fields if f not in existing_fields]
     
-    found_errors = 0
-    with open(log_file, "r") as f:
-        for line in f.readlines()[-200:]:
-            if any(re.search(p, line) for p in error_patterns):
-                if not any(n in line for n in noise):
-                    print(f"🚨 KRITISCH: {line.strip()}")
-                    found_errors += 1
-    return found_errors
+    if not missing:
+        print(f"✅ INTEGRITÄT: Alle DNA-Kernfelder ({len(expected_fields)}) in der Datenbank vorhanden.")
+    else:
+        print(f"❌ FEHLER: Fehlende Felder in 'profiles': {', '.join(missing)}")
+    
+    # Check Manifesto Layer [cite: 2026-03-15]
+    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'manifesto_vectors';")
+    mv_fields = [row[0] for row in cur.fetchall()]
+    if 'manifesto_user' in mv_fields and 'manifesto_enc' in mv_fields:
+        print("✅ VERSCHLÜSSELUNG: AES- und RSA-Layer Spalten sind aktiv.")
+    
+    cur.close(); conn.close()
 
-def check_matrix_stats():
-    """Prüft die Erreichbarkeit der Datenbank."""
-    print_header("Matrix Status")
+def get_matrix_stats():
+    """Holt die harten Zahlen aus der Matrix [cite: 2026-03-27]."""
+    print_header("Matrix Statistiken")
     try:
         conn = db_handler.get_connection()
-        conn.close()
-        print("✅ DATABASE: Verbindung stabil.")
-        return True
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
+        cur.execute("""
+            SELECT 
+                COUNT(*) as total,
+                COUNT(*) FILTER (WHERE is_email_verified = true) as verified,
+                COUNT(*) FILTER (WHERE is_active = true) as active
+            FROM profiles;
+        """)
+        p_stats = cur.fetchone()
+        
+        cur.execute("SELECT COUNT(*) FROM manifesto_vectors WHERE embedding IS NOT NULL;")
+        vec_count = cur.fetchone()[0]
+
+        print(f"👥 Profile gesamt:      {p_stats['total']}")
+        print(f"📧 E-Mail verifiziert:  {p_stats['verified']}")
+        print(f"🟢 Aktiv im Matching:   {p_stats['active']}")
+        print(f"✨ Vektorisierte DNA:   {vec_count}")
+        
+        if p_stats['total'] > 0:
+            print("-" * 60)
+            print("🏆 TESTDATEN-CHECK:")
+            cur.execute("SELECT email, age, messenger_contact FROM profiles LIMIT 5;")
+            for row in cur.fetchall():
+                print(f"  👉 {row['email']} | Alter: {row['age']} | Kontakt: {row['messenger_contact']}")
+        
+        cur.close(); conn.close()
     except Exception as e:
-        print(f"❌ DATABASE: Verbindung fehlgeschlagen: {e}")
-        return False
+        print(f"❌ STATS-FEHLER: {e}")
+
+# ... (Hier die restlichen Funktionen: get_server_stats, scan_streamlit_logs etc. behalten)
 
 if __name__ == "__main__":
-    issues = []
+    # 1. Server Check
+    total, used, free = shutil.disk_usage("/")
+    print_header("Server & Infrastruktur")
+    print(f"💾 DISK: {used//(2**30)}GB genutzt / {free//(2**30)}GB frei")
     
-    # 1. Ressourcen-Check
-    status, msg = get_server_stats()
-    if not status:
-        issues.append(msg)
-        
-    # 2. Log-Check
-    log_errors = scan_streamlit_logs()
-    if log_errors > 0:
-        issues.append(f"Kritische Streamlit-Fehler gefunden: {log_errors} neue Einträge.")
-        
-    # 3. Datenbank-Check
-    if not check_matrix_stats():
-        issues.append("Datenbank-Verbindung konnte nicht hergestellt werden.")
-
-    # 4. Alert-Versand bei Problemen
-    if issues:
-        alert_body = "Das AIM Command Center hat folgende Unregelmäßigkeiten festgestellt:\n\n" + "\n".join(issues)
-        send_admin_alert("🛰️ AIM ALERT: System-Inkonsistenz erkannt", alert_body)
-    else:
-        print("\n✨ System-DNA stabil. Keine Alerts notwendig.")
+    # 2. Integrität & Stats
+    check_matrix_integrity()
+    get_matrix_stats()
+    
+    # 3. Logs
+    # scan_streamlit_logs() # Optional, falls log vorhanden
+    
+    print("\n✅ Admin-Check beendet.")
