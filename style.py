@@ -93,7 +93,7 @@ def render_header():
     """Rendert das große, transparente 'i am | [AiM]' Logo ohne Doppelungen."""
     import os
     # Pfad zur neuen Datei
-    logo_path = "log_transparent.png" 
+    logo_path = "i_am_aim_groß_schmal.jpg" 
     
     if os.path.exists(logo_path):
         with open(logo_path, "rb") as f:
