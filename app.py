@@ -163,14 +163,16 @@ def init_db():
             );
         """)
         # UPDATE: manifesto_user hinzugefügt für den User-AES-Blob [cite: 2026-03-15]
+
         cur.execute("""
             CREATE TABLE IF NOT EXISTS manifesto_vectors (
                 profile_id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
-                manifesto_user TEXT,
+                manifesto_user TEXT,   -- DIESE ZEILE HAT GEFEHLT! [cite: 2026-03-15]
                 manifesto_enc TEXT,
                 embedding vector(1536)
             );
         """)
+
         conn.commit()
     except Exception as e:
         print(f"DB-Init Fehler: {e}"); conn.rollback()
