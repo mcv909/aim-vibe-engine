@@ -1,12 +1,10 @@
 import os
-import subprocess
-import shutil
-import re
-import platform
 import smtplib
+import shutil
+import platform
+import re
 import numpy as np
 import psycopg2.extras
-from datetime import datetime
 from dotenv import load_dotenv
 
 # Unsere Module
@@ -19,136 +17,87 @@ def print_header(title):
     print(f"🛰️  {title.upper()}")
     print("="*60)
 
+def send_admin_alert(subject, body):
+    """Sendet eine Alarm-Mail an den Admin [cite: 2026-03-12]."""
+    sender = os.getenv("MAIL_SENDER")
+    pwd = os.getenv("MAIL_PASSWORD")
+    receiver = "mcv@iam-aim.com"
+    
+    msg = f"Subject: {subject}\n\n{body}"
+    
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender, pwd)
+        server.sendmail(sender, receiver, msg.encode('utf-8'))
+        server.quit()
+        print(f"✅ ALERT-MAIL gesendet an {receiver}")
+    except Exception as e:
+        print(f"❌ MAIL-FEHLER beim Senden des Alerts: {e}")
+
 def get_server_stats():
-    """Prüft Uptime, Disk und Last Login (Cross-Platform Mac/Linux)."""
+    """Prüft Ressourcen und gibt bei Engpässen eine Warnung zurück."""
     print_header("Server & Infrastruktur")
-    
-    # 1. Disk Space
     total, used, free = shutil.disk_usage("/")
-    print(f"💾 DISK: {used//(2**30)}GB genutzt / {free//(2**30)}GB frei (Gesamt: {total//(2**30)}GB)")
+    free_gb = free // (2**30)
+    print(f"💾 DISK: {used//(2**30)}GB genutzt / {free_gb}GB frei")
     
-    # 2. Uptime Fix für Mac/Linux [cite: 2026-02-03]
-    try:
-        if platform.system() == "Darwin": # MacAir
-            uptime = subprocess.check_output(['uptime']).decode('utf-8').strip()
-        else: # Hetzner (Linux)
-            uptime = subprocess.check_output(['uptime', '-p']).decode('utf-8').strip()
-        print(f"🕒 UPTIME: {uptime}")
-    except Exception:
-        print("🕒 UPTIME: Konnte nicht ermittelt werden.")
-    
-    # 3. Last Login
-    try:
-        last_log = subprocess.check_output(['last', '-n', '1']).decode('utf-8').split('\n')[0]
-        print(f"👤 LAST LOGIN: {last_log}")
-    except:
-        print("👤 LAST LOGIN: Keine Daten.")
-
-def check_security_logs():
-    """Sucht nach fehlgeschlagenen Logins (Nur auf Linux sinnvoll)."""
-    if platform.system() == "Darwin":
-        print("\n🔒 SECURITY: SSH-Audit auf Mac übersprungen.")
-        return
-
-    print_header("Security Audit (Hacker-Radar)")
-    try:
-        # Check SSH Fehlversuche [cite: 2026-01-18]
-        cmd = "grep 'Failed password' /var/log/auth.log | wc -l"
-        failed = subprocess.check_output(cmd, shell=True).decode('utf-8').strip()
-        print(f"🛡️ SSH FEHLVERSUCHE: {failed} Einträge in /var/log/auth.log")
-    except:
-        print("⚠️ SECURITY: Zugriff auf auth.log verweigert (root benötigt).")
+    # Kritischer Schwellenwert: 5 GB [cite: 2026-02-03]
+    if free_gb < 5:
+        return False, f"⚠️ Speicherplatz kritisch: Nur noch {free_gb}GB frei!"
+    return True, None
 
 def scan_streamlit_logs():
-    """Filtert Rauschen aus den Streamlit-Logs [cite: 2026-03-12]."""
-    print_header("Streamlit Log-Analyse (Signal vs. Rauschen)")
+    """Scannt Logs und zählt kritische Fehler."""
+    print_header("Streamlit Log-Analyse")
     log_file = "streamlit.log"
-    
     if not os.path.exists(log_file):
-        print("ℹ️ Keine streamlit.log gefunden.")
-        return
+        return 0
 
-    # Relevante Fehler-Keywords [cite: 2026-02-03]
-    error_patterns = [r"Traceback", r"Exception:", r"AttributeError:", r"psycopg2\..*Error", r"OpenAIError"]
+    error_patterns = [r"Traceback", r"Exception:", r"AttributeError:", r"psycopg2\..*Error"]
     noise = ["GatherUsageStats", "Connection reset by peer", "Broken pipe"]
-
+    
     found_errors = 0
     with open(log_file, "r") as f:
-        lines = f.readlines()
-        for line in lines[-200:]: # Letzte 200 Zeilen
+        for line in f.readlines()[-200:]:
             if any(re.search(p, line) for p in error_patterns):
                 if not any(n in line for n in noise):
                     print(f"🚨 KRITISCH: {line.strip()}")
                     found_errors += 1
-    
-    if found_errors == 0:
-        print("✨ Keine relevanten Fehler im Log-Fenster.")
+    return found_errors
 
 def check_matrix_stats():
-    """Der klassische Matrix-Report (V1) [cite: 2026-03-27]."""
-    print_header("Matrix & Resonanz Status")
+    """Prüft die Erreichbarkeit der Datenbank."""
+    print_header("Matrix Status")
     try:
         conn = db_handler.get_connection()
-        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        
-        # Profile & Vektoren [cite: 2026-02-07]
-        cur.execute("""
-            SELECT 
-                COUNT(*) as total,
-                COUNT(*) FILTER (WHERE is_email_verified = true) as verified
-            FROM profiles;
-        """)
-        stats = cur.fetchone()
-        
-        cur.execute("SELECT COUNT(*) FROM manifesto_vectors WHERE embedding IS NOT NULL;")
-        vecs = cur.fetchone()[0]
-
-        print(f"👥 Profile gesamt:      {stats['total']}")
-        print(f"📧 Verifiziert:         {stats['verified']}")
-        print(f"✨ Vektorisierte DNA:   {vecs}")
-        
-        # Vektor-Integrität L2-Norm [cite: 2026-02-07]
-        cur.execute("SELECT embedding FROM manifesto_vectors WHERE embedding IS NOT NULL LIMIT 1;")
-        sample = cur.fetchone()
-        if sample:
-            vec = np.array(sample['embedding'])
-            print(f"🔢 Vektor-Check: $1536$ Dim | $L2$-Norm: {np.linalg.norm(vec):.4f}")
-
-        cur.close(); conn.close()
+        conn.close()
+        print("✅ DATABASE: Verbindung stabil.")
+        return True
     except Exception as e:
-        print(f"❌ MATRIX-FEHLER: {e}")
-
-def troubleshoot_user(email):
-    """Gezielte Diagnose für Bugfixing [cite: 2026-03-12]."""
-    print_header(f"Diagnose: {email}")
-    try:
-        conn = db_handler.get_connection()
-        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute("SELECT * FROM profiles WHERE email = %s;", (email,))
-        user = cur.fetchone()
-
-        if not user:
-            print(f"❌ User '{email}' nicht gefunden.")
-        else:
-            print(f"✅ Profil {str(user['id'])[:8]}... aktiv.")
-            print(f"📧 Verifiziert: {'JA' if user['is_email_verified'] else 'NEIN'}")
-            # Check Vektor
-            cur.execute("SELECT embedding FROM manifesto_vectors WHERE profile_id = %s;", (user['id'],))
-            vec = cur.fetchone()
-            print(f"🧬 DNA-Vektor:  {'BERECHNET' if vec and vec['embedding'] is not None else 'FEHLT'}")
-        cur.close(); conn.close()
-    except Exception as e:
-        print(f"❌ TROUBLESHOOT-FEHLER: {e}")
+        print(f"❌ DATABASE: Verbindung fehlgeschlagen: {e}")
+        return False
 
 if __name__ == "__main__":
-    import sys
-    get_server_stats()
+    issues = []
     
-    if len(sys.argv) > 1:
-        troubleshoot_user(sys.argv[1])
+    # 1. Ressourcen-Check
+    status, msg = get_server_stats()
+    if not status:
+        issues.append(msg)
+        
+    # 2. Log-Check
+    log_errors = scan_streamlit_logs()
+    if log_errors > 0:
+        issues.append(f"Kritische Streamlit-Fehler gefunden: {log_errors} neue Einträge.")
+        
+    # 3. Datenbank-Check
+    if not check_matrix_stats():
+        issues.append("Datenbank-Verbindung konnte nicht hergestellt werden.")
+
+    # 4. Alert-Versand bei Problemen
+    if issues:
+        alert_body = "Das AIM Command Center hat folgende Unregelmäßigkeiten festgestellt:\n\n" + "\n".join(issues)
+        send_admin_alert("🛰️ AIM ALERT: System-Inkonsistenz erkannt", alert_body)
     else:
-        check_security_logs()
-        scan_streamlit_logs()
-        check_matrix_stats()
-    
-    print("\n✅ Admin-Check beendet.")
+        print("\n✨ System-DNA stabil. Keine Alerts notwendig.")

@@ -133,7 +133,7 @@ def render_founding_dashboard():
 
 def init_db():
     """Initialisiert die vollständige AIM-Struktur (Email-First)."""
-    conn = get_connection()
+    conn = db_handler.get_connection()
     cur = conn.cursor()
     try:
         cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
@@ -162,10 +162,11 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        # WICHTIG: PRIMARY KEY auf profile_id für den ON CONFLICT Support!
+        # UPDATE: manifesto_user hinzugefügt für den User-AES-Blob [cite: 2026-03-15]
         cur.execute("""
             CREATE TABLE IF NOT EXISTS manifesto_vectors (
                 profile_id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+                manifesto_user TEXT,
                 manifesto_enc TEXT,
                 embedding vector(1536)
             );
