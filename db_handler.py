@@ -19,6 +19,44 @@ DB_PASS = os.getenv("DB_PASSWORD") or os.getenv("DB_PASS")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
+# Globaler Cache für die Vector-OID
+_VECTOR_OID = None
+
+def register_vector_type(conn):
+    """Registriert den pgvector-Typ global in psycopg2 [cite: 2026-03-28]."""
+    global _VECTOR_OID
+    if _VECTOR_OID is None:
+        cur = conn.cursor()
+        # Wir holen uns die interne ID des 'vector' Typs
+        cur.execute("SELECT oid FROM pg_type WHERE typname = 'vector';")
+        res = cur.fetchone()
+        if res:
+            _VECTOR_OID = res[0]
+            
+            # Definition: Wie soll der String aus der DB in Python umgewandelt werden?
+            def cast_vector(value, cur):
+                if value is None: return None
+                # Entfernt eckige Klammern und wandelt in Numpy-Array um [cite: 2026-02-07]
+                return np.fromstring(value.strip('[]'), sep=',')
+
+            # Registrierung des neuen Typs
+            VECTOR = extensions.new_type((_VECTOR_OID,), "VECTOR", cast_vector)
+            extensions.register_type(VECTOR)
+        cur.close()
+
+def get_connection():
+    """Erstellt eine Verbindung und stellt sicher, dass Datentypen passen [cite: 2026-03-12]."""
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        database=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASS"),
+        port=os.getenv("DB_PORT")
+    )
+    # Einmalige Registrierung pro Session
+    register_vector_type(conn)
+    return conn
+
 def load_db():
     """Lädt Profile für die Admin-Ansicht (E-Mail basiert)."""
     conn = get_connection()
