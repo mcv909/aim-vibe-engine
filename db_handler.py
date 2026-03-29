@@ -29,7 +29,6 @@ def register_vector_type(conn):
             _VECTOR_OID = res[0]
             def cast_vector(value, cur):
                 if value is None: return None
-                # Wandelt den DB-String direkt in Numpy-Array um [cite: 2026-03-28]
                 return np.fromstring(value.strip('[]'), sep=',')
             
             VECTOR = extensions.new_type((_VECTOR_OID,), "VECTOR", cast_vector)
@@ -43,43 +42,6 @@ def get_connection():
     )
     register_vector_type(conn)
     return conn
-
-# ... (restliche Funktionen beibehalten, aber sicherstellen, dass sie get_connection() nutzen)
-
-def load_db():
-    """Lädt Profile für die Admin-Ansicht (E-Mail basiert)."""
-    conn = get_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-    try:
-        cur.execute("""
-            SELECT id, email, coords, age, identity, is_ukrainian, 
-                   is_email_verified, is_active, created_at 
-            FROM profiles 
-            ORDER BY created_at DESC;
-        """)
-        return cur.fetchall()
-    except Exception as e:
-        print(f"Fehler beim Laden der Admin-DB: {e}")
-        return []
-    finally:
-        cur.close()
-        conn.close()
-
-def get_user_count():
-    """Gibt die Anzahl der aktiven Profile für das Dashboard zurück."""
-    conn = get_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute("SELECT COUNT(*) FROM profiles WHERE is_active = true;")
-        return cur.fetchone()[0]
-    finally:
-        cur.close()
-        conn.close()
-
-def get_connection():
-    return psycopg2.connect(
-        dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT
-    )
 
 def init_db():
     """Initialisiert die Matrix-Struktur [cite: 2026-02-03]."""
@@ -96,7 +58,7 @@ def init_db():
                 u_height_min INTEGER, u_height_max INTEGER, radius INTEGER DEFAULT 50,
                 is_ukrainian BOOLEAN DEFAULT FALSE, is_email_verified BOOLEAN DEFAULT FALSE,
                 is_active BOOLEAN DEFAULT FALSE, 
-                is_testuser BOOLEAN DEFAULT FALSE, -- NEU: Für Seeding-Tests [cite: 2026-03-27]
+                is_testuser BOOLEAN DEFAULT FALSE,
                 key_hash TEXT, messenger_contact TEXT,
                 verification_token UUID DEFAULT gen_random_uuid(),
                 last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -116,6 +78,9 @@ def init_db():
         print(f"DB-Init Fehler: {e}"); conn.rollback()
     finally:
         cur.close(); conn.close()
+
+# ... (Hier folgen deine restlichen Funktionen wie save_profile_atomic, etc. 
+# die nun alle die korrekte get_connection() nutzen)
 
 def save_profile_atomic(data, manifesto_raw, vibe_key):
     conn = get_connection()

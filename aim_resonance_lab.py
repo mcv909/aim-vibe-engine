@@ -1,13 +1,27 @@
 import numpy as np
-from sentence_transformers import SentenceTransformer
-# Wir importieren nur die notwendigen Teile deines bestehenden Setups [cite: 2026-03-04]
+from transformers import AutoModel, AutoConfig
+from sentence_transformers import SentenceTransformer, models
 import torch
 
 # Setup (nutzt deine MPS Power auf dem MacAir) [cite: 2025-12-20]
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 model_id = 'Alibaba-NLP/gte-Qwen2-1.5B-instruct'
-# Hier laden wir das Modell wie im Worker (gekürzt für das Lab)
-model = SentenceTransformer(model_id, device=device, trust_remote_code=True)
+
+print(f"🚀 Initialisiere {model_id} auf {device}...")
+
+# 1. Config patchen [cite: 2026-03-03, 2026-03-04]
+config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+config.rope_theta = 10000.0
+config.use_cache = False
+
+# 2. Modell manuell laden (Umgeht den AttributeError) [cite: 2026-03-03]
+transformer_model = AutoModel.from_pretrained(model_id, config=config, trust_remote_code=True)
+word_embedding_model = models.Transformer(model_id)
+word_embedding_model.auto_model = transformer_model
+
+# 3. In SentenceTransformer packen
+pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
 
 def get_similarity(v1, v2):
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
@@ -26,7 +40,7 @@ test_cases = {
 }
 
 def run_lab():
-    print(f"🚀 Starte AIM Resonance Lab auf {device}...\n")
+    print(f"🧪 Starte AIM Resonance Lab Simulation...\n")
     
     for instr_name, instr_text in instructions.items():
         print(f"=== Testlauf mit Instruktion: '{instr_name}' ===")
