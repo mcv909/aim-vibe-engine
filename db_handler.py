@@ -1,61 +1,50 @@
 import psycopg2
 import psycopg2.extras
-from psycopg2.extras import RealDictCursor
-from psycopg2 import errors
+from psycopg2 import extensions, errors
 import os
 import json
+import numpy as np
 from dotenv import load_dotenv
-import security  # Wichtig: Das gesamte Modul importieren! [cite: 2026-03-03]
+import security 
 
-# HIER DIREKT LADEN
 load_dotenv()
 
-# DB-Verbindung aus der .env laden
+# DB-Verbindung aus der .env
 DB_NAME = os.getenv("DB_NAME", "aim_db")
 DB_USER = os.getenv("DB_USER", "postgres")
-# WICHTIG: Prüfe in deiner .env ob es DB_PASS oder DB_PASSWORD heißt. 
-# Dieser Fallback deckt beides ab:
 DB_PASS = os.getenv("DB_PASSWORD") or os.getenv("DB_PASS") 
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
-# Globaler Cache für die Vector-OID
 _VECTOR_OID = None
 
 def register_vector_type(conn):
-    """Registriert den pgvector-Typ global in psycopg2 [cite: 2026-03-28]."""
+    """Registriert den pgvector-Typ global [cite: 2026-03-28]."""
     global _VECTOR_OID
     if _VECTOR_OID is None:
         cur = conn.cursor()
-        # Wir holen uns die interne ID des 'vector' Typs
         cur.execute("SELECT oid FROM pg_type WHERE typname = 'vector';")
         res = cur.fetchone()
         if res:
             _VECTOR_OID = res[0]
-            
-            # Definition: Wie soll der String aus der DB in Python umgewandelt werden?
             def cast_vector(value, cur):
                 if value is None: return None
-                # Entfernt eckige Klammern und wandelt in Numpy-Array um [cite: 2026-02-07]
+                # Wandelt den DB-String direkt in Numpy-Array um [cite: 2026-03-28]
                 return np.fromstring(value.strip('[]'), sep=',')
-
-            # Registrierung des neuen Typs
+            
             VECTOR = extensions.new_type((_VECTOR_OID,), "VECTOR", cast_vector)
             extensions.register_type(VECTOR)
         cur.close()
 
 def get_connection():
-    """Erstellt eine Verbindung und stellt sicher, dass Datentypen passen [cite: 2026-03-12]."""
+    """Zentrale Verbindungsstelle inkl. Typ-Registrierung [cite: 2026-03-12]."""
     conn = psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        database=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASS"),
-        port=os.getenv("DB_PORT")
+        dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT
     )
-    # Einmalige Registrierung pro Session
     register_vector_type(conn)
     return conn
+
+# ... (restliche Funktionen beibehalten, aber sicherstellen, dass sie get_connection() nutzen)
 
 def load_db():
     """Lädt Profile für die Admin-Ansicht (E-Mail basiert)."""
@@ -93,11 +82,11 @@ def get_connection():
     )
 
 def init_db():
+    """Initialisiert die Matrix-Struktur [cite: 2026-02-03]."""
     conn = get_connection()
     cur = conn.cursor()
     try:
         cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-        # Haupttabelle mit allen Filtern [cite: 2026-03-08, 2026-03-11]
         cur.execute("""
             CREATE TABLE IF NOT EXISTS profiles (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -106,16 +95,18 @@ def init_db():
                 coords JSONB, u_age_min INTEGER, u_age_max INTEGER,
                 u_height_min INTEGER, u_height_max INTEGER, radius INTEGER DEFAULT 50,
                 is_ukrainian BOOLEAN DEFAULT FALSE, is_email_verified BOOLEAN DEFAULT FALSE,
-                is_active BOOLEAN DEFAULT FALSE, key_hash TEXT, messenger_contact TEXT,
+                is_active BOOLEAN DEFAULT FALSE, 
+                is_testuser BOOLEAN DEFAULT FALSE, -- NEU: Für Seeding-Tests [cite: 2026-03-27]
+                key_hash TEXT, messenger_contact TEXT,
                 verification_token UUID DEFAULT gen_random_uuid(),
                 last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        # HIER DER FIX: PRIMARY KEY auf profile_id für ON CONFLICT Support!
         cur.execute("""
             CREATE TABLE IF NOT EXISTS manifesto_vectors (
                 profile_id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+                manifesto_user TEXT,
                 manifesto_enc TEXT,
                 embedding vector(1536)
             );
