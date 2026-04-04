@@ -44,11 +44,14 @@ def get_connection():
     return conn
 
 def init_db():
-    """Initialisiert die Matrix-Struktur [cite: 2026-02-03]."""
+    """Initialisiert die vollständige Matrix-Struktur [cite: 2026-02-03, 2026-04-04]."""
     conn = get_connection()
     cur = conn.cursor()
     try:
+        # 1. Vektor-Erweiterung aktivieren
         cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+        
+        # 2. Profiles-Tabelle (Kern-Daten) [cite: 2026-02-03]
         cur.execute("""
             CREATE TABLE IF NOT EXISTS profiles (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -65,21 +68,18 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+
+        # 3. Manifesto-Vektoren (Die digitale DNA) [cite: 2026-03-15, 2026-02-07]
         cur.execute("""
             CREATE TABLE IF NOT EXISTS manifesto_vectors (
                 profile_id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
-                manifesto_user TEXT,
-                manifesto_enc TEXT,
-                embedding vector(1536)
+                manifesto_user TEXT,   -- Verschlüsseltes Original für den User
+                manifesto_enc TEXT,    -- RSA-Blob für den Worker [cite: 2026-03-04]
+                embedding vector(1536) -- Die mathematische Resonanz [cite: 2026-02-07]
             );
         """)
-        conn.commit()
-    except Exception as e:
-        print(f"DB-Init Fehler: {e}"); conn.rollback()
-    finally:
-        cur.close(); conn.close()
-        try:
-        # Das Gedächtnis für bereits versendete Benachrichtigungen [cite: 2026-04-04]
+
+        # 4. Match-Gedächtnis (Dubletten-Schutz) [cite: 2026-04-04]
         cur.execute("""
             CREATE TABLE IF NOT EXISTS notified_matches (
                 user_a UUID REFERENCES profiles(id) ON DELETE CASCADE,
@@ -89,11 +89,15 @@ def init_db():
                 PRIMARY KEY (user_a, user_b)
             );
         """)
+
         conn.commit()
+        print("✨ Matrix-Struktur erfolgreich initialisiert.")
     except Exception as e:
-        print(f"DB-Init Fehler: {e}"); conn.rollback()
+        print(f"❌ DB-Init Fehler: {e}")
+        conn.rollback()
     finally:
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
 
 # ... (Hier folgen deine restlichen Funktionen wie save_profile_atomic, etc. 
 # die nun alle die korrekte get_connection() nutzen)
