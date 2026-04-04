@@ -106,6 +106,34 @@ def process_vibes():
     cur.close(); conn.close()
     return True
 
+def should_notify(user_id_1, user_id_2):
+    """Prüft, ob dieses Paar schon jemals benachrichtigt wurde [cite: 2026-04-04]."""
+    # IDs sortieren, um Dubletten wie (A,B) und (B,A) zu verhindern
+    a, b = sorted([str(user_id_1), str(user_id_2)])
+    
+    conn = db_handler.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM notified_matches WHERE user_a = %s AND user_b = %s", (a, b))
+    exists = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    return exists is None
+
+def mark_as_notified(user_id_1, user_id_2, score):
+    """Markiert das Match als 'erledigt' [cite: 2026-04-04]."""
+    a, b = sorted([str(user_id_1), str(user_id_2)])
+    conn = db_handler.get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO notified_matches (user_a, user_b, last_score) 
+        VALUES (%s, %s, %s)
+        ON CONFLICT (user_a, user_b) DO UPDATE SET last_score = EXCLUDED.last_score;
+    """, (a, b, score))
+    conn.commit()
+    cur.close()
+    conn.close()
+
 if __name__ == "__main__":
     print("\n--- 🛰️ AIM WORKER AKTIV ---")
     print("Scanne Matrix nach neuen Impulsen...")
