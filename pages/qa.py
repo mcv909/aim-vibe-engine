@@ -28,6 +28,12 @@ def main():
             "q": "Wie funktioniert das Matching im 1536-D Raum?",
             "a": "Stell dir vor, dein Text wird in 1536 verschiedene Facetten oder 'Bedeutungs-Räume' zerlegt. Dabei hat jeder Raum eine spezifische mathematische Wertung. Die Logik dahinter: Präzision: Je mehr Text du lieferst, desto feiner und schärfer werden diese Räume ausgeleuchtet. Muster: AiM erstellt daraus eine mathematische 'Perlenkette' deines Vibes. Resonanz: Wenn die Hardfacts (Alter, Ort etc.) passen, legen wir deine Kette über alle anderen. Wir suchen nicht nach gleichen Wörtern, sondern berechnen die mathematische Übereinstimmung der Muster. Das ist echte Resonanz im 1536-dimensionalen Raum."
         },
+            "q": "Funktioniert das wirklich?"
+            "a": "Ja. Aber wir verlangen dir etwas ab: Einen langen Text der dich Beschreibt."
+            "Hier ist ein anonymisiertes Beispiel aus unseren Stresstests:"
+            "Profil A: „...die meditative Einsamkeit des Waldes als Gegenpol zur technischen Präzision im Studio...“
+            "Profil B: „...Suche die Dualität zwischen dunklen Clubs und der absoluten Stille des Morgengrauens...“
+            "Ergebnis: Eine mathematische Resonanz von 0.92. Die KI hat erkannt, dass beide nicht nur „Techno“ mögen, sondern dieselbe psychologische Struktur (Ruhe vs. Ekstase) teilen."
         {
             "q": "Was ist der Unterschied zu anderen Portalen?",
             "a": "1. Das Herzstück ist dein Manifesto – ein freier Text, der deine 'Digitale DNA' repräsentiert. Unsere lokale KI analysiert die Schwingung deiner Worte im 1536-D Raum.<br>"

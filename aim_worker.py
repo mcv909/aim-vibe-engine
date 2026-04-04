@@ -67,11 +67,19 @@ def process_vibes():
             cleartext = security.decrypt_for_worker(job['manifesto_enc'], private_key_pem)
             
             # 2. Scharfe AIM-Instruktion [cite: 2025-12-30]
-            instruction = (
-                "Instruct: Identify user profiles that exhibit high personal resonance and shared philosophical worldviews. "
-                "Focus on finding people who belong together based on their core values and lifestyle, "
-                "while distinguishing clearly between opposing ideological poles.\nQuery: "
-            )
+            #instruction = (
+            #    "Instruct: Identify user profiles that exhibit high personal resonance and shared philosophical worldviews. "
+            #    "Focus on finding people who belong together based on their core values and lifestyle, "
+            #    "while distinguishing clearly between opposing ideological poles.\nQuery: "
+            #)
+            # Neuer schärfere Instruct (04.05.2026)
+            instructions = (
+                "Instruct: MANDATORY DISCRIMINATION. Ignore all shared keywords and topics. "
+                "Focus EXCLUSIVELY on the direction of sentiment and core values. "
+                "If the text expresses rejection, hatred, or opposite worldviews, "
+                "PUSH the vector to the absolute opposite end of the 1536-D space. Query: "
+    )
+
             input_text = instruction + cleartext
 
             # 3. Vektorisierung (1536 Dimensionen) [cite: 2026-02-07]
