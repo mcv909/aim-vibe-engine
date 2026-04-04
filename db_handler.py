@@ -78,6 +78,22 @@ def init_db():
         print(f"DB-Init Fehler: {e}"); conn.rollback()
     finally:
         cur.close(); conn.close()
+        try:
+        # Das Gedächtnis für bereits versendete Benachrichtigungen [cite: 2026-04-04]
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS notified_matches (
+                user_a UUID REFERENCES profiles(id) ON DELETE CASCADE,
+                user_b UUID REFERENCES profiles(id) ON DELETE CASCADE,
+                first_matched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_score FLOAT,
+                PRIMARY KEY (user_a, user_b)
+            );
+        """)
+        conn.commit()
+    except Exception as e:
+        print(f"DB-Init Fehler: {e}"); conn.rollback()
+    finally:
+        cur.close(); conn.close()
 
 # ... (Hier folgen deine restlichen Funktionen wie save_profile_atomic, etc. 
 # die nun alle die korrekte get_connection() nutzen)

@@ -9,6 +9,8 @@ from sentence_transformers import models, SentenceTransformer
 import db_handler 
 import security
 import logging
+import numpy as np # Wichtig für get_similarity [cite: 2026-02-07]
+import psycopg2.extras
 # Schaltet die internen Warnungen der Bibliotheken stumm
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
@@ -41,11 +43,16 @@ model = SentenceTransformer(modules=[word_embedding_model, pooling_model], devic
 with open("worker_private_key.pem", "r") as f:
     private_key_pem = f.read()
 
+def get_similarity(v1, v2):
+    """Berechnet die Cosinus-Ähnlichkeit im 1536-D Raum [cite: 2026-02-07]."""
+    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
 def process_vibes():
     conn = db_handler.get_connection()
-    cur = conn.cursor(cursor_factory=db_handler.psycopg2.extras.DictCursor)
+    # Wir brauchen DictCursor für den Zugriff via Spaltennamen
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
-    # 1. To-Do Liste: RSA-Blobs ohne Vektor [cite: 2026-03-04]
+    # 1. To-Do Liste: Profile ohne Vektor
     cur.execute("""
         SELECT profile_id, manifesto_enc 
         FROM manifesto_vectors 
@@ -60,44 +67,34 @@ def process_vibes():
 
     print(f"🧬 Verarbeite {len(jobs)} neue DNA-Pakete...")
 
+    # Unsere scharfe Master-Instruktion [cite: 2026-03-29]
+    logic_enforcer = (
+        "Instruct: MANDATORY DISCRIMINATION. Ignore all shared keywords and topics. "
+        "Focus EXCLUSIVELY on the direction of sentiment and core values. "
+        "If the text expresses rejection, hatred, or opposite worldviews, "
+        "PUSH the vector to the absolute opposite end of the 1536-D space. Query: "
+    )
+
     for job in jobs:
         p_id = job['profile_id']
         try:
-            # 1. RSA-Entschlüsselung [cite: 2026-03-04]
+            # 1. RSA-Entschlüsselung für den Worker [cite: 2026-03-04]
             cleartext = security.decrypt_for_worker(job['manifesto_enc'], private_key_pem)
             
-            # 2. Scharfe AIM-Instruktion [cite: 2025-12-30]
-            #instruction = (
-            #    "Instruct: Identify user profiles that exhibit high personal resonance and shared philosophical worldviews. "
-            #    "Focus on finding people who belong together based on their core values and lifestyle, "
-            #    "while distinguishing clearly between opposing ideological poles.\nQuery: "
-            #)
-            # Neuer schärfere Instruct (04.05.2026)
-            instructions = (
-                "Instruct: MANDATORY DISCRIMINATION. Ignore all shared keywords and topics. "
-                "Focus EXCLUSIVELY on the direction of sentiment and core values. "
-                "If the text expresses rejection, hatred, or opposite worldviews, "
-                "PUSH the vector to the absolute opposite end of the 1536-D space. Query: "
-    )
-
-            input_text = instruction + cleartext
-
-            # 3. Vektorisierung (1536 Dimensionen) [cite: 2026-02-07]
-            vector = model.encode(input_text).tolist()
+            # 2. Vektorisierung mit Logic-Enforcer [cite: 2026-03-29]
+            input_text = logic_enforcer + cleartext
+            vector_np = model.encode(input_text)
+            vector_list = vector_np.tolist()
             
-            # 4. Vollzugsmeldung an die Matrix [cite: 2026-03-12]
-            cur.execute("UPDATE manifesto_vectors SET embedding = %s WHERE profile_id = %s;", (vector, p_id))
+            # 3. Vektor in die DB schreiben [cite: 2026-03-12]
+            cur.execute("UPDATE manifesto_vectors SET embedding = %s WHERE profile_id = %s;", (vector_list, p_id))
+            cur.execute("UPDATE profiles SET is_active = true WHERE id = %s;", (p_id,))
+            conn.commit() # Vektor muss für den nächsten Schritt in der DB sein
             
-            # WICHTIG: Hier setzen wir den Mail-Trigger auf FALSE (muss noch gesendet werden)
-            cur.execute("""
-                UPDATE profiles 
-                SET is_active = true, 
-                    activation_mail_sent = false 
-                WHERE id = %s;
-            """, (p_id,))
+            # --- NEU: SOFORTIGER MATCH-CHECK (Inkubator-Modus) [cite: 2026-04-04] ---
+            run_matching_for_user(p_id, vector_np)
             
-            conn.commit()
-            print(f"✅ Profil {str(p_id)[:8]}... erfolgreich aktiviert.")
+            print(f"✅ Profil {str(p_id)[:8]}... aktiviert und auf Resonanz geprüft.")
             
         except Exception as e:
             print(f"❌ Fehler bei Profil {p_id}: {e}")
@@ -106,33 +103,35 @@ def process_vibes():
     cur.close(); conn.close()
     return True
 
-def should_notify(user_id_1, user_id_2):
-    """Prüft, ob dieses Paar schon jemals benachrichtigt wurde [cite: 2026-04-04]."""
-    # IDs sortieren, um Dubletten wie (A,B) und (B,A) zu verhindern
-    a, b = sorted([str(user_id_1), str(user_id_2)])
-    
+def run_matching_for_user(new_id, new_vector):
+    """Vergleicht das neue Profil mit dem Bestand (Anti-Spam-Logik) [cite: 2026-04-04]."""
     conn = db_handler.get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT 1 FROM notified_matches WHERE user_a = %s AND user_b = %s", (a, b))
-    exists = cur.fetchone()
-    cur.close()
-    conn.close()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
-    return exists is None
+    # Alle anderen Vektoren holen [cite: 2026-03-12]
+    cur.execute("SELECT profile_id, embedding FROM manifesto_vectors WHERE profile_id != %s AND embedding IS NOT NULL", (new_id,))
+    others = cur.fetchall()
+    
+    for other in others:
+        other_id = other['profile_id']
+        other_vector = np.array(other['embedding'])
+        
+        # 1. Haben wir dieses Paar schon gemeldet? [cite: 2026-04-04]
+        if should_notify(new_id, other_id):
+            # 2. Resonanz berechnen [cite: 2026-02-07]
+            score = get_similarity(new_vector, other_vector)
+            
+            # 3. Harte 0.85er Grenze [cite: 2026-03-29]
+            if score >= 0.85:
+                print(f"🔥 MATCH GEFUNDEN: {str(new_id)[:8]} <-> {str(other_id)[:8]} (Score: {score:.4f})")
+                
+                # In notified_matches verewigen (Dubletten-Sperre) [cite: 2026-04-04]
+                mark_as_notified(new_id, other_id, score)
+                
+                # Hier käme der Mail-Trigger für beide User [cite: 2026-03-08]
+                # mail_logic.send_match_notification(new_id, other_id, score)
 
-def mark_as_notified(user_id_1, user_id_2, score):
-    """Markiert das Match als 'erledigt' [cite: 2026-04-04]."""
-    a, b = sorted([str(user_id_1), str(user_id_2)])
-    conn = db_handler.get_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO notified_matches (user_a, user_b, last_score) 
-        VALUES (%s, %s, %s)
-        ON CONFLICT (user_a, user_b) DO UPDATE SET last_score = EXCLUDED.last_score;
-    """, (a, b, score))
-    conn.commit()
-    cur.close()
-    conn.close()
+    cur.close(); conn.close()
 
 if __name__ == "__main__":
     print("\n--- 🛰️ AIM WORKER AKTIV ---")

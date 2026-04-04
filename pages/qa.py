@@ -60,6 +60,14 @@ def main():
         {
             "q": "Wie kann ich meine Chance auf Matches vergrößern?",
             "a": "Ein kurzes Manifesto führt zu einem 'verpixelten' Matching. Je mehr qualitative Anker du wirfst, desto präziser kann AiM die Resonanz berechnen."        
+        },
+        {
+            "q": "Warum muss mein Manifesto so lang sein?"
+            "a": "AIM arbeitet nicht mit Stichworten, sondern mit deiner „Digitalen DNA“. Erst ab ca. 500 Zeichen erreicht die mathematische Auflösung eine Qualität, die echte Resonanz von oberflächlichem Rauschen unterscheiden kann. Wir wollen, dass du nur Menschen triffst, die wirklich auf deiner Frequenz schwingen."
+        },
+        {
+            "q": "Bekomme ich ständig dieselben Vorschläge?"
+            "a": "Nein. Unser System besitzt ein „Match-Gedächtnis“. [cite: 2026-04-04] Sobald eine Resonanz festgestellt wurde, wird diese Information sicher gespeichert. Du wirst niemals doppelt über dasselbe Match benachrichtigt, selbst wenn wir unsere KI im Hintergrund optimieren."
         }
     ]
 
