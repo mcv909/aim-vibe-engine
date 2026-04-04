@@ -245,6 +245,24 @@ def render_manifesto_editor(user, is_edit):
         label_visibility="collapsed"
     )
     
+        # --- In deinem Haupt-Code-Block ---
+
+    manifesto_input = st.text_area("Dein Manifesto (min. 500 Zeichen)", height=300)
+
+    # Visuelles Feedback aufrufen [cite: 2025-12-30]
+    render_quality_magic(manifesto_input)
+
+    # Die harte Schranke für das Backend [cite: 2026-03-29]
+    if len(manifesto_input) >= 500:
+        if st.button("Profil in die Matrix einspeisen"):
+            # Hier folgt dein Speichervorgang [cite: 2026-03-12]
+            st.info("🛰️ Initialisiere Vektorisierung...")
+            # save_profile_atomic(...)
+    else:
+        # Button anzeigen, aber deaktiviert mit Hinweis [cite: 2026-03-29]
+        st.button("Profil speichern", disabled=True, 
+                help="Dein Vibe ist noch nicht scharf genug. Schreibe mindestens 500 Zeichen für eine echte Resonanz-Analyse.")
+
     # Buffer aktualisieren, wenn sich der Wert ändert (passiert beim Verlassen des Feldes)
     if manifesto != st.session_state.manifesto_buffer:
         st.session_state.manifesto_buffer = manifesto

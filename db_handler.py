@@ -40,7 +40,7 @@ def get_connection():
     conn = psycopg2.connect(
         dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT
     )
-    register_vector_type(conn)
+    register_vector_type(conn) # Dies wandelt DB-Strings in Numpy-Floats [cite: 2026-03-28]
     return conn
 
 def init_db():
@@ -197,10 +197,9 @@ def save_feedback(user_id, rating, comment, match_id=None):
 def fetch_pending_jobs_latest_only():
     """Holt pro User nur den aktuellsten 'pending' Job."""
     conn = get_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
+    # KORREKTUR: Zugriff über psycopg2.extras fixen [cite: 2026-03-15]
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
-        # DISTINCT ON sorgt dafür, dass wir pro profile_id nur eine Zeile bekommen.
-        # ORDER BY sorgt dafür, dass es die NEUESTE (DESC) ist. [cite: 2026-03-03]
         cur.execute("""
             SELECT DISTINCT ON (profile_id) id, profile_id, encrypted_manifesto 
             FROM embedding_queue 
@@ -209,8 +208,7 @@ def fetch_pending_jobs_latest_only():
         """)
         return cur.fetchall()
     finally:
-        cur.close()
-        conn.close()
+        cur.close(); conn.close()
 
 def finalize_vibe_vector(profile_id, vector):
     """Schreibt den 1536-D Vektor in die manifesto_vectors Tabelle.""" # [cite: 2026-02-07]
