@@ -230,53 +230,37 @@ def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
         cur.close(); conn.close()
 
 def render_manifesto_editor(user, is_edit):
-    # Buffer-Check ohne st.rerun [cite: 2026-03-12]
+    # 1. Wert aus Session-State oder DB laden [cite: 2026-03-12]
     current_val = st.session_state.get('manifesto_buffer', user.get('manifesto_text', ""))
 
-    # Magie-Anzeige NUR HIER (nicht in main)
+    # 2. Visuelle Resonanz-Anzeige (Die Neon-Bar) [cite: 2025-12-30]
     render_quality_magic(current_val)
 
+    # 3. EINZIGES Textfeld für das Manifesto [cite: 2026-04-03]
     manifesto = st.text_area(
         "Beschreibe deinen Sound...", 
         value=current_val, 
         height=300, 
         key="main_manifesto_input",
-        help="Ein längerer Text erhöht deine Resonanz-Präzision.",
+        help="Schreibe mindestens 500 Zeichen für eine präzise Resonanz-Analyse.",
         label_visibility="collapsed"
     )
     
-        # --- In deinem Haupt-Code-Block ---
-
-    manifesto_input = st.text_area("Dein Manifesto (min. 500 Zeichen)", height=300)
-
-    # Visuelles Feedback aufrufen [cite: 2025-12-30]
-    render_quality_magic(manifesto_input)
-
-    # Die harte Schranke für das Backend [cite: 2026-03-29]
-    if len(manifesto_input) >= 500:
-        if st.button("Profil in die Matrix einspeisen"):
-            # Hier folgt dein Speichervorgang [cite: 2026-03-12]
-            st.info("🛰️ Initialisiere Vektorisierung...")
-            # save_profile_atomic(...)
-    else:
-        # Button anzeigen, aber deaktiviert mit Hinweis [cite: 2026-03-29]
-        st.button("Profil speichern", disabled=True, 
-                help="Dein Vibe ist noch nicht scharf genug. Schreibe mindestens 500 Zeichen für eine echte Resonanz-Analyse.")
-
-    # Buffer aktualisieren, wenn sich der Wert ändert (passiert beim Verlassen des Feldes)
-    if manifesto != st.session_state.manifesto_buffer:
+    # Buffer sofort aktualisieren [cite: 2026-03-12]
+    if manifesto != st.session_state.get('manifesto_buffer'):
         st.session_state.manifesto_buffer = manifesto
 
+    # --- Die restlichen Profil-Felder ---
     st.markdown('<p class="centered-header" style="font-size: 1.8rem; margin-top: 40px; margin-bottom: 20px;">Deine Digitale DNA</p>', unsafe_allow_html=True)
     
     c1, c2, c3 = st.columns(3)
+    # ... (Deine Spalten c1, c2, c3 bleiben hier identisch wie in deinem Code) ...
     with c1:
         st.markdown("**Basis**")
         u_name = st.text_input("Name / Alias", value=user.get('name', ""), key="inp_name")
         u_email = st.text_input("E-Mail", value=user.get('email', ""), disabled=is_edit, key="inp_email")
         v_key = st.text_input("Vibe Key", type="password", key="inp_key") if not is_edit else None
         u_messenger = st.text_input("Messenger-Kontakt", value=user.get('messenger_contact', ""), key="inp_mess")
-        # u_ukraine = st.checkbox("Ukraine Support / Herkunft", value=user.get('is_ukrainian', False), key="inp_ukr")
 
     with c2:
         st.markdown("**Identität**")
@@ -295,19 +279,25 @@ def render_manifesto_editor(user, is_edit):
         u_radius = st.number_input("Suchradius (km)", 5, 1000, value=user.get('radius', 100), key="inp_rad")
         u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(user.get('u_height_min', 160), user.get('u_height_max', 190)), key="inp_h_range")
 
+    # 4. DER GATEKEEPER-BUTTON [cite: 2026-03-29]
     btn_label = "PROFIL AKTUALISIEREN" if is_edit else "DNA SICHERN & RESONANZ STARTEN"
-    if st.button(btn_label, type="primary", key="save_dna_btn"):
-        # Datenpaket für die atomare Speicherung
-        extra_data = {
-            'name': u_name, 'age': u_age, 
-            'identity': g_list.index(u_gender) + 1,
-            'search_for': g_list.index(u_search_gender) + 1,
-            'height': u_height, 'is_ukrainian': False,
-            'u_age_min': u_age_range[0], 'u_age_max': u_age_range[1],
-            'u_height_min': u_target_height[0], 'u_height_max': u_target_height[1],
-            'radius': u_radius, 'messenger_contact': u_messenger
-        }
-        handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_data)
+    
+    if len(manifesto) >= 500:
+        if st.button(btn_label, type="primary", key="save_dna_btn"):
+            extra_data = {
+                'name': u_name, 'age': u_age, 
+                'identity': g_list.index(u_gender) + 1,
+                'search_for': g_list.index(u_search_gender) + 1,
+                'height': u_height, 'is_ukrainian': False,
+                'u_age_min': u_age_range[0], 'u_age_max': u_age_range[1],
+                'u_height_min': u_target_height[0], 'u_height_max': u_target_height[1],
+                'radius': u_radius, 'messenger_contact': u_messenger
+            }
+            handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_data)
+    else:
+        # Deaktivierter Button mit Hinweis [cite: 2026-03-29]
+        st.button(btn_label, disabled=True, type="secondary", key="save_dna_btn_disabled",
+                  help="Dein Vibe ist noch nicht scharf genug. Schreibe mindestens 500 Zeichen.")
 
 def render_login_form():
     """Rendert das Login-Formular und kümmert sich um die Entschlüsselung."""
