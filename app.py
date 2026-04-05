@@ -343,7 +343,8 @@ def handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_da
             # Wir nutzen den WORKER_PUBLIC_KEY aus der env für den Hybrid-Part [cite: 2026-03-04]
             pub_key = os.getenv("WORKER_PUBLIC_KEY")
             
-            v_token, db_status = save_profile_atomic(user_data, manifesto, pub_key, v_key)
+            # Jetzt rufen wir den zentralen Handler korrekt auf [cite: 2026-04-05]
+            v_token, db_status = db_handler.save_profile_atomic(user_data, manifesto, pub_key, v_key)
             
             if db_status == "needs_verification":
                 st.write("✉ Sende Aktivierungslink...")
