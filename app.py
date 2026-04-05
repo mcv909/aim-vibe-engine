@@ -131,103 +131,104 @@ def render_founding_dashboard():
 
     st.markdown(html_content, unsafe_allow_html=True)
 
-def init_db():
-    """Initialisiert die vollständige AIM-Struktur (Email-First)."""
-    conn = db_handler.get_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS profiles (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                email VARCHAR(255) UNIQUE NOT NULL,
-                identity INT, 
-                search_for INT, 
-                age INT,
-                height INT, 
-                stature_id INT, 
-                coords JSONB,
-                u_age_min INTEGER,
-                u_age_max INTEGER,
-                u_height_min INTEGER,
-                u_height_max INTEGER,
-                radius INTEGER DEFAULT 50,
-                is_ukrainian BOOLEAN DEFAULT FALSE,
-                is_email_verified BOOLEAN DEFAULT FALSE,
-                is_active BOOLEAN DEFAULT FALSE,
-                key_hash TEXT,
-                messenger_contact TEXT,
-                verification_token UUID DEFAULT gen_random_uuid(),
-                last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-        # UPDATE: manifesto_user hinzugefügt für den User-AES-Blob [cite: 2026-03-15]
+# sinnfreie funktion da doppelt vorhanden - wird in db_handler.py bearbeitet
+# def init_db():
+#     """Initialisiert die vollständige AIM-Struktur (Email-First)."""
+#     conn = db_handler.get_connection()
+#     cur = conn.cursor()
+#     try:
+#         cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+#         cur.execute("""
+#             CREATE TABLE IF NOT EXISTS profiles (
+#                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+#                 email VARCHAR(255) UNIQUE NOT NULL,
+#                 identity INT, 
+#                 search_for INT, 
+#                 age INT,
+#                 height INT, 
+#                 stature_id INT, 
+#                 coords JSONB,
+#                 u_age_min INTEGER,
+#                 u_age_max INTEGER,
+#                 u_height_min INTEGER,
+#                 u_height_max INTEGER,
+#                 radius INTEGER DEFAULT 50,
+#                 is_ukrainian BOOLEAN DEFAULT FALSE,
+#                 is_email_verified BOOLEAN DEFAULT FALSE,
+#                 is_active BOOLEAN DEFAULT FALSE,
+#                 key_hash TEXT,
+#                 messenger_contact TEXT,
+#                 verification_token UUID DEFAULT gen_random_uuid(),
+#                 last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+#                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+#             );
+#         """)
+#         # UPDATE: manifesto_user hinzugefügt für den User-AES-Blob [cite: 2026-03-15]
 
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS manifesto_vectors (
-                profile_id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
-                manifesto_user TEXT,   -- DIESE ZEILE HAT GEFEHLT! [cite: 2026-03-15]
-                manifesto_enc TEXT,
-                embedding vector(1536)
-            );
-        """)
+#         cur.execute("""
+#             CREATE TABLE IF NOT EXISTS manifesto_vectors (
+#                 profile_id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+#                 manifesto_user TEXT,   -- DIESE ZEILE HAT GEFEHLT! [cite: 2026-03-15]
+#                 manifesto_enc TEXT,
+#                 embedding vector(1536)
+#             );
+#         """)
 
-        conn.commit()
-    except Exception as e:
-        print(f"DB-Init Fehler: {e}"); conn.rollback()
-    finally:
-        cur.close(); conn.close()
+#         conn.commit()
+#     except Exception as e:
+#         print(f"DB-Init Fehler: {e}"); conn.rollback()
+#     finally:
+#         cur.close(); conn.close()
 
-def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
-    """Speichert alle 14 Datenpunkte inklusive der Suchfilter."""
-    conn = db_handler.get_connection()
-    cur = conn.cursor()
-    try:
-        # Verschlüsselung
-        user_enc = security.encrypt_data(manifesto_raw, v_key) if v_key else None
-        worker_enc = security.encrypt_for_worker(manifesto_raw, pub_key)
-        coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
+# def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
+#     """Speichert alle 14 Datenpunkte inklusive der Suchfilter."""
+#     conn = db_handler.get_connection()
+#     cur = conn.cursor()
+#     try:
+#         # Verschlüsselung
+#         user_enc = security.encrypt_data(manifesto_raw, v_key) if v_key else None
+#         worker_enc = security.encrypt_for_worker(manifesto_raw, pub_key)
+#         coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
 
-        cur.execute("""
-            INSERT INTO profiles (
-                email, identity, search_for, age, height, coords, 
-                is_ukrainian, key_hash, messenger_contact,
-                u_age_min, u_age_max, u_height_min, u_height_max, radius
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (email) DO UPDATE SET
-                age = EXCLUDED.age, height = EXCLUDED.height, coords = EXCLUDED.coords,
-                identity = EXCLUDED.identity, search_for = EXCLUDED.search_for,
-                is_ukrainian = EXCLUDED.is_ukrainian,
-                u_age_min = EXCLUDED.u_age_min, u_age_max = EXCLUDED.u_age_max,
-                u_height_min = EXCLUDED.u_height_min, u_height_max = EXCLUDED.u_height_max,
-                radius = EXCLUDED.radius, last_interaction = CURRENT_TIMESTAMP
-            RETURNING id, verification_token;
-        """, (
-            data['email'], data['identity'], data['search_for'], 
-            data['age'], data['height'], coords_json, data['is_ukrainian'],
-            data.get('key_hash'), data.get('messenger_contact'),
-            data['u_age_min'], data['u_age_max'], 
-            data['u_height_min'], data['u_height_max'], data['radius']
-        ))
-        p_id, v_token = cur.fetchone()
+#         cur.execute("""
+#             INSERT INTO profiles (
+#                 email, identity, search_for, age, height, coords, 
+#                 is_ukrainian, key_hash, messenger_contact,
+#                 u_age_min, u_age_max, u_height_min, u_height_max, radius
+#             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+#             ON CONFLICT (email) DO UPDATE SET
+#                 age = EXCLUDED.age, height = EXCLUDED.height, coords = EXCLUDED.coords,
+#                 identity = EXCLUDED.identity, search_for = EXCLUDED.search_for,
+#                 is_ukrainian = EXCLUDED.is_ukrainian,
+#                 u_age_min = EXCLUDED.u_age_min, u_age_max = EXCLUDED.u_age_max,
+#                 u_height_min = EXCLUDED.u_height_min, u_height_max = EXCLUDED.u_height_max,
+#                 radius = EXCLUDED.radius, last_interaction = CURRENT_TIMESTAMP
+#             RETURNING id, verification_token;
+#         """, (
+#             data['email'], data['identity'], data['search_for'], 
+#             data['age'], data['height'], coords_json, data['is_ukrainian'],
+#             data.get('key_hash'), data.get('messenger_contact'),
+#             data['u_age_min'], data['u_age_max'], 
+#             data['u_height_min'], data['u_height_max'], data['radius']
+#         ))
+#         p_id, v_token = cur.fetchone()
 
-        # Manifesto-Update
-        cur.execute("""
-            INSERT INTO manifesto_vectors (profile_id, manifesto_user, manifesto_enc)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (profile_id) DO UPDATE SET 
-                manifesto_user = COALESCE(EXCLUDED.manifesto_user, manifesto_vectors.manifesto_user),
-                manifesto_enc = EXCLUDED.manifesto_enc;
-        """, (p_id, user_enc, worker_enc))
+#         # Manifesto-Update
+#         cur.execute("""
+#             INSERT INTO manifesto_vectors (profile_id, manifesto_user, manifesto_enc)
+#             VALUES (%s, %s, %s)
+#             ON CONFLICT (profile_id) DO UPDATE SET 
+#                 manifesto_user = COALESCE(EXCLUDED.manifesto_user, manifesto_vectors.manifesto_user),
+#                 manifesto_enc = EXCLUDED.manifesto_enc;
+#         """, (p_id, user_enc, worker_enc))
 
-        conn.commit()
-        return v_token, "needs_verification"
-    except Exception as e:
-        conn.rollback()
-        return None, str(e)
-    finally:
-        cur.close(); conn.close()
+#         conn.commit()
+#         return v_token, "needs_verification"
+#     except Exception as e:
+#         conn.rollback()
+#         return None, str(e)
+#     finally:
+#         cur.close(); conn.close()
 
 def render_manifesto_editor(user, is_edit):
     # 1. Wert aus Session-State oder DB laden [cite: 2026-03-12]
