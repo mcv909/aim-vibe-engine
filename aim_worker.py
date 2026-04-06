@@ -30,12 +30,21 @@ CATEGORY_PROMPTS = {
     "komm": "Instruct: FOCUS ON LINGUISTIC NUANCE. Identify the use of irony, sarcasm, and directness. Query: "
 }
 
-# Setup [cite: 2025-12-20, 2026-03-04]
+# --- REPARIERTES MODELL-SETUP --- [cite: 2026-04-06]
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 model_id = 'Alibaba-NLP/gte-Qwen2-1.5B-instruct'
 
-print(f"🚀 Initialisiere {model_id} auf {device}...")
-model = SentenceTransformer(model_id, device=device, trust_remote_code=True)
+print(f"🚀 Initialisiere {model_id} auf {device} (mit Qwen-Fix)...")
+config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+config.rope_theta = 10000.0  # Der fehlende Wert [cite: 2026-04-06]
+config.use_cache = False 
+
+transformer_model = AutoModel.from_pretrained(model_id, config=config, trust_remote_code=True)
+word_embedding_model = models.Transformer(model_id)
+word_embedding_model.auto_model = transformer_model
+
+pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
 
 with open("worker_private_key.pem", "r") as f:
     private_key_pem = f.read()

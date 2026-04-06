@@ -111,6 +111,46 @@ def get_spam_protection_stats():
     print(f"🔒 Gespeicherte Resonanzen (notified_matches): {count}")
     cur.close(); conn.close()
 
+def get_kaskade_analysis(email):
+    """Detaillierte Einsicht in die 5 Layer-Scores [cite: 2026-04-06]."""
+    print_header(f"Kaskaden-Analyse: {email}")
+    conn = db_handler.get_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    try:
+        # 1. Daten des Ziel-Users holen
+        cur.execute("""
+            SELECT mv.embedding, mv.emb_werte, mv.emb_vibe, mv.emb_offenheit, mv.emb_komm, mv.quality_score 
+            FROM manifesto_vectors mv JOIN profiles p ON p.id = mv.profile_id WHERE p.email = %s;
+        """, (email,))
+        me = cur.fetchone()
+        
+        if not me or me['emb_werte'] is None:
+            print(f"❌ Profil {email} noch nicht vollständig kaskadiert."); return
+
+        # 2. Top 3 berechnen (mit der Kaskaden-Logik)
+        # Wir nutzen ::vector für das explizite Casting [cite: 2026-04-05]
+        cur.execute("""
+            SELECT p.email, 
+                   (1 - (mv.emb_werte <=> %s::vector)) as sw,
+                   (1 - (mv.emb_vibe <=> %s::vector)) as sv,
+                   (1 - (mv.emb_offenheit <=> %s::vector)) as so,
+                   (1 - (mv.emb_komm <=> %s::vector)) as sk,
+                   (1 - (mv.embedding <=> %s::vector)) as sg
+            FROM manifesto_vectors mv JOIN profiles p ON p.id = mv.profile_id
+            WHERE p.email != %s AND mv.emb_werte IS NOT NULL
+            ORDER BY (1 - (mv.emb_werte <=> %s::vector)) DESC LIMIT 3;
+        """, (me['emb_werte'], me['emb_vibe'], me['emb_offenheit'], me['emb_komm'], me['embedding'], email, me['emb_werte']))
+        
+        print(f"{'PARTNER-EMAIL':<25} | {'WERT':<5} | {'VIBE':<5} | {'OFF':<5} | {'KOM':<5} | {'GEN'}")
+        print("-" * 75)
+        for r in cur.fetchall():
+            print(f"{r['email'][:23]:<25} | {r['sw']:.2f} | {r['sv']:.2f} | {r['so']:.2f} | {r['sk']:.2f} | {r['sg']:.2f}")
+    except Exception as e:
+        print(f"❌ Fehler in der Kaskaden-Analyse: {e}")
+    finally:
+        cur.close(); conn.close()
+
 if __name__ == "__main__":
     total, used, free = shutil.disk_usage("/")
     print_header("Infrastruktur")
