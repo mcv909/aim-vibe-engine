@@ -1,5 +1,6 @@
 import os
 import shutil
+import numpy as np
 import psycopg2.extras
 from dotenv import load_dotenv
 import db_handler
@@ -28,39 +29,74 @@ def check_db_connectivity():
         return False
 
 def check_matrix_integrity():
-    """Prüft die DNA-Kernfelder in der DB."""
+    """Prüft die DNA-Kernfelder in beiden Tabellen."""
     print_header("Integritäts-Check")
     conn = db_handler.get_connection()
     cur = conn.cursor()
+    
+    # 1. Spaltennamen für 'profiles' holen
     cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'profiles';")
     fields = [row[0] for row in cur.fetchall()]
+    p_count = len(fields)
     
+    # 2. Spaltennamen für 'manifesto_vectors' holen
+    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'manifesto_vectors';")
+    v_fields = [row[0] for row in cur.fetchall()]
+    v_count = len(v_fields)
+    
+    print(f"✅ DNA-Struktur: {p_count} Profil-Felder | {v_count} Vektor-Felder erkannt.")
+    
+    # Kaskaden-Status prüfen
+    cur.execute("SELECT COUNT(*) FROM manifesto_vectors WHERE emb_werte IS NOT NULL;")
+    kaskade_ok = cur.fetchone()[0]
+    print(f"✅ KASKADEN-STATUS: {kaskade_ok} Profile tiefenpsychologisch erfasst.")
+
+    # Kernfelder-Abgleich (Profiles)
     core_dna = ['email', 'identity', 'search_for', 'age', 'height', 'last_interaction']
     missing = [f for f in core_dna if f not in fields]
     
-    if not missing:
-        print(f"✅ DNA-Struktur stabil ({len(fields)} Felder erkannt).")
-    else:
+    if missing:
         print(f"❌ FEHLENDE SEQUENZEN: {', '.join(missing)}")
+    else:
+        print("✅ Alle Kern-Sequenzen in 'profiles' vorhanden.")
+    
     cur.close(); conn.close()
 
 def get_pipeline_report():
-    """Detaillierter Status inkl. Matching-Zeitstempel."""
+    """Detaillierter Status inkl. Kaskaden-Check [cite: 2026-04-06]."""
     print_header("DNA-Pipeline Monitor")
     conn = db_handler.get_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    # Wir prüfen die Existenz des General-Vektors UND des Werte-Layers
     cur.execute("""
         SELECT p.email, 
-               (mv.embedding IS NOT NULL) as vec, 
+               (mv.embedding IS NOT NULL) as gen_vec, 
+               (mv.emb_werte IS NOT NULL) as kaskade_ok,
                mv.last_matching_run as last_run
-        FROM profiles p LEFT JOIN manifesto_vectors mv ON p.id = mv.profile_id
+        FROM profiles p 
+        LEFT JOIN manifesto_vectors mv ON p.id = mv.profile_id
         ORDER BY p.created_at DESC;
     """)
-    print(f"{'E-MAIL':<30} | {'VEKTOR':<6} | {'LETZTES MATCHING'}")
-    print("-" * 70)
+    
+    print(f"{'E-MAIL':<30} | {'GEN':<4} | {'KASK':<4} | {'MATCHING-STATUS'}")
+    print("-" * 75)
+    
     for r in cur.fetchall():
         run_time = r['last_run'].strftime("%H:%M:%S") if r['last_run'] else "---"
-        print(f"{r['email'][:28]:<30} | {'✅ JA' if r['vec'] else '❌ NEIN':<6} | {run_time}")
+        
+        # Status-Logik für den schnellen Überblick [cite: 2026-04-06]
+        if not r['gen_vec']:
+            status = "🧬 WARTET (NEU)"
+        elif not r['kaskade_ok']:
+            status = "🧊 KASKADE PENDING"
+        elif r['last_run']:
+            status = f"✅ ABGESCHLOSSEN ({run_time})"
+        else:
+            status = "📡 MATCHING ACTIVE"
+
+        print(f"{r['email'][:28]:<30} | {'✅' if r['gen_vec'] else '❌':<4} | {'✅' if r['kaskade_ok'] else '❌':<4} | {status}")
+    
     cur.close(); conn.close()
 
 def get_matrix_stats():
@@ -111,25 +147,33 @@ def get_spam_protection_stats():
     print(f"🔒 Gespeicherte Resonanzen (notified_matches): {count}")
     cur.close(); conn.close()
 
+def get_score_visual(score):
+    """Erzeugt eine visuelle Heatmap-Leiste [cite: 2026-04-06]."""
+    blocks = int(score * 10)
+    bar = "🟩" * blocks + "⬜" * (10 - blocks)
+    if score < 0.40: color = "🟥"
+    elif score < 0.82: color = "🟨"
+    else: color = "🟩"
+    return f"{bar} ({color} {score:.2f})"
+
 def get_kaskade_analysis(email):
-    """Detaillierte Einsicht in die 5 Layer-Scores [cite: 2026-04-06]."""
-    print_header(f"Kaskaden-Analyse: {email}")
+    """Detaillierte Einsicht mit Heatmap-Visualisierung [cite: 2026-04-06]."""
+    print_header(f"Kaskaden-Analyse & Heatmap: {email}")
     conn = db_handler.get_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
     try:
-        # 1. Daten des Ziel-Users holen
         cur.execute("""
-            SELECT mv.embedding, mv.emb_werte, mv.emb_vibe, mv.emb_offenheit, mv.emb_komm, mv.quality_score 
+            SELECT mv.embedding, mv.emb_werte, mv.emb_vibe, mv.emb_offenheit, mv.emb_komm 
             FROM manifesto_vectors mv JOIN profiles p ON p.id = mv.profile_id WHERE p.email = %s;
         """, (email,))
         me = cur.fetchone()
         
         if not me or me['emb_werte'] is None:
-            print(f"❌ Profil {email} noch nicht vollständig kaskadiert."); return
+            print(f"❌ Profil {email} noch nicht kaskadiert."); return
 
-        # 2. Top 3 berechnen (mit der Kaskaden-Logik)
-        # Wir nutzen ::vector für das explizite Casting [cite: 2026-04-05]
+        def to_list(vec): return vec.tolist() if isinstance(vec, np.ndarray) else vec
+
         cur.execute("""
             SELECT p.email, 
                    (1 - (mv.emb_werte <=> %s::vector)) as sw,
@@ -140,14 +184,20 @@ def get_kaskade_analysis(email):
             FROM manifesto_vectors mv JOIN profiles p ON p.id = mv.profile_id
             WHERE p.email != %s AND mv.emb_werte IS NOT NULL
             ORDER BY (1 - (mv.emb_werte <=> %s::vector)) DESC LIMIT 3;
-        """, (me['emb_werte'], me['emb_vibe'], me['emb_offenheit'], me['emb_komm'], me['embedding'], email, me['emb_werte']))
+        """, (to_list(me['emb_werte']), to_list(me['emb_vibe']), to_list(me['emb_offenheit']), 
+              to_list(me['emb_komm']), to_list(me['embedding']), email, to_list(me['emb_werte'])))
         
-        print(f"{'PARTNER-EMAIL':<25} | {'WERT':<5} | {'VIBE':<5} | {'OFF':<5} | {'KOM':<5} | {'GEN'}")
-        print("-" * 75)
-        for r in cur.fetchall():
-            print(f"{r['email'][:23]:<25} | {r['sw']:.2f} | {r['sv']:.2f} | {r['so']:.2f} | {r['sk']:.2f} | {r['sg']:.2f}")
+        rows = cur.fetchall()
+        for r in rows:
+            print(f"\n📡 PARTNER: {r['email']}")
+            print(f"  ├─ WERTE: {get_score_visual(r['sw'])}")
+            print(f"  ├─ VIBE:  {get_score_visual(r['sv'])}")
+            print(f"  ├─ OFF:   {get_score_visual(r['so'])}")
+            print(f"  ├─ KOMM:  {get_score_visual(r['sk'])}")
+            print(f"  └─ GEN:   {get_score_visual(r['sg'])}")
+            
     except Exception as e:
-        print(f"❌ Fehler in der Kaskaden-Analyse: {e}")
+        print(f"❌ Heatmap-Fehler: {e}")
     finally:
         cur.close(); conn.close()
 

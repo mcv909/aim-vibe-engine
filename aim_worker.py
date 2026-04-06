@@ -24,10 +24,10 @@ AIM_CONFIG = {
 }
 
 CATEGORY_PROMPTS = {
-    "werte": "Instruct: FOCUS ON MORAL COMPASS. Extract values regarding social justice, universalism, and benevolence. Query: ",
-    "vibe": "Instruct: FOCUS ON SOCIAL BATTERY. Analyze the need for stimulation vs. solitude. Focus on the 'how' of social interaction. Query: ",
-    "offenheit": "Instruct: FOCUS ON INTELLECTUAL OPENNESS. Analyze the attitude towards new experiences, arts, and unconventional lifestyles. Query: ",
-    "komm": "Instruct: FOCUS ON LINGUISTIC NUANCE. Identify the use of irony, sarcasm, and directness. Query: "
+    "werte": "Instruct: Represent the ethical values and worldviews of this person.\nQuery: ",
+    "vibe": "Instruct: Represent the social temperament and energy level of this person.\nQuery: ",
+    "offenheit": "Instruct: Represent the curiosity and openness to new experiences of this person.\nQuery: ",
+    "komm": "Instruct: Represent the communication style and linguistic tone of this person.\nQuery: "
 }
 
 # --- REPARIERTES MODELL-SETUP --- [cite: 2026-04-06]
@@ -73,8 +73,24 @@ def run_db_matching(user_id, vectors_dict, quality_score):
                (1 - (mv.emb_komm <=> %s::vector)) as sk,
                (1 - (mv.embedding <=> %s::vector)) as sg
         FROM manifesto_vectors mv
-        JOIN profiles p ON mv.profile_id = p.id
-        WHERE mv.profile_id != %s AND mv.emb_werte IS NOT NULL AND p.is_active = true
+        JOIN profiles p_target ON mv.profile_id = p_target.id
+        JOIN profiles p_me ON p_me.id = %s
+        WHERE mv.profile_id != %s 
+          AND p_target.is_active = true
+          AND (
+            -- PFAD A: Romantisches Matching [cite: 2026-04-06]
+            (
+                p_me.search_intent IN ('p', 'b') AND p_target.search_intent IN ('p', 'b')
+                AND (p_me.search_for = p_target.identity OR p_me.search_for = 'all')
+                AND (p_target.search_for = p_me.identity OR p_target.search_for = 'all')
+            )
+            OR 
+            -- PFAD B: Freundschaftliches Matching [cite: 2026-04-06]
+            (
+                p_me.search_intent IN ('f', 'b') AND p_target.search_intent IN ('f', 'b')
+                -- Bei Freunden ist das Geschlecht oft egal, wir lassen es hier offen
+            )
+          )
           AND (1 - (mv.emb_werte <=> %s::vector)) >= %s;
     """
     
@@ -108,53 +124,71 @@ def run_db_matching(user_id, vectors_dict, quality_score):
         cur.close(); conn.close()
 
 def process_vibes():
-    """DNA-Sezierung in 5 Layer [cite: 2026-04-06]."""
-    conn = db_handler.get_connection()
+    """DNA-Sezierung in 5 Layer mit korrektem Logic Enforcer [cite: 2026-04-06]."""
+    print("📡 Versuche Datenbank-Verbindung...", end=" ", flush=True)
+    try:
+        conn = db_handler.get_connection()
+        print("✅")
+    except Exception as e:
+        print(f"❌ Fehler: {e}")
+        return False
+        
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    print("🔎 Suche DNA-Pakete...", end=" ", flush=True)
     cur.execute("""
         SELECT profile_id, manifesto_enc, embedding, quality_score, emb_werte 
-        FROM manifesto_vectors WHERE (embedding IS NULL OR last_matching_run IS NULL) 
+        FROM manifesto_vectors WHERE (embedding IS NULL OR last_matching_run IS NULL OR emb_werte IS NULL) 
         AND manifesto_enc IS NOT NULL LIMIT 5;
     """)
     jobs = cur.fetchall()
+    print(f"✅ ({len(jobs)} gefunden)")
+    
     if not jobs:
-        cur.close(); conn.close(); return False
+        cur.close(); conn.close()
+        return False
 
-    logic_enforcer = (
-        "Instruct: MANDATORY DISCRIMINATION. Ignore all shared keywords and topics. "
-        "Focus EXCLUSIVELY on the direction of sentiment and core values. "
-        "If the text expresses rejection, hatred, or opposite worldviews, "
-        "PUSH the vector to the absolute opposite end of the 1536-D space. Query: "
-    )
+    # DER FIX: Der vollständige Logic Enforcer für den General-Vektor [cite: 2026-03-29]
+    logic_enforcer = "Instruct: Represent this person's core identity for personality matching.\nQuery: "
 
     for job in jobs:
         p_id = job['profile_id']
+        print(f"🧬 Starte 5-Layer-Analyse für {str(p_id)[:8]}...", end=" ", flush=True)
         try:
-            if job['emb_werte'] is None: # Vollständige Neu-Vektorisierung [cite: 2026-04-06]
-                cleartext = security.decrypt_for_worker(job['manifesto_enc'], private_key_pem)
-                q_score = float(calculate_quality_factor(cleartext))
-                
-                vectors = {'general': model.encode(logic_enforcer + cleartext)}
-                for key, prompt in CATEGORY_PROMPTS.items():
-                    vectors[key] = model.encode(prompt + cleartext)
-                
-                v_lists = {k: [float(x) for x in vec.tolist()] for k, vec in vectors.items()}
-                
-                cur.execute("""
-                    UPDATE manifesto_vectors SET embedding = %s, emb_werte = %s, emb_vibe = %s, 
-                    emb_offenheit = %s, emb_komm = %s, quality_score = %s WHERE profile_id = %s;
-                """, (v_lists['general'], v_lists['werte'], v_lists['vibe'], v_lists['offenheit'], v_lists['komm'], q_score, p_id))
-                cur.execute("UPDATE profiles SET is_active = true WHERE id = %s;", (p_id,))
-                conn.commit()
-                current_vectors = v_lists
-            else:
-                current_vectors = {'general': job['embedding'], 'werte': job['emb_werte']} # (vereinfacht)
-
-            run_db_matching(p_id, current_vectors, q_score or job['quality_score'])
-            print(f"✅ Profil {str(p_id)[:8]}... Kaskaden-Matching beendet.")
+            cleartext = security.decrypt_for_worker(job['manifesto_enc'], private_key_pem)
+            q_score = float(calculate_quality_factor(cleartext))
+            
+            # 1. General Vektor
+            vectors = {'general': model.encode(logic_enforcer + cleartext)}
+            
+            # 2. Die 4 Kaskaden-Layer [cite: 2026-04-06]
+            for key, prompt in CATEGORY_PROMPTS.items():
+                vectors[key] = model.encode(prompt + cleartext)
+            
+            # Umwandlung für Postgres
+            v_lists = {k: [float(x) for x in vec.tolist()] for k, vec in vectors.items()}
+            
+            cur.execute("""
+                UPDATE manifesto_vectors SET 
+                    embedding = %s, emb_werte = %s, emb_vibe = %s, 
+                    emb_offenheit = %s, emb_komm = %s, quality_score = %s 
+                WHERE profile_id = %s;
+            """, (v_lists['general'], v_lists['werte'], v_lists['vibe'], 
+                  v_lists['offenheit'], v_lists['komm'], q_score, p_id))
+            
+            cur.execute("UPDATE profiles SET is_active = true WHERE id = %s;", (p_id,))
+            conn.commit()
+            
+            # Matching anstoßen
+            run_db_matching(p_id, v_lists, q_score)
+            print("✅")
+            
         except Exception as e:
-            print(f"❌ Fehler bei Profil {p_id}: {e}"); conn.rollback()
-    cur.close(); conn.close(); return True
+            print(f"❌ Fehler: {e}")
+            conn.rollback()
+            
+    cur.close(); conn.close()
+    return True
 
 if __name__ == "__main__":
     print("\n--- 🛰️ AIM WORKER AKTIV (KASKADEN-MODUS) ---")
