@@ -23,12 +23,12 @@ def send_activation_mail(receiver_email, token):
     body = f"""
     Moin! 
     
-    Dein Manifesto wurde sicher verschlüsselt übertragen. [cite: 2026-01-18]
+    Dein Manifesto wurde sicher verschlüsselt übertragen.
     Klicke bitte auf den Link, um deine E-Mail zu bestätigen und dein Profil live zu schalten:
     
     {activation_link}
     
-    Sobald du verifiziert bist, verortet AIM deinen Vibe im 1536-D Raum.
+    Sobald du verifiziert bist, verortet AIM deinen Vibe mehrfach im 1536-D Raum.
     
     Viel Erfolg!
     Dein AIM (AI matching)
@@ -46,3 +46,26 @@ def send_activation_mail(receiver_email, token):
     except Exception as e:
         print(f"SMTP-Fehler: {e}")
         return False
+
+def generate_match_insights(scores):
+    """
+    Erstellt qualitative Hinweise basierend auf den Layer-Scores.
+    scores: dict { 'sw': 0.92, 'sv': 0.45, ... }
+    """
+    insights = []
+    
+    # Grundwerte
+    if scores['sw'] > 0.90:
+        insights.append("Euer moralischer Kompass schlägt fast identisch aus – ein sehr tiefes Fundament.")
+    
+    # Kommunikation
+    if scores['sk'] < 0.50:
+        insights.append("Eure Art zu kommunizieren unterscheidet sich stark. Das könnte Reibung erzeugen, aber auch neue Perspektiven eröffnen.")
+    elif scores['sk'] > 0.85:
+        insights.append("Ihr sprecht dieselbe Sprache – Ironie und Zwischentöne werden wahrscheinlich sofort verstanden.")
+        
+    # Vibe
+    if 0.40 <= scores['sv'] < 0.60:
+        insights.append("In eurem Energie-Level seid ihr unterschiedlich, was für eine gute Balance zwischen Aktion und Ruhe sorgen kann.")
+
+    return "\n".join(insights)

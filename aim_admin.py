@@ -12,7 +12,7 @@ def print_header(title):
     print("="*70)
 
 def check_db_connectivity():
-    """Prüft, ob die Matrix-Leitung stabil ist [cite: 2026-04-05]."""
+    """Prüft, ob die Matrix-Leitung stabil ist."""
     try:
         conn = db_handler.get_connection()
         params = conn.get_dsn_parameters()
@@ -28,7 +28,7 @@ def check_db_connectivity():
         return False
 
 def check_matrix_integrity():
-    """Prüft die DNA-Kernfelder in der DB [cite: 2026-02-03]."""
+    """Prüft die DNA-Kernfelder in der DB."""
     print_header("Integritäts-Check")
     conn = db_handler.get_connection()
     cur = conn.cursor()
@@ -45,7 +45,7 @@ def check_matrix_integrity():
     cur.close(); conn.close()
 
 def get_pipeline_report():
-    """Detaillierter Status inkl. Matching-Zeitstempel [cite: 2026-04-05]."""
+    """Detaillierter Status inkl. Matching-Zeitstempel."""
     print_header("DNA-Pipeline Monitor")
     conn = db_handler.get_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -64,7 +64,7 @@ def get_pipeline_report():
     cur.close(); conn.close()
 
 def get_matrix_stats():
-    """Harte Zahlen & Live-Monitoring [cite: 2026-03-27, 2026-04-05]."""
+    """Harte Zahlen & Live-Monitoring."""
     print_header("Matrix Statistiken")
     conn = db_handler.get_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -84,7 +84,7 @@ def get_matrix_stats():
     cur.close(); conn.close()
 
 def get_detailed_dna_report():
-    """Analyse der Vektoren & Verschlüsselung [cite: 2026-04-05, 2026-03-15]."""
+    """Analyse der Vektoren & Verschlüsselung."""
     print_header("Detaillierter DNA-Status")
     conn = db_handler.get_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -102,7 +102,7 @@ def get_detailed_dna_report():
     cur.close(); conn.close()
 
 def get_spam_protection_stats():
-    """Status des Match-Gedächtnisses [cite: 2026-04-04]."""
+    """Status des Match-Gedächtnisses."""
     print_header("Spam-Schutz (Match-Gedächtnis)")
     conn = db_handler.get_connection()
     cur = conn.cursor()
@@ -115,6 +115,8 @@ if __name__ == "__main__":
     total, used, free = shutil.disk_usage("/")
     print_header("Infrastruktur")
     print(f"💾 DISK: {used//(2**30)}GB / {total//(2**30)}GB")
+
+    get_kaskade_analysis('marc.c.vietor@gmail.com')
     
     if check_db_connectivity():
         check_matrix_integrity()
@@ -124,7 +126,7 @@ if __name__ == "__main__":
         get_spam_protection_stats()
 
 def get_resonance_analysis(email):
-    """Analysiert, warum es (kein) Match gab [cite: 2026-04-05]."""
+    """Analysiert, warum es (kein) Match gab."""
     print_header(f"Resonanz-Analyse für {email}")
     conn = db_handler.get_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -136,7 +138,7 @@ def get_resonance_analysis(email):
     if not me or me['embedding'] is None:
         print("❌ Profil noch nicht vektorisiert."); return
 
-    # 2. Top 3 potenzielle Partner direkt in SQL berechnen [cite: 2026-02-07, 2026-04-05]
+    # 2. Top 3 potenzielle Partner direkt in SQL berechnen
     cur.execute("""
         SELECT p.email, 
                (1 - (mv.embedding <=> %s)) * ((%s + mv.quality_score) / 2) as score
@@ -154,7 +156,7 @@ def get_resonance_analysis(email):
     cur.close(); conn.close()
 
 def get_resonance_analysis(email):
-    """Zeigt, wie nah (oder fern) potenzielle Matches liegen [cite: 2026-04-05]."""
+    """Zeigt, wie nah (oder fern) potenzielle Matches liegen."""
     print_header(f"Resonanz-Analyse: {email}")
     conn = db_handler.get_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -181,5 +183,41 @@ def get_resonance_analysis(email):
     for r in cur.fetchall():
         print(f"{r['email'][:28]:<30} | {r['resonance']:.4f}")
     cur.close(); conn.close()
+
+def get_kaskade_analysis(email):
+    """Detaillierte Einsicht in die 5 Layer-Scores."""
+    print_header(f"Kaskaden-Analyse: {email}")
+    conn = db_handler.get_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    cur.execute("""
+        SELECT mv.profile_id, mv.emb_werte, mv.emb_vibe, mv.emb_offenheit, mv.emb_komm, mv.embedding, mv.quality_score 
+        FROM manifesto_vectors mv JOIN profiles p ON p.id = mv.profile_id WHERE p.email = %s;
+    """, (email,))
+    me = cur.fetchone()
+    
+    if not me or me['emb_werte'] is None:
+        print("❌ Profil noch nicht vollständig kaskadiert."); return
+
+    cur.execute("""
+        SELECT p.email, 
+               (1 - (mv.emb_werte <=> %s::vector)) as sw,
+               (1 - (mv.emb_vibe <=> %s::vector)) as sv,
+               (1 - (mv.emb_offenheit <=> %s::vector)) as so,
+               (1 - (mv.emb_komm <=> %s::vector)) as sk,
+               (1 - (mv.embedding <=> %s::vector)) as sg
+        FROM manifesto_vectors mv JOIN profiles p ON p.id = mv.profile_id
+        WHERE p.email != %s AND mv.emb_werte IS NOT NULL
+        ORDER BY sw DESC LIMIT 3;
+    """, (me['emb_werte'], me['emb_vibe'], me['emb_offenheit'], me['emb_komm'], me['embedding'], email))
+    
+    print(f"{'PARTNER':<25} | {'WERT':<5} | {'VIBE':<5} | {'OFF':<5} | {'KOM':<5} | {'GEN'}")
+    print("-" * 70)
+    for r in cur.fetchall():
+        print(f"{r['email'][:23]:<25} | {r['sw']:.2f} | {r['sv']:.2f} | {r['so']:.2f} | {r['sk']:.2f} | {r['sg']:.2f}")
+    cur.close(); conn.close()
+
+# Im __main__ Teil hinzufügen:
+# get_kaskade_analysis('marc.c.vietor@gmail.com')
     
     print("\n✅ Admin-Check beendet.")
