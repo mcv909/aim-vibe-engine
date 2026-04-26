@@ -169,3 +169,17 @@ def verify_email_by_token(token):
         conn.rollback(); return False, None
     finally:
         cur.close(); conn.close()
+
+def update_user_status(user_id, new_status):
+    """Aktualisiert den Match-Status eines Users [cite: 2026-04-06]."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("UPDATE profiles SET match_status = %s WHERE id = %s", (new_status, user_id))
+        conn.commit()
+    except Exception as e:
+        print(f"❌ Fehler beim Status-Update: {e}")
+        conn.rollback()
+    finally:
+        cur.close()
+        conn.close()

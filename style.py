@@ -58,15 +58,14 @@ def apply_custom_style():
         div[data-baseweb="slider"] > div > div:first-child {{ background-color: {CD_SCHWARZ} !important; }}
         div[data-baseweb="slider"] > div > div > div {{ background-color: {CD_NEON_GRUEN} !important; background-image: none !important; }}
         div[role="slider"] {{ background-color: {CD_SCHWARZ} !important; border: 2px solid {CD_NEON_GRUEN} !important; }}
-        </style>
-        """, 
-        unsafe_allow_html=True
-        .status-radar { display: flex; align-items: center; padding: 15px; background: #f8f9fb; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee; }
-        .radar-dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 10px; }
-        .radar-searching { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
-        .radar-focusing { background-color: #f1c40f; box-shadow: 0 0 8px #f1c40f; }
-        .radar-paused { background-color: #95a5a6; }
-    )
+        .status-radar {{ display: flex; align-items: center; padding: 15px; background: #f8f9fb; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee; }}
+        .radar-dot {{ height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 10px; }}
+        .radar-searching {{ background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }}
+        .radar-focusing {{ background-color: #f1c40f; box-shadow: 0 0 8px #f1c40f; }}
+        .radar-paused {{ background-color: #95a5a6; }}
+    </style>
+""", unsafe_allow_html=True)
+
 
 def render_nav():
     init_global_state()
