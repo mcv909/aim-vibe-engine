@@ -183,3 +183,30 @@ def update_user_status(user_id, new_status):
     finally:
         cur.close()
         conn.close()
+
+def get_user_manifesto_by_id(user_id):
+    """
+    Spezifischer Abruf für den Editor. 
+    Hinweis: Nutzt 'manifesto_user' entsprechend deiner get_profile_by_email Logik.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT manifesto_user FROM manifesto_vectors WHERE profile_id = %s", (user_id,))
+        res = cur.fetchone()
+        return res[0] if res else None
+    finally:
+        cur.close(); conn.close()
+
+def update_user_status(user_id, new_status):
+    """Aktualisiert den Match-Status (searching, focusing, paused) in der DB."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("UPDATE profiles SET match_status = %s WHERE id = %s", (new_status, user_id))
+        conn.commit()
+    except Exception as e:
+        print(f"❌ Fehler beim Status-Update: {e}")
+        conn.rollback()
+    finally:
+        cur.close(); conn.close()
