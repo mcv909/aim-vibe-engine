@@ -15,7 +15,7 @@ import mail_logic
 import re
 
 # --- 1. ABSOLUTER EINSTIEG & INITIALISIERUNG ---
-style.init_global_state() # Das reicht völlig aus! [cite: 2026-03-12]
+style.init_global_state() # Das reicht völlig aus!
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if os.path.exists(os.path.join(BASE_DIR, 'maintenance.flag')):
@@ -42,7 +42,7 @@ query_params = st.query_params
 if "token" in query_params:
     token = query_params["token"]
     
-    # 2. Verifizierung in der DB anstoßen [cite: 2026-03-08]
+    # 2. Verifizierung in der DB anstoßen
     success, p_id = db_handler.verify_email_by_token(token)
     
     if success:
@@ -131,113 +131,14 @@ def render_founding_dashboard():
 
     st.markdown(html_content, unsafe_allow_html=True)
 
-# sinnfreie funktion da doppelt vorhanden - wird in db_handler.py bearbeitet
-# def init_db():
-#     """Initialisiert die vollständige AIM-Struktur (Email-First)."""
-#     conn = db_handler.get_connection()
-#     cur = conn.cursor()
-#     try:
-#         cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-#         cur.execute("""
-#             CREATE TABLE IF NOT EXISTS profiles (
-#                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-#                 email VARCHAR(255) UNIQUE NOT NULL,
-#                 identity INT, 
-#                 search_for INT, 
-#                 age INT,
-#                 height INT, 
-#                 stature_id INT, 
-#                 coords JSONB,
-#                 u_age_min INTEGER,
-#                 u_age_max INTEGER,
-#                 u_height_min INTEGER,
-#                 u_height_max INTEGER,
-#                 radius INTEGER DEFAULT 50,
-#                 is_ukrainian BOOLEAN DEFAULT FALSE,
-#                 is_email_verified BOOLEAN DEFAULT FALSE,
-#                 is_active BOOLEAN DEFAULT FALSE,
-#                 key_hash TEXT,
-#                 messenger_contact TEXT,
-#                 verification_token UUID DEFAULT gen_random_uuid(),
-#                 last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-#                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-#             );
-#         """)
-#         # UPDATE: manifesto_user hinzugefügt für den User-AES-Blob [cite: 2026-03-15]
-
-#         cur.execute("""
-#             CREATE TABLE IF NOT EXISTS manifesto_vectors (
-#                 profile_id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
-#                 manifesto_user TEXT,   -- DIESE ZEILE HAT GEFEHLT! [cite: 2026-03-15]
-#                 manifesto_enc TEXT,
-#                 embedding vector(1536)
-#             );
-#         """)
-
-#         conn.commit()
-#     except Exception as e:
-#         print(f"DB-Init Fehler: {e}"); conn.rollback()
-#     finally:
-#         cur.close(); conn.close()
-
-# def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
-#     """Speichert alle 14 Datenpunkte inklusive der Suchfilter."""
-#     conn = db_handler.get_connection()
-#     cur = conn.cursor()
-#     try:
-#         # Verschlüsselung
-#         user_enc = security.encrypt_data(manifesto_raw, v_key) if v_key else None
-#         worker_enc = security.encrypt_for_worker(manifesto_raw, pub_key)
-#         coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
-
-#         cur.execute("""
-#             INSERT INTO profiles (
-#                 email, identity, search_for, age, height, coords, 
-#                 is_ukrainian, key_hash, messenger_contact,
-#                 u_age_min, u_age_max, u_height_min, u_height_max, radius
-#             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-#             ON CONFLICT (email) DO UPDATE SET
-#                 age = EXCLUDED.age, height = EXCLUDED.height, coords = EXCLUDED.coords,
-#                 identity = EXCLUDED.identity, search_for = EXCLUDED.search_for,
-#                 is_ukrainian = EXCLUDED.is_ukrainian,
-#                 u_age_min = EXCLUDED.u_age_min, u_age_max = EXCLUDED.u_age_max,
-#                 u_height_min = EXCLUDED.u_height_min, u_height_max = EXCLUDED.u_height_max,
-#                 radius = EXCLUDED.radius, last_interaction = CURRENT_TIMESTAMP
-#             RETURNING id, verification_token;
-#         """, (
-#             data['email'], data['identity'], data['search_for'], 
-#             data['age'], data['height'], coords_json, data['is_ukrainian'],
-#             data.get('key_hash'), data.get('messenger_contact'),
-#             data['u_age_min'], data['u_age_max'], 
-#             data['u_height_min'], data['u_height_max'], data['radius']
-#         ))
-#         p_id, v_token = cur.fetchone()
-
-#         # Manifesto-Update
-#         cur.execute("""
-#             INSERT INTO manifesto_vectors (profile_id, manifesto_user, manifesto_enc)
-#             VALUES (%s, %s, %s)
-#             ON CONFLICT (profile_id) DO UPDATE SET 
-#                 manifesto_user = COALESCE(EXCLUDED.manifesto_user, manifesto_vectors.manifesto_user),
-#                 manifesto_enc = EXCLUDED.manifesto_enc;
-#         """, (p_id, user_enc, worker_enc))
-
-#         conn.commit()
-#         return v_token, "needs_verification"
-#     except Exception as e:
-#         conn.rollback()
-#         return None, str(e)
-#     finally:
-#         cur.close(); conn.close()
-
 def render_manifesto_editor(user, is_edit):
-    # 1. Wert aus Session-State oder DB laden [cite: 2026-03-12]
+    # 1. Wert aus Session-State oder DB laden
     current_val = st.session_state.get('manifesto_buffer', user.get('manifesto_text', ""))
 
-    # 2. Visuelle Resonanz-Anzeige (Die Neon-Bar) [cite: 2025-12-30]
+    # 2. Visuelle Resonanz-Anzeige (Die Neon-Bar)
     render_quality_magic(current_val)
 
-    # 3. EINZIGES Textfeld für das Manifesto [cite: 2026-04-03]
+    # 3. EINZIGES Textfeld für das Manifesto
     manifesto = st.text_area(
         "Beschreibe deinen Sound...", 
         value=current_val, 
@@ -247,7 +148,7 @@ def render_manifesto_editor(user, is_edit):
         label_visibility="collapsed"
     )
     
-    # Buffer sofort aktualisieren [cite: 2026-03-12]
+    # Buffer sofort aktualisieren
     if manifesto != st.session_state.get('manifesto_buffer'):
         st.session_state.manifesto_buffer = manifesto
 
@@ -280,7 +181,7 @@ def render_manifesto_editor(user, is_edit):
         u_radius = st.number_input("Suchradius (km)", 5, 1000, value=user.get('radius', 100), key="inp_rad")
         u_target_height = st.slider("Gesuchte Größe (cm)", 140, 220, value=(user.get('u_height_min', 160), user.get('u_height_max', 190)), key="inp_h_range")
 
-    # 4. DER GATEKEEPER-BUTTON [cite: 2026-03-29]
+    # 4. DER GATEKEEPER-BUTTON
     btn_label = "PROFIL AKTUALISIEREN" if is_edit else "DNA SICHERN & RESONANZ STARTEN"
     
     if len(manifesto) >= 500:
@@ -296,7 +197,7 @@ def render_manifesto_editor(user, is_edit):
             }
             handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_data)
     else:
-        # Deaktivierter Button mit Hinweis [cite: 2026-03-29]
+        # Deaktivierter Button mit Hinweis
         st.button(btn_label, disabled=True, type="secondary", key="save_dna_btn_disabled",
                   help="Dein Vibe ist noch nicht scharf genug. Schreibe mindestens 500 Zeichen.")
 
@@ -313,7 +214,7 @@ def render_login_form():
                 # Manifesto aus der DB holen (Source of Truth)
                 enc_manifesto = db_handler.get_user_manifesto_by_id(user_res['id'])
                 if enc_manifesto:
-                    # Entschlüsseln mit dem User-Key (AES) [cite: 2026-03-15]
+                    # Entschlüsseln mit dem User-Key (AES)
                     user_res['manifesto_text'] = security.decrypt_data(enc_manifesto, l_key)
                 st.session_state.user_data = user_res
                 st.rerun()
@@ -340,10 +241,10 @@ def handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_da
             }
             
             st.write("🔑 Webe Verschlüsselungsschichten...")
-            # Wir nutzen den WORKER_PUBLIC_KEY aus der env für den Hybrid-Part [cite: 2026-03-04]
+            # Wir nutzen den WORKER_PUBLIC_KEY aus der env für den Hybrid-Part
             pub_key = os.getenv("WORKER_PUBLIC_KEY")
             
-            # Jetzt rufen wir den zentralen Handler korrekt auf [cite: 2026-04-05]
+            # Jetzt rufen wir den zentralen Handler korrekt auf
             v_token, db_status = db_handler.save_profile_atomic(user_data, manifesto, pub_key, v_key)
             
             if db_status == "needs_verification":
@@ -356,7 +257,7 @@ def handle_save_process(u_email, v_key, manifesto, u_location, is_edit, extra_da
                     st.error("Mail-Zustellung fehlgeschlagen. Prüfe SMTP.")
 
 def render_explanation_box():
-    """Rahmenlose Erklärung der Vision [cite: 2026-02-03]."""
+    """Rahmenlose Erklärung der Vision."""
     st.markdown("""
         <div style="padding: 10px 0; margin-bottom: 40px; line-height: 1.6; color: #333; font-size: 1.1rem; text-align: center;">
             AIM verbindet dich nicht über oberflächliche Profile, sondern über deinen individuellen Sound und deine Werte. 
@@ -368,7 +269,7 @@ def render_explanation_box():
     """, unsafe_allow_html=True)
 
 def render_quality_magic(text):
-    """Visualisiert die Auflösung der Digitalen DNA [cite: 2025-12-30]."""
+    """Visualisiert die Auflösung der Digitalen DNA."""
     length = len(text)
     # Fortschrittsberechnung (Ziel: 500 Zeichen für HD)
     progress = min(length / 500, 1.0)
@@ -387,6 +288,32 @@ def render_quality_magic(text):
     else:
         st.write("✨ **Vibe-Status:** HD-Resonanz erreicht!")
 
+def render_status_dashboard(u_id, current_status):
+    st.markdown('<p class="centered-header" style="font-size: 1.5rem; margin-top: 20px;">📡 Dein Resonanz-Radar</p>', unsafe_allow_html=True)
+    
+    # Visualisierung [cite: 2026-04-06]
+    radar_class = f"radar-{current_status}"
+    status_label = {"searching": "Aktiv auf Suche", "focusing": "Fokus-Modus (Match gefunden)", "paused": "Pausiert"}.get(current_status, current_status)
+    
+    st.markdown(f"""
+        <div class="status-radar">
+            <span class="radar-dot {radar_class}"></span>
+            <span style="font-weight: 600;">Status: {status_label}</span>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Interaktion [cite: 2026-02-03]
+    cols = st.columns(3)
+    if cols[0].button("🔍 Suchen"): 
+        db_handler.update_user_status(u_id, 'searching')
+        st.rerun()
+    if cols[1].button("🟡 Fokus"): 
+        db_handler.update_user_status(u_id, 'focusing')
+        st.rerun()
+    if cols[2].button("⚪ Pause"): 
+        db_handler.update_user_status(u_id, 'paused')
+        st.rerun()
+
 def main():
     style.apply_custom_style() 
     
@@ -397,7 +324,7 @@ def main():
     # 2. LOGO
     style.render_header()
     
-    # 3. DASHBOARD & ERKLÄRUNG [cite: 2026-02-03]
+    # 3. DASHBOARD & ERKLÄRUNG
     render_founding_dashboard()
     render_explanation_box()
 
@@ -412,6 +339,8 @@ def main():
         if not is_edit:
             render_login_form()
         else:
+            render_status_dashboard(u_data['id'], u_data.get('match_status', 'searching'))
+            st.markdown("---")
             render_manifesto_editor(u_data, True)
             st.markdown("---")
             if st.button("AUS DER MATRIX AUFTAUCHEN (Logout)", key="logout_btn_main"):

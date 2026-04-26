@@ -8,14 +8,14 @@ def send_activation_mail(receiver_email, token):
     auth_user = os.getenv("MAIL_SENDER") # mcv@iam-aim.com
     auth_pass = os.getenv("MAIL_PASSWORD")
     
-    # Der Alias, der beim User angezeigt wird [cite: 2026-03-12]
+    # Der Alias, der beim User angezeigt wird
     display_from = "aktivierung@iam-aim.com"
     
-    # Der Aktivierungslink (IP/Domain anpassen!) [cite: 2026-03-08]
+    # Der Aktivierungslink (IP/Domain anpassen!)
     activation_link = f"http://91.98.23.22/?token={token}" 
 
     msg = MIMEMultipart()
-    # Hier setzen wir den Alias und einen schönen Anzeigenamen [cite: 2026-03-12]
+    # Hier setzen wir den Alias und einen schönen Anzeigenamen
     msg['From'] = f"AIM | Aktivierung <{display_from}>"
     msg['To'] = receiver_email
     msg['Subject'] = "Aktiviere deinen Vibe-Check"
@@ -39,7 +39,7 @@ def send_activation_mail(receiver_email, token):
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
-        server.login(auth_user, auth_pass) # Login mit mcv@ [cite: 2026-03-12]
+        server.login(auth_user, auth_pass) # Login mit mcv@
         server.send_message(msg)
         server.quit()
         return True

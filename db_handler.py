@@ -19,7 +19,7 @@ DB_PORT = os.getenv("DB_PORT", "5432")
 _VECTOR_OID = None
 
 def register_vector_type(conn):
-    """Registriert den pgvector-Typ global für Numpy-Konvertierung [cite: 2026-03-28]."""
+    """Registriert den pgvector-Typ global für Numpy-Konvertierung."""
     global _VECTOR_OID
     if _VECTOR_OID is None:
         cur = conn.cursor()
@@ -35,7 +35,7 @@ def register_vector_type(conn):
         cur.close()
 
 def get_connection():
-    """Zentrale Verbindung inkl. Typ-Casting [cite: 2026-03-12, 2026-03-28]."""
+    """Zentrale Verbindung inkl. Typ-Casting."""
     conn = psycopg2.connect(
         dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT
     )
@@ -43,13 +43,13 @@ def get_connection():
     return conn
 
 def init_db():
-    """Initialisiert die gesamte Matrix-Struktur inkl. Match-Gedächtnis [cite: 2026-04-04]."""
+    """Initialisiert die gesamte Matrix-Struktur inkl. Match-Gedächtnis."""
     conn = get_connection()
     cur = conn.cursor()
     try:
         cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
         
-        # 1. Profiles (Basisdaten) [cite: 2026-02-03]
+        # 1. Profiles (Basisdaten)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS profiles (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -64,7 +64,7 @@ def init_db():
             );
         """)
 
-        # 2. Manifesto-Vektoren (Hybride Verschlüsselung) [cite: 2026-03-15, 2026-02-07]
+        # 2. Manifesto-Vektoren (Hybride Verschlüsselung)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS manifesto_vectors (
                 profile_id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
@@ -74,7 +74,7 @@ def init_db():
             );
         """)
 
-        # 3. Notified Matches (Dubletten-Schutz) [cite: 2026-04-04]
+        # 3. Notified Matches (Dubletten-Schutz)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS notified_matches (
                 user_a UUID REFERENCES profiles(id) ON DELETE CASCADE,
@@ -92,11 +92,11 @@ def init_db():
         cur.close(); conn.close()
 
 def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
-    """Zentraler Speicherprozess inkl. doppelter Verschlüsselung [cite: 2026-03-04, 2026-03-15, 2026-04-03]."""
+    """Zentraler Speicherprozess inkl. doppelter Verschlüsselung."""
     conn = get_connection()
     cur = conn.cursor()
     try:
-        # Verschlüsselungsschichten [cite: 2026-01-18, 2026-03-04]
+        # Verschlüsselungsschichten
         user_enc = security.encrypt_data(manifesto_raw, v_key) if v_key else None
         worker_enc = security.encrypt_for_worker(manifesto_raw, pub_key) if pub_key else None
         coords_json = json.dumps(data.get('coords')) if data.get('coords') else None
@@ -142,7 +142,7 @@ def save_profile_atomic(data, manifesto_raw, pub_key, v_key):
         cur.close(); conn.close()
 
 def get_profile_by_email(email):
-    """Lädt das Profil inkl. User-Manifesto für den Login [cite: 2026-03-12, 2026-03-15]."""
+    """Lädt das Profil inkl. User-Manifesto für den Login."""
     conn = get_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) 
     try:
@@ -157,7 +157,7 @@ def get_profile_by_email(email):
         cur.close(); conn.close()
 
 def verify_email_by_token(token):
-    """Verifiziert die E-Mail und gibt die ID zurück [cite: 2026-03-08]."""
+    """Verifiziert die E-Mail und gibt die ID zurück."""
     conn = get_connection()
     cur = conn.cursor()
     try:

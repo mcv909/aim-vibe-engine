@@ -10,7 +10,7 @@ def run_backup():
     
     print(f"📦 Starte Sicherungslauf: {backup_file}...")
     try:
-        # Nutzt pg_dump für eine vollständige Sicherung [cite: 2026-04-06]
+        # Nutzt pg_dump für eine vollständige Sicherung
         env = os.environ.copy()
         # Stelle sicher, dass DB_PASS in der Shell/Env gesetzt ist
         subprocess.run([
@@ -29,7 +29,7 @@ def start_waschmaschine():
         conn = db_handler.get_connection()
         cur = conn.cursor()
         
-        # Wir löschen die Layer-Vektoren und den Zeitstempel [cite: 2026-04-06]
+        # Wir löschen die Layer-Vektoren und den Zeitstempel
         cur.execute("""
             UPDATE manifesto_vectors SET 
                 emb_werte = NULL, emb_vibe = NULL, 

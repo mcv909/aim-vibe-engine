@@ -22,7 +22,7 @@ def encrypt_for_worker(cleartext, public_key_pem):
     import base64
 
     # 1. AES Key (32 Bytes = 256 Bit) & IV generieren
-    aes_key = os.urandom(32) # WICHTIG: Rohdaten, kein Base64! [cite: 2026-03-04]
+    aes_key = os.urandom(32) # WICHTIG: Rohdaten, kein Base64!
     iv = os.urandom(16)
     
     # 2. Manifesto mit AES (CFB Mode) verschlüsseln
@@ -67,7 +67,7 @@ def verify_key(vibe_key, hashed_key):
 def derive_encryption_key(vibe_key):
     """
     Leitet aus dem User-Key einen AES-Schlüssel ab. 
-    Ohne diesen exakten Key bleibt das Manifesto Datenmüll [cite: 2026-01-18].
+    Ohne diesen exakten Key bleibt das Manifesto Datenmüll.
     """
     digest = hashlib.sha256(vibe_key.encode()).digest()
     return base64.urlsafe_b64encode(digest)
@@ -109,7 +109,7 @@ def detect_attack(input_string):
     return False
 
 def handle_hacker():
-    """Der finale Rauswurf mit dem gewünschten Wording [cite: 2026-01-18]."""
+    """Der finale Rauswurf mit dem gewünschten Wording."""
     st.error("Hacker? Deine Mudda!")
     st.stop()
 

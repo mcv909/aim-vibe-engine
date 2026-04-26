@@ -9,7 +9,7 @@ import db_handler
 import security
 import logging
 
-# --- 🛰️ AIM KONFIGURATION (THRESHOLD-ZENTRALE) --- [cite: 2026-04-06]
+# --- 🛰️ AIM KONFIGURATION (THRESHOLD-ZENTRALE) ---
 AIM_CONFIG = {
     "VALUE_MATCH_MIN": 0.82,       # Harte Hürde für Grundwerte
     "DISMATCH_VETO": 0.40,        # Ab hier gilt ein Layer als Ausschlusskriterium
@@ -30,13 +30,13 @@ CATEGORY_PROMPTS = {
     "komm": "Instruct: Represent the communication style and linguistic tone of this person.\nQuery: "
 }
 
-# --- REPARIERTES MODELL-SETUP --- [cite: 2026-04-06]
+# --- REPARIERTES MODELL-SETUP ---
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 model_id = 'Alibaba-NLP/gte-Qwen2-1.5B-instruct'
 
 print(f"🚀 Initialisiere {model_id} auf {device} (mit Qwen-Fix)...")
 config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
-config.rope_theta = 10000.0  # Der fehlende Wert [cite: 2026-04-06]
+config.rope_theta = 10000.0  # Der fehlende Wert
 config.use_cache = False 
 
 transformer_model = AutoModel.from_pretrained(model_id, config=config, trust_remote_code=True)
@@ -52,16 +52,16 @@ with open("worker_private_key.pem", "r") as f:
 # --- HILFSFUNKTIONEN ---
 
 def calculate_quality_factor(text):
-    """Berechnet den Bonus (0.6 - 1.2) [cite: 2026-03-29, 2025-12-30]."""
+    """Berechnet den Bonus (0.6 - 1.2)."""
     words = len(text.split())
     return float(min(1.2, np.log10(words + 1) / 1.8))
 
 def run_db_matching(user_id, vectors_dict, quality_score):
-    """Kaskadierendes Matching: Erst Werte-Check, dann Veto-Filter [cite: 2026-04-06]."""
+    """Kaskadierendes Matching: Erst Werte-Check, dann Veto-Filter."""
     conn = db_handler.get_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
-    # Vorbereitung der Vektoren als Listen für Postgres [cite: 2026-04-05]
+    # Vorbereitung der Vektoren als Listen für Postgres
     v = {k: ([float(x) for x in vec.tolist()] if isinstance(vec, np.ndarray) else vec) 
          for k, vec in vectors_dict.items()}
 
@@ -71,40 +71,43 @@ def run_db_matching(user_id, vectors_dict, quality_score):
                (1 - (mv.emb_vibe <=> %s::vector)) as sv,
                (1 - (mv.emb_offenheit <=> %s::vector)) as so,
                (1 - (mv.emb_komm <=> %s::vector)) as sk,
-               (1 - (mv.embedding <=> %s::vector)) as sg
+               (1 - (mv.embedding <=> %s::vector)) as sg,
+               p_target.email
         FROM manifesto_vectors mv
         JOIN profiles p_target ON mv.profile_id = p_target.id
         JOIN profiles p_me ON p_me.id = %s
         WHERE mv.profile_id != %s 
           AND p_target.is_active = true
+          -- 🛰️ STATUS-FILTER: Nur wer aktiv sucht [cite: 2026-04-06]
+          AND p_target.match_status = 'searching'
+          AND p_me.match_status = 'searching'
+          -- 🛰️ DOPPEL-MATCH-SCHUTZ: Gedächtnis der Matrix [cite: 2026-04-06]
+          AND NOT EXISTS (
+              SELECT 1 FROM notified_matches nm 
+              WHERE (nm.user_a = LEAST(%s::text, mv.profile_id::text) 
+                AND nm.user_b = GREATEST(%s::text, mv.profile_id::text))
+          )
           AND (
-            -- PFAD A: Romantisches Matching [cite: 2026-04-06]
-            (
-                p_me.search_intent IN ('p', 'b') AND p_target.search_intent IN ('p', 'b')
-                AND (p_me.search_for = p_target.identity OR p_me.search_for = 'all')
-                AND (p_target.search_for = p_me.identity OR p_target.search_for = 'all')
-            )
+            (p_me.search_intent IN ('p', 'b') AND p_target.search_intent IN ('p', 'b')
+             AND (p_me.search_for = p_target.identity OR p_me.search_for = 'all')
+             AND (p_target.search_for = p_me.identity OR p_target.search_for = 'all'))
             OR 
-            -- PFAD B: Freundschaftliches Matching [cite: 2026-04-06]
-            (
-                p_me.search_intent IN ('f', 'b') AND p_target.search_intent IN ('f', 'b')
-                -- Bei Freunden ist das Geschlecht oft egal, wir lassen es hier offen
-            )
+            (p_me.search_intent IN ('f', 'b') AND p_target.search_intent IN ('f', 'b'))
           )
           AND (1 - (mv.emb_werte <=> %s::vector)) >= %s;
     """
     
     try:
         cur.execute(query, (v['werte'], v['vibe'], v['offenheit'], v['komm'], v['general'], 
-                            user_id, v['werte'], AIM_CONFIG["VALUE_MATCH_MIN"]))
+                            user_id, user_id, str(user_id), str(user_id), v['werte'], AIM_CONFIG["VALUE_MATCH_MIN"]))
         candidates = cur.fetchall()
         
         for cand in candidates:
-            # Veto-Prüfung (Ausschluss bei krassem Gegensatz) [cite: 2026-04-06]
+            # Veto-Prüfung (Ausschluss bei krassem Gegensatz)
             if any(cand[key] < AIM_CONFIG["DISMATCH_VETO"] for key in ['sv', 'so', 'sk']):
                 continue 
             
-            # Gewichteter Final-Score [cite: 2026-04-06]
+            # Gewichteter Final-Score
             w = AIM_CONFIG["WEIGHTS"]
             final_score = (cand['sw'] * w['werte'] + cand['sg'] * w['general'] + 
                            cand['sv'] * w['vibe'] + cand['so'] * w['offenheit'] + cand['sk'] * w['komm'])
@@ -115,6 +118,13 @@ def run_db_matching(user_id, vectors_dict, quality_score):
                     INSERT INTO notified_matches (user_a, user_b, last_score) 
                     VALUES (%s, %s, %s) ON CONFLICT DO NOTHING;
                 """, (a, b, final_score))
+                                
+                # 🛰️ AUTOMATISCHER FOKUS-MODUS
+                cur.execute("""
+                    UPDATE profiles SET match_status = 'focusing' 
+                    WHERE id IN (%s, %s);
+                """, (str(user_id), str(cand['profile_id'])))
+                print(f"🎯 Resonanz gefunden! Fokus-Modus für {a[:8]} und {b[:8]} aktiviert.")
         
         cur.execute("UPDATE manifesto_vectors SET last_matching_run = CURRENT_TIMESTAMP WHERE profile_id = %s;", (user_id,))
         conn.commit()
@@ -124,7 +134,7 @@ def run_db_matching(user_id, vectors_dict, quality_score):
         cur.close(); conn.close()
 
 def process_vibes():
-    """DNA-Sezierung in 5 Layer mit korrektem Logic Enforcer [cite: 2026-04-06]."""
+    """DNA-Sezierung in 5 Layer mit korrektem Logic Enforcer."""
     print("📡 Versuche Datenbank-Verbindung...", end=" ", flush=True)
     try:
         conn = db_handler.get_connection()
@@ -148,7 +158,7 @@ def process_vibes():
         cur.close(); conn.close()
         return False
 
-    # DER FIX: Der vollständige Logic Enforcer für den General-Vektor [cite: 2026-03-29]
+    # DER FIX: Der vollständige Logic Enforcer für den General-Vektor
     logic_enforcer = "Instruct: Represent this person's core identity for personality matching.\nQuery: "
 
     for job in jobs:
@@ -161,7 +171,7 @@ def process_vibes():
             # 1. General Vektor
             vectors = {'general': model.encode(logic_enforcer + cleartext)}
             
-            # 2. Die 4 Kaskaden-Layer [cite: 2026-04-06]
+            # 2. Die 4 Kaskaden-Layer
             for key, prompt in CATEGORY_PROMPTS.items():
                 vectors[key] = model.encode(prompt + cleartext)
             

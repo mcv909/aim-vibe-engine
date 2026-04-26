@@ -1,7 +1,7 @@
 import streamlit as st
 import base64 # NEU: Wichtig für die Bild-Konvertierung
 
-# Zentrales CD (Corporate Design) [cite: 2026-01-17]
+# Zentrales CD (Corporate Design)
 CD_WEISS = "#FFFFFF"
 CD_SCHWARZ = "#111111"
 CD_GRAU_HELL = "#F8F9FB"
@@ -61,6 +61,11 @@ def apply_custom_style():
         </style>
         """, 
         unsafe_allow_html=True
+        .status-radar { display: flex; align-items: center; padding: 15px; background: #f8f9fb; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee; }
+        .radar-dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 10px; }
+        .radar-searching { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+        .radar-focusing { background-color: #f1c40f; box-shadow: 0 0 8px #f1c40f; }
+        .radar-paused { background-color: #95a5a6; }
     )
 
 def render_nav():
@@ -80,7 +85,7 @@ def render_nav():
             is_active = (st.session_state.menu == menu_val)
             st.markdown(f'<div class="{"active-nav-btn" if is_active else ""}">', unsafe_allow_html=True)
             
-            # UNIQUE KEY FIX: Wir nutzen den Menü-Wert im Key [cite: 2026-03-12]
+            # UNIQUE KEY FIX: Wir nutzen den Menü-Wert im Key
             if st.button(label, key=f"btn_nav_{menu_val.replace(' ', '_')}"):
                 st.session_state.menu = menu_val 
                 if target_file == "app.py":
@@ -108,7 +113,7 @@ def render_header():
         # Fallback NUR wenn Datei fehlt
         st.markdown("<h1 style='text-align:center;'>i am | [AiM]</h1>", unsafe_allow_html=True)
     
-    # Der zusätzliche st.markdown Aufruf am Ende wurde entfernt! [cite: 2026-02-03]
+    # Der zusätzliche st.markdown Aufruf am Ende wurde entfernt!
 
 def render_beta_footer():
     st.markdown("""
@@ -118,7 +123,7 @@ def render_beta_footer():
                 <a href="/Impressum" style="color: #666; text-decoration: none;">Impressum</a>
             </p>
             <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">
-                <b>Beta-Status:</b> Dein Vibe Key ist dein einziger Zugang. [cite: 2026-01-18]
+                <b>Beta-Status:</b> Dein Vibe Key ist dein einziger Zugang.
             </p>
         </div>
     """, unsafe_allow_html=True)

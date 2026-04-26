@@ -21,7 +21,7 @@ def get_resonance_report():
         """)
         p_stats = cur.fetchone()
         
-        # 2. Vektor-Status (1536-D Raum) [cite: 2026-02-07]
+        # 2. Vektor-Status (1536-D Raum)
         cur.execute("SELECT COUNT(*) FROM manifesto_vectors WHERE embedding IS NOT NULL;")
         vectorized_count = cur.fetchone()[0]
 

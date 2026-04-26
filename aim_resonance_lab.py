@@ -3,7 +3,7 @@ from transformers import AutoModel, AutoConfig
 from sentence_transformers import SentenceTransformer, models
 import torch
 
-# Setup (nutzt deine MPS Power auf dem MacAir) [cite: 2025-12-20]
+# Setup (nutzt deine MPS Power auf dem MacAir)
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 model_id = 'Alibaba-NLP/gte-Qwen2-1.5B-instruct'
 
@@ -14,7 +14,7 @@ config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
 config.rope_theta = 10000.0
 config.use_cache = False
 
-# 2. Modell manuell laden (Gegen den AttributeError) [cite: 2026-03-03]
+# 2. Modell manuell laden (Gegen den AttributeError)
 transformer_model = AutoModel.from_pretrained(model_id, config=config, trust_remote_code=True)
 word_embedding_model = models.Transformer(model_id)
 word_embedding_model.auto_model = transformer_model
@@ -24,16 +24,16 @@ pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension
 model = SentenceTransformer(modules=[word_embedding_model, pooling_model], device=device)
 
 def get_similarity(v1, v2):
-    """Berechnet die Cosinus-Ähnlichkeit im 1536-D Raum [cite: 2026-02-07]."""
+    """Berechnet die Cosinus-Ähnlichkeit im 1536-D Raum."""
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
 def calculate_quality_factor(text):
-    """Berechnet einen Bonus basierend auf der Textlänge (Anker-Theorie) [cite: 2025-12-30]."""
+    """Berechnet einen Bonus basierend auf der Textlänge (Anker-Theorie)."""
     words = len(text.split())
-    # Logarithmische Skalierung: Mehr Text ist gut, bis zum Diminishing Return [cite: 2025-12-30, 2026-03-29]
+    # Logarithmische Skalierung: Mehr Text ist gut, bis zum Diminishing Return
     return min(1.2, np.log10(words + 1) / 1.8) 
 
-# --- TEST-KONFIGURATION --- [cite: 2026-03-29]
+# --- TEST-KONFIGURATION ---
 instructions = {
     "logic_enforcer": (
         "Instruct: MANDATORY DISCRIMINATION. Ignore all shared keywords and topics. "
@@ -129,7 +129,7 @@ test_cases_stress = {
 }
 
 def run_lab():
-    # Master-Text laden [cite: 2026-04-03]
+    # Master-Text laden
     master_text = test_cases.get("Marc_Master")
     if not master_text:
         print("❌ FEHLER: 'Marc_Master' fehlt!")
@@ -144,22 +144,22 @@ def run_lab():
         print(f"{'PROFIL':<25} | {'BASIS':<10} | {'FINAL':<10} | {'STATUS'}")
         print("-" * 80)
         
-        # Vektor für den Master berechnen [cite: 2026-03-04, 2026-03-28]
+        # Vektor für den Master berechnen
         v_master = model.encode(instr_text + master_text)
         
-        # JETZT: Die Schleife über die Stress-Test-Cases [cite: 2026-04-03]
+        # JETZT: Die Schleife über die Stress-Test-Cases
         for profile_name, profile_text in test_cases_stress.items():
             # Vektor für das Test-Profil
             v_test = model.encode(instr_text + profile_text)
             
-            # Basis-Scores (Cosinus) [cite: 2026-02-07]
+            # Basis-Scores (Cosinus)
             base_score = get_similarity(v_master, v_test)
             
-            # Qualität/Anker einrechnen [cite: 2026-03-29]
+            # Qualität/Anker einrechnen
             q_test = calculate_quality_factor(profile_text)
             final_vibe = base_score * ((q_master + q_test) / 2)
             
-            # Einstufung basierend auf Resonanz-Zonen [cite: 2026-03-29]
+            # Einstufung basierend auf Resonanz-Zonen
             if final_vibe >= 0.85:
                 status = "🔥 MATCH"
             elif final_vibe >= 0.78:
