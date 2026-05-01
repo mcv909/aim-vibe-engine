@@ -110,7 +110,7 @@ if "db_initialized" not in st.session_state:
 def render_founding_dashboard():
     try:
         db = db_handler.load_db()
-        current_count = len(db)
+        current_count = db_handler.get_user_count()
     except Exception:
         current_count = 0
         
