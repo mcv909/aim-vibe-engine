@@ -210,3 +210,13 @@ def update_user_status(user_id, new_status):
         conn.rollback()
     finally:
         cur.close(); conn.close()
+
+def get_user_count():
+    """Zählt die echten Einträge in der Postgres-DB."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM profiles;")
+    count = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+    return count
