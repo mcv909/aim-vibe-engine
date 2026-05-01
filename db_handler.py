@@ -212,11 +212,16 @@ def update_user_status(user_id, new_status):
         cur.close(); conn.close()
 
 def get_user_count():
-    """Zählt die echten Einträge in der Postgres-DB."""
+    """Gibt die Anzahl der registrierten Profile in der Postgres-DB zurück."""
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM profiles;")
-    count = cur.fetchone()[0]
-    cur.close()
-    conn.close()
-    return count
+    try:
+        cur.execute("SELECT COUNT(*) FROM profiles;")
+        count = cur.fetchone()[0]
+        return count
+    except Exception as e:
+        print(f"Datenbank-Zählfehler: {e}")
+        return 0
+    finally:
+        cur.close()
+        conn.close()

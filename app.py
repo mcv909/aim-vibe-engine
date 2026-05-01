@@ -108,10 +108,12 @@ if "db_initialized" not in st.session_state:
 
 # --- UI HILFSFUNKTIONEN ---
 def render_founding_dashboard():
+    # Wir holen uns die echte Zahl direkt aus der Postgres-Datenbank
     try:
-        db = db_handler.load_db()
         current_count = db_handler.get_user_count()
-    except Exception:
+    except Exception as e:
+        # Falls die DB mal schläft, loggen wir den Fehler kurz
+        print(f"Fehler beim Counter-Abruf: {e}")
         current_count = 0
         
     limit = 2000
