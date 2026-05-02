@@ -84,13 +84,13 @@ def run_db_matching(user_id, vectors_dict, quality_score):
           -- 🛰️ DOPPEL-MATCH-SCHUTZ: Gedächtnis der Matrix [cite: 2026-04-06]
           AND NOT EXISTS (
               SELECT 1 FROM notified_matches nm 
-              WHERE (nm.user_a = LEAST(%s::text, mv.profile_id::text) 
-                AND nm.user_b = GREATEST(%s::text, mv.profile_id::text))
+              WHERE (nm.user_a = LEAST(%s::uuid, mv.profile_id) 
+                AND nm.user_b = GREATEST(%s::uuid, mv.profile_id))
           )
           AND (
             (p_me.search_intent IN ('p', 'b') AND p_target.search_intent IN ('p', 'b')
-             AND (p_me.search_for = p_target.identity OR p_me.search_for = 'all')
-             AND (p_target.search_for = p_me.identity OR p_target.search_for = 'all'))
+             AND (p_me.search_for = p_target.identity OR p_me.search_for = 3)
+             AND (p_target.search_for = p_me.identity OR p_target.search_for = 3))
             OR 
             (p_me.search_intent IN ('f', 'b') AND p_target.search_intent IN ('f', 'b'))
           )
@@ -116,7 +116,7 @@ def run_db_matching(user_id, vectors_dict, quality_score):
                 a, b = sorted([str(user_id), str(cand['profile_id'])])
                 cur.execute("""
                     INSERT INTO notified_matches (user_a, user_b, last_score) 
-                    VALUES (%s, %s, %s) ON CONFLICT DO NOTHING;
+                    VALUES (%s::uuid, %s::uuid, %s) ON CONFLICT DO NOTHING;
                 """, (a, b, final_score))
                                 
                 # 🛰️ AUTOMATISCHER FOKUS-MODUS
