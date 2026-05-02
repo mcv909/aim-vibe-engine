@@ -3,6 +3,7 @@ import os
 import db_handler
 import security
 import logic
+import time  # <--- DAS HIER HAT GEFEHLT!
 from dotenv import load_dotenv
 import sys
 
