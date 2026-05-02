@@ -24,6 +24,22 @@ def map_gender(val):
     mapping = {'m': 1, 'w': 2, 'd': 3, 'egal': 3}
     return mapping.get(str(val).lower(), 3)
 
+def get_coords_safe(city_name):
+    """Versucht Geocoding mit aggressivem Retry bei 429 Fehlern."""
+    attempts = 0
+    while attempts < 10:
+        coords = logic.geocode_city(city_name)
+        if coords: # Erfolg!
+            return coords
+        
+        # Wenn wir hier landen, gab es wahrscheinlich einen 429
+        attempts += 1
+        wait_time = 5 * attempts # Wartet 5, 10, 15... Sekunden
+        print(f"⚠️ Geocoding blockiert (429). Warte {wait_time}s... (Versuch {attempts}/10)")
+        time.sleep(wait_time)
+    
+    return None # Nach 10 Versuchen geben wir auf
+
 def run_import():
     df = pd.read_excel(FILE_PATH)
     print(f"📡 Starte Ingest von {len(df)} Profilen...")
@@ -32,23 +48,21 @@ def run_import():
         try:
             base_email = str(row['Mailadresse']).strip()
             test_name = str(row['Name']).replace(" ", "")
-            
-            # 🛰️ EMAIL-FIX: Machen wir die Mail für den Test eindeutig!
-            # Erzeugt: marc.c.vietor+LenaK@gmail.com
             email = base_email.replace("@", f"+{test_name}@")
             
-            print(f"🧬 Verarbeite: {email}...")
+            print(f"🧬 Verarbeite: {email} ({row['Wohnort']})...")
             
+            # 🛰️ DIE BRECHSTANGE: Sicherer Standort-Abruf
+            coords = get_coords_safe(str(row['Wohnort']))
+            
+            if not coords:
+                print(f"❌ ÜBERSPRUNGEN: Kein Standort für {row['Name']} gefunden.")
+                continue
+
             v_key = str(row['Passwort'])
             manifesto = str(row['Manifest'])
             
-            # Geocoding (hier liegt der 429er)
-            coords = logic.geocode_city(str(row['Wohnort']))
-            
-            # 🛰️ RATE-LIMIT-FIX: Wir geben dem Geocoder Zeit zum Atmen
-            time.sleep(1.1)
-            
-            # Alters- und Größenbereiche
+            # Alters- und Größenbereiche splitten
             age_min, age_max = map(int, str(row['Sucht Alter']).replace(" ", "").split("-"))
             h_min, h_max = map(int, str(row['Sucht Größe']).replace(" ", "").split("-"))
 
@@ -66,16 +80,18 @@ def run_import():
                 'is_ukrainian': False,
                 'key_hash': security.hash_key(v_key),
                 'is_email_verified': True,
-                'is_active': False
+                'is_active': True, # Direkt auf True, damit der Worker sie sofort matcht
+                'match_status': 'searching' # Direkt auf Suche
             }
 
-            v_token, status = db_handler.save_profile_atomic(user_data, manifesto, PUB_KEY, v_key)
+            db_handler.save_profile_atomic(user_data, manifesto, PUB_KEY, v_key)
             print(f"✅ Profil {email} gesichert.")
+            
+            # Kleine Pause nach jedem erfolgreichen Profil für die DB
+            time.sleep(1.5) 
 
         except Exception as e:
             print(f"❌ FEHLER bei {row.get('Name')}: {e}")
 
 if __name__ == "__main__":
-    print("🎬 DEBUG: Rufe run_import() auf...")
     run_import()
-    print("🏁 DEBUG: Script beendet.")
