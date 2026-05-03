@@ -147,9 +147,14 @@ def process_vibes():
     
     print("🔎 Suche DNA-Pakete...", end=" ", flush=True)
     cur.execute("""
-        SELECT profile_id, manifesto_enc, embedding, quality_score, emb_werte 
-        FROM manifesto_vectors WHERE (embedding IS NULL OR last_matching_run IS NULL OR emb_werte IS NULL) 
-        AND manifesto_enc IS NOT NULL LIMIT 5;
+        SELECT mv.profile_id, mv.manifesto_enc, mv.embedding, mv.quality_score, mv.emb_werte 
+        FROM manifesto_vectors mv
+        JOIN profiles p ON p.id = mv.profile_id
+        WHERE (mv.embedding IS NULL OR mv.emb_werte IS NULL)
+        AND mv.manifesto_enc IS NOT NULL
+        AND p.is_active = true
+        AND p.is_email_verified = true
+        LIMIT 5;
     """)
     jobs = cur.fetchall()
     print(f"✅ ({len(jobs)} gefunden)")
