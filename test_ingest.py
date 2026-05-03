@@ -40,9 +40,13 @@ def get_coords_safe(city_name):
     
     return None # Nach 10 Versuchen geben wir auf
 
-def run_import():
-    df = pd.read_excel(FILE_PATH)
-    print(f"📡 Starte Ingest von {len(df)} Profilen...")
+def run_import(target_file):
+    if not os.path.exists(target_file):
+        print(f"❌ FEHLER: Datei '{target_file}' nicht gefunden!")
+        return
+
+    df = pd.read_excel(target_file)
+    print(f"📡 Starte Ingest von {len(df)} Profilen aus {target_file}...")
 
     for i, row in df.iterrows():
         try:
@@ -54,10 +58,9 @@ def run_import():
             
             # 🛰️ DIE BRECHSTANGE: Sicherer Standort-Abruf
             coords = get_coords_safe(str(row['Wohnort']))
-            
             if not coords:
-                print(f"❌ ÜBERSPRUNGEN: Kein Standort für {row['Name']} gefunden.")
-                continue
+                print(f"⚠️ Geocoding fehlgeschlagen für {row['Wohnort']}. Nutze Hamburg-Default für Test.")
+                coords = (53.5511, 9.9937) # Fallback statt 'continue'
 
             v_key = str(row['Passwort'])
             manifesto = str(row['Manifest'])
@@ -68,6 +71,8 @@ def run_import():
 
             user_data = {
                 'email': email,
+                'is_email_verified': True,
+                'is_active': True,
                 'identity': map_gender(row['Geschlecht']),
                 'search_for': map_gender(row['Sucht m/w/egal']),
                 'search_intent': 'b',
@@ -85,13 +90,13 @@ def run_import():
             }
 
             db_handler.save_profile_atomic(user_data, manifesto, PUB_KEY, v_key)
-            print(f"✅ Profil {email} gesichert.")
-            
-            # Kleine Pause nach jedem erfolgreichen Profil für die DB
-            time.sleep(1.5) 
+            print(f"✅ Profil {email} gesichert/aktualisiert.")
+            time.sleep(1.2)
 
         except Exception as e:
             print(f"❌ FEHLER bei {row.get('Name')}: {e}")
 
 if __name__ == "__main__":
-    run_import()
+    # Ermöglicht: python3 test_ingest.py delta.xlsx
+    file_to_load = sys.argv[1] if len(sys.argv) > 1 else FILE_PATH
+    run_import(file_to_load)
