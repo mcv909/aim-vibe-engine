@@ -8,27 +8,39 @@ import db_handler
 
 load_dotenv()
 
-# --- 🛰️ AIM KONFIGURATION (SYNC MIT WORKER) ---
+# --- 🛰️ AIM KONFIGURATION ---
 AIM_CONFIG = {
     "VALUE_MATCH_MIN": 0.82,
     "DISMATCH_VETO": 0.40,
     "FINAL_RESONANCE_MIN": 0.85,
     "WEIGHTS": {
-        "werte": 0.40,
-        "general": 0.20,
-        "vibe": 0.15,
-        "offenheit": 0.15,
-        "komm": 0.10
+        "werte": 0.40, "general": 0.20, "vibe": 0.15, "offenheit": 0.15, "komm": 0.10
     }
 }
 
-def print_header(title):
-    print("\n" + "="*75)
-    print(f"🛰️  {title.upper()}")
-    print("="*75)
+# --- 🛰️ GOLD STANDARD MAPPING ---
+GOLD_STANDARD = {
+    "LenaK": "100%", "MarcAnkerTest": "100%", "SandraM": "100%", 
+    "MiriamT": "100%", "KatjaR": "100%", "AnjaV": "100%",
+    "JanaM": "100%", "MiriamP": "100%", "LauraR": "100%", "AnkeB": "100%",
+    "ClaudiaH": "Werte verschieden", "PetraW": "Werte verschieden",
+    "JuliaF": "Werte verschieden", "MarieS": "Werte verschieden",
+    "SophiaB": "Werte verschieden", "TanjaK": "50/50", "NinaP": "50/50",
+    "VeraL": "50/50", "ElenaG": "50/50", "InesB": "50/50", 
+    "JuliaH": "50/50", "SteffiP": "50/50", "NinaT": "50/50",
+    "EvaV": "50/50", "AnalyGerechtFanat": "Offen!", "TechnoKünstlerin": "Offen!",
+    "MarcAnker": "Anker-Profil"
+}
+
+def get_expected_status(email):
+    try:
+        # Extrahiert Name zwischen + und @ (z.B. MarcAnker)
+        name = email.split('+')[1].split('@')[0]
+        return GOLD_STANDARD.get(name, "Unbekannt")
+    except:
+        return "Basis-Profil"
 
 def get_score_visual(score):
-    """Erzeugt eine visuelle Heatmap-Leiste mit Emojis."""
     blocks = int(score * 10)
     bar = "🟩" * blocks + "⬜" * (10 - blocks)
     if score < AIM_CONFIG["DISMATCH_VETO"]: color = "🟥"
@@ -36,46 +48,19 @@ def get_score_visual(score):
     else: color = "🟩"
     return f"{bar} ({color} {score:.4f})"
 
-def check_db_connectivity():
-    try:
-        conn = db_handler.get_connection()
-        params = conn.get_dsn_parameters()
-        cur = conn.cursor()
-        cur.execute("SELECT version();")
-        ver = cur.fetchone()[0]
-        print(f"✅ VERBINDUNG: {params['host']} auf Port {params['port']}")
-        print(f"🐘 SERVER: {ver[:60]}...")
-        cur.close(); conn.close()
-        return True
-    except Exception as e:
-        print(f"❌ DB-VERBINDUNGSFEHLER: {e}")
-        return False
-
 def analyze_user_kaskade(email):
-    """Deep-Dive Analyse der Kaskaden-Resonanz für ein spezifisches Profil."""
-    print_header(f"Kaskaden-Analyse & Heatmap: {email}")
     conn = db_handler.get_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
     try:
-        # 🛰️ TYPEN-WANDLER: Konvertiert Numpy-Vektoren in Postgres-Listen
-        def to_list(v): 
-            return v.tolist() if hasattr(v, 'tolist') else v
+        def to_list(v): return v.tolist() if hasattr(v, 'tolist') else v
 
-        # 1. Anker-Daten holen
-        cur.execute("""
-            SELECT mv.*, p.email 
-            FROM manifesto_vectors mv 
-            JOIN profiles p ON p.id = mv.profile_id 
-            WHERE p.email = %s;
-        """, (email,))
+        cur.execute("SELECT mv.* FROM manifesto_vectors mv JOIN profiles p ON p.id = mv.profile_id WHERE p.email = %s;", (email,))
         me = cur.fetchone()
         
         if not me or me['emb_werte'] is None:
-            print(f"❌ Profil {email} wurde noch nicht kaskadiert oder existiert nicht."); return
+            print(f"❌ Profil {email} wurde noch nicht kaskadiert."); return
 
-        # 2. Alle potenziellen Partner berechnen
-        # Wir wandeln hier JEDEN Vektor vor dem Senden in eine Liste um
         cur.execute("""
             SELECT p.email,
                    (1 - (mv.emb_werte <=> %s::vector)) as sw,
@@ -83,44 +68,30 @@ def analyze_user_kaskade(email):
                    (1 - (mv.emb_offenheit <=> %s::vector)) as so,
                    (1 - (mv.emb_komm <=> %s::vector)) as sk,
                    (1 - (mv.embedding <=> %s::vector)) as sg
-            FROM manifesto_vectors mv
-            JOIN profiles p ON p.id = mv.profile_id
+            FROM manifesto_vectors mv JOIN profiles p ON p.id = mv.profile_id
             WHERE p.email != %s AND mv.emb_werte IS NOT NULL;
-        """, (to_list(me['emb_werte']), to_list(me['emb_vibe']), 
-              to_list(me['emb_offenheit']), to_list(me['emb_komm']), 
-              to_list(me['embedding']), email))
+        """, (to_list(me['emb_werte']), to_list(me['emb_vibe']), to_list(me['emb_offenheit']), to_list(me['emb_komm']), to_list(me['embedding']), email))
         
         candidates = cur.fetchall()
         results = []
-        w = AIM_CONFIG["WEIGHTS"]
-        
         for c in candidates:
-            # Veto-Logik
-            has_veto = any(c[k] < AIM_CONFIG["DISMATCH_VETO"] for k in ['sv', 'so', 'sk'])
-            
-            final_score = (c['sw'] * w['werte'] + c['sg'] * w['general'] + 
-                           c['sv'] * w['vibe'] + c['so'] * w['offenheit'] + c['sk'] * w['komm'])
-            
-            results.append({
-                'email': c['email'], 'sw': c['sw'], 'sv': c['sv'], 'so': c['so'], 
-                'sk': c['sk'], 'sg': c['sg'], 'final': final_score, 'veto': has_veto
-            })
+            final_score = (c['sw'] * 0.4 + c['sg'] * 0.2 + c['sv'] * 0.15 + c['so'] * 0.15 + c['sk'] * 0.1)
+            results.append({'email': c['email'], 'sw': c['sw'], 'sv': c['sv'], 'so': c['so'], 'sk': c['sk'], 'final': final_score})
 
         results = sorted(results, key=lambda x: x['final'], reverse=True)
 
-        for r in results[:15]: # Top 15 Partner anzeigen
-            status = "🚫 VETO" if r['veto'] else ("🔥 MATCH" if r['final'] >= AIM_CONFIG["FINAL_RESONANCE_MIN"] else "☁️ DISSONANZ")
-            print(f"\n📡 PARTNER: {r['email']} [{status}]")
-            print(f"  ├─ GESAMT: {get_score_visual(r['final'])}")
-            print(f"  ├─ WERTE:  {get_score_visual(r['sw'])}")
-            print(f"  ├─ VIBE:   {get_score_visual(r['sv'])}")
-            print(f"  ├─ OFFEN:  {get_score_visual(r['so'])}")
-            print(f"  └─ KOMM:   {get_score_visual(r['sk'])}")
+        print(f"\n{'PARTNER (EMAIL)':<45} | {'SOLL':<18} | {'IST-SCORE'}")
+        print("-" * 85)
+        for r in results[:15]:
+            exp = get_expected_status(r['email'])
+            ist = "🔥 MATCH" if r['final'] >= 0.85 else "☁️ DISSONANZ"
+            print(f"{r['email'][:43]:<45} | {exp:<18} | {ist}")
+            print(f"  └─ HEATMAP: {get_score_visual(r['final'])}")
             
-    except Exception as e:
-        print(f"❌ Fehler bei der Analyse: {e}")
     finally:
         cur.close(); conn.close()
+
+# ... restlicher Code (run_standard_report etc.) bleibt identisch ...
 
 def run_standard_report():
     """Führt die Standard-Integritätsprüfung durch."""

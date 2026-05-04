@@ -163,16 +163,8 @@ def process_vibes():
         cur.close(); conn.close()
         return False
 
-    # DER FIX: Der vollständige Logic Enforcer für den General-Vektor abgeschaltet am 04.05.
-    # logic_enforcer = "Instruct: Represent this person's core identity for personality matching.\nQuery: "
-
-    # NEUER EXPERIMENTELLER ENFORCER aufgenommen am 04.05 und auch raugenommen
-    # logic_enforcer = "Instruct: Extract the core biographical facts, specific interests (like techno, 303, photography), and fundamental values from this text for a factual similarity check. Ignore the linguistic style.\nQuery: "
-    #neuer leerer logic enforcer 04.05. und auch wieder rausgenommen
-    #logic_enforcer = ""
-    # neuer logic enforcer - dieses mal im anderen format
-    logic_enforcer = "<|im_start|>system\nRepresent this person's core identity for personality matching. Focus on facts (Lützow, IT, 303, Techno).<|im_end|>\n<|im_start|>user\n"
-    # Und am Ende des Textes müsste eigentlich noch ein <|im_end|> stehen.
+    # DER FIX: Der vollständige Logic Enforcer für den General-Vektor
+    logic_enforcer = "Instruct: Represent this person's core identity for personality matching.\nQuery: "
 
     for job in jobs:
         p_id = job['profile_id']
